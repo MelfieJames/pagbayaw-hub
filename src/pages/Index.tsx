@@ -1,11 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen">
+      <Navbar />
+      <Hero />
+      <div id="about" className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-8">About Us</h2>
+          <p className="text-lg text-gray-700 max-w-3xl mx-auto text-center">
+            PAGBAYAW INC. is dedicated to preserving and promoting local artisanal crafts
+            while supporting sustainable practices. Through our platform, we connect skilled
+            artisans with appreciative customers, ensuring the continuation of traditional
+            craftsmanship in the modern world.
+          </p>
+        </div>
       </div>
     </div>
   );
