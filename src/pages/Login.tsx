@@ -2,7 +2,9 @@ import Navbar from "@/components/Navbar";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,31 +12,40 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const { toast } = useToast();
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Check for admin credentials
     if (email === "adminunvas@admin.unvas" && password === "unvasadmin098123") {
+      login({ email, isAdmin: true });
       toast({
         title: "Admin Login Successful",
         description: "Welcome back, Admin!",
       });
-      // Here you would typically set some admin state and redirect
+      navigate("/admin");
       return;
     }
     
     // Regular user authentication
     if (isLogin) {
+      // Mock login - in a real app, this would verify credentials against a backend
+      login({ email, isAdmin: false, name: "User" });
       toast({
-        title: "Login Attempted",
-        description: "This is a mock login. Connect to a backend for real authentication.",
+        title: "Login Successful",
+        description: "Welcome back!",
       });
+      navigate("/");
     } else {
+      // Mock signup - in a real app, this would create a new user in the backend
+      login({ email, isAdmin: false, name });
       toast({
-        title: "Sign Up Attempted",
-        description: "This is a mock signup. Connect to a backend for real authentication.",
+        title: "Sign Up Successful",
+        description: "Welcome to UNVAS!",
       });
+      navigate("/");
     }
   };
 
