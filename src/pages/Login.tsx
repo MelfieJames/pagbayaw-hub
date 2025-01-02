@@ -14,7 +14,17 @@ const Login = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // This is a mock authentication - in a real app, you'd want to connect this to a backend
+    // Check for admin credentials
+    if (email === "adminunvas@admin.unvas" && password === "unvasadmin098123") {
+      toast({
+        title: "Admin Login Successful",
+        description: "Welcome back, Admin!",
+      });
+      // Here you would typically set some admin state and redirect
+      return;
+    }
+    
+    // Regular user authentication
     if (isLogin) {
       toast({
         title: "Login Attempted",
