@@ -40,7 +40,7 @@ const AdminDashboard = () => {
             <Award className="w-6 h-6" />
             <span>Add Achievements</span>
           </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
+          <a href="/admin/products" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
             <ShoppingBag className="w-6 h-6" />
             <span>Add Products</span>
           </a>
