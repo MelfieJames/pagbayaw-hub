@@ -1,10 +1,14 @@
-import Navbar from "@/components/Navbar";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import ErrorModal from "@/components/ErrorModal";
+
+// Simple in-memory storage for registered users
+const registeredUsers: { email: string; password: string; name?: string }[] = [];
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +18,18 @@ const Login = () => {
   const { toast } = useToast();
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Error modal state
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorModalContent, setErrorModalContent] = useState({
+    title: "",
+    message: "",
+  });
+
+  const showError = (title: string, message: string) => {
+    setErrorModalContent({ title, message });
+    setIsErrorModalOpen(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,23 +45,47 @@ const Login = () => {
       return;
     }
     
-    // Regular user authentication
     if (isLogin) {
-      // Mock login - in a real app, this would verify credentials against a backend
-      login({ email, isAdmin: false, name: "User" });
+      // Login logic
+      const user = registeredUsers.find(u => u.email === email);
+      if (!user) {
+        showError(
+          "Account Not Found",
+          "This email is not registered. Please sign up first."
+        );
+        return;
+      }
+      if (user.password !== password) {
+        showError(
+          "Invalid Credentials",
+          "The password you entered is incorrect."
+        );
+        return;
+      }
+      
+      login({ email, isAdmin: false, name: user.name });
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
       navigate("/");
     } else {
-      // Mock signup - in a real app, this would create a new user in the backend
-      login({ email, isAdmin: false, name });
+      // Sign up logic
+      const existingUser = registeredUsers.find(u => u.email === email);
+      if (existingUser) {
+        showError(
+          "Email Already Registered",
+          "This email is already registered. Please log in instead."
+        );
+        return;
+      }
+      
+      registeredUsers.push({ email, password, name });
       toast({
         title: "Sign Up Successful",
-        description: "Welcome to UNVAS!",
+        description: "You can now log in with your credentials.",
       });
-      navigate("/");
+      setIsLogin(true); // Switch to login mode
     }
   };
 
@@ -120,6 +160,13 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        title={errorModalContent.title}
+        message={errorModalContent.message}
+      />
     </div>
   );
 };
