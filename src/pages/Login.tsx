@@ -6,14 +6,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ErrorModal from "@/components/ErrorModal";
-import bcryptjs from "bcryptjs";
+import bcrypt from "bcryptjs";
 
 // Simple in-memory storage for registered users
 const registeredUsers: { email: string; password: string; name?: string }[] = [];
 
-// Admin credentials (encrypted password)
+// Admin credentials
 const ADMIN_EMAIL = "admin@unvas.com";
-const ADMIN_PASSWORD_HASH = "$2a$10$YourHashedPasswordHere"; // This is just a placeholder
+const ADMIN_PASSWORD = "admin123!@#";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -41,9 +41,7 @@ const Login = () => {
     
     // Admin authentication
     if (email === ADMIN_EMAIL) {
-      // For demo purposes, using a simple password check
-      // In production, you should use proper password hashing
-      if (password === "admin123!@#") {
+      if (password === ADMIN_PASSWORD) {
         login({ email, isAdmin: true, name: "Admin" });
         toast({
           title: "Admin Login Successful",
@@ -70,7 +68,9 @@ const Login = () => {
         );
         return;
       }
-      if (user.password !== password) {
+      
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
         showError(
           "Invalid Credentials",
           "The password you entered is incorrect."
@@ -95,7 +95,8 @@ const Login = () => {
         return;
       }
       
-      registeredUsers.push({ email, password, name });
+      const hashedPassword = await bcrypt.hash(password, 10);
+      registeredUsers.push({ email, password: hashedPassword, name });
       toast({
         title: "Sign Up Successful",
         description: "You can now log in with your credentials.",
