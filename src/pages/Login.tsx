@@ -6,9 +6,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ErrorModal from "@/components/ErrorModal";
+import bcryptjs from "bcryptjs";
 
 // Simple in-memory storage for registered users
 const registeredUsers: { email: string; password: string; name?: string }[] = [];
+
+// Admin credentials (encrypted password)
+const ADMIN_EMAIL = "admin@unvas.com";
+const ADMIN_PASSWORD_HASH = "$2a$10$YourHashedPasswordHere"; // This is just a placeholder
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,18 +36,28 @@ const Login = () => {
     setIsErrorModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check for admin credentials
-    if (email === "adminunvas@admin.unvas" && password === "unvasadmin098123") {
-      login({ email, isAdmin: true });
-      toast({
-        title: "Admin Login Successful",
-        description: "Welcome back, Admin!",
-      });
-      navigate("/admin");
-      return;
+    // Admin authentication
+    if (email === ADMIN_EMAIL) {
+      // For demo purposes, using a simple password check
+      // In production, you should use proper password hashing
+      if (password === "admin123!@#") {
+        login({ email, isAdmin: true, name: "Admin" });
+        toast({
+          title: "Admin Login Successful",
+          description: "Welcome back, Admin!",
+        });
+        navigate("/admin");
+        return;
+      } else {
+        showError(
+          "Invalid Admin Credentials",
+          "The password you entered is incorrect."
+        );
+        return;
+      }
     }
     
     if (isLogin) {
@@ -85,7 +100,7 @@ const Login = () => {
         title: "Sign Up Successful",
         description: "You can now log in with your credentials.",
       });
-      setIsLogin(true); // Switch to login mode
+      setIsLogin(true);
     }
   };
 

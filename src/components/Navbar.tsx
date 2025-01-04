@@ -1,4 +1,4 @@
-import { Home, Award, ShoppingBag, Mail, User, LogOut } from "lucide-react";
+import { Home, Award, ShoppingBag, Mail, User, LogOut, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -33,6 +33,9 @@ const Navbar = () => {
             <NavLink to="/achievements" icon={<Award />} text="Achievements" />
             <NavLink to="/products" icon={<ShoppingBag />} text="Products" />
             <NavLink to="/contact" icon={<Mail />} text="Contact Us" />
+            {user?.isAdmin && (
+              <NavLink to="/admin" icon={<LayoutDashboard />} text="Admin Dashboard" />
+            )}
             
             {user ? (
               <DropdownMenu>
