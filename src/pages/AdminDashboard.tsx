@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
-import { Award, LogOut, MonitorDashboard, ShoppingBag, Star } from "lucide-react";
+import { Award, LogOut, ShoppingBag, Star } from "lucide-react";
 
 const data = [
   { name: 'Q1', value: 400 },
@@ -33,7 +33,7 @@ const AdminDashboard = () => {
         
         <nav className="mt-8">
           <a href="#" className="flex items-center gap-3 px-4 py-3 bg-[#9b815f] text-white">
-            <MonitorDashboard className="w-6 h-6" />
+            <Star className="w-6 h-6" />
             <span>Dashboard</span>
           </a>
           <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
