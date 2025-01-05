@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
@@ -22,6 +22,11 @@ const AdminDashboard = () => {
     }
   }, [user, navigate]);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -32,24 +37,24 @@ const AdminDashboard = () => {
         </div>
         
         <nav className="mt-8">
-          <a href="#" className="flex items-center gap-3 px-4 py-3 bg-[#9b815f] text-white">
+          <Link to="/admin" className="flex items-center gap-3 px-4 py-3 bg-[#9b815f] text-white">
             <Star className="w-6 h-6" />
             <span>Dashboard</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
+          </Link>
+          <Link to="/admin/achievements" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
             <Award className="w-6 h-6" />
             <span>Add Achievements</span>
-          </a>
-          <a href="/admin/products" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
+          </Link>
+          <Link to="/admin/products" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
             <ShoppingBag className="w-6 h-6" />
             <span>Add Products</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
+          </Link>
+          <Link to="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
             <Star className="w-6 h-6" />
             <span>View Rating</span>
-          </a>
+          </Link>
           <button 
-            onClick={() => logout()}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white mt-auto"
           >
             <LogOut className="w-6 h-6" />
