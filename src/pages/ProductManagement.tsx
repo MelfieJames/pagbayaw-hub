@@ -8,7 +8,8 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileText, Pencil, Trash2, Plus } from "lucide-react";
+import { FileText, Pencil, Trash2, Plus, Star, Award, ShoppingBag, LogOut } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Product {
   id: number;
@@ -75,22 +76,22 @@ const ProductManagement = () => {
         </div>
         
         <nav className="mt-8">
-          <a href="/admin" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
-            <FileText className="w-6 h-6" />
+          <Link to="/admin" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
+            <Star className="w-6 h-6" />
             <span>Dashboard</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
-            <FileText className="w-6 h-6" />
+          </Link>
+          <Link to="/admin/achievements" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
+            <Award className="w-6 h-6" />
             <span>Add Achievements</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 bg-[#9b815f] text-white">
-            <FileText className="w-6 h-6" />
+          </Link>
+          <Link to="/admin/products" className="flex items-center gap-3 px-4 py-3 bg-[#9b815f] text-white">
+            <ShoppingBag className="w-6 h-6" />
             <span>Add Products</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
-            <FileText className="w-6 h-6" />
+          </Link>
+          <Link to="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
+            <Star className="w-6 h-6" />
             <span>View Rating</span>
-          </a>
+          </Link>
         </nav>
       </div>
 
