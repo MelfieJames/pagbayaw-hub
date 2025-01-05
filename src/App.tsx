@@ -10,6 +10,7 @@ import Products from "./pages/Products";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProductManagement from "./pages/ProductManagement";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/products" element={<ProductManagement />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
