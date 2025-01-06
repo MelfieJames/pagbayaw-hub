@@ -9,11 +9,12 @@ import ErrorModal from "@/components/ErrorModal";
 import bcrypt from "bcryptjs";
 
 // Simple in-memory storage for registered users
-const registeredUsers: { email: string; password: string; name?: string }[] = [];
+const registeredUsers: { email: string; password: string; name?: string; id: string }[] = [];
 
 // Admin credentials
 const ADMIN_EMAIL = "admin@unvas.com";
 const ADMIN_PASSWORD = "admin123!@#";
+const ADMIN_ID = "admin-id"; // Fixed admin ID
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -42,7 +43,12 @@ const Login = () => {
     // Admin authentication
     if (email === ADMIN_EMAIL) {
       if (password === ADMIN_PASSWORD) {
-        login({ email, isAdmin: true, name: "Admin" });
+        login({ 
+          id: ADMIN_ID,
+          email, 
+          isAdmin: true, 
+          name: "Admin" 
+        });
         toast({
           title: "Admin Login Successful",
           description: "Welcome back, Admin!",
@@ -78,7 +84,12 @@ const Login = () => {
         return;
       }
       
-      login({ email, isAdmin: false, name: user.name });
+      login({ 
+        id: user.id,
+        email, 
+        isAdmin: false, 
+        name: user.name 
+      });
       toast({
         title: "Login Successful",
         description: "Welcome back!",
@@ -96,7 +107,13 @@ const Login = () => {
       }
       
       const hashedPassword = await bcrypt.hash(password, 10);
-      registeredUsers.push({ email, password: hashedPassword, name });
+      const userId = `user-${Date.now()}`; // Generate a unique ID for new users
+      registeredUsers.push({ 
+        id: userId,
+        email, 
+        password: hashedPassword, 
+        name 
+      });
       toast({
         title: "Sign Up Successful",
         description: "You can now log in with your credentials.",
