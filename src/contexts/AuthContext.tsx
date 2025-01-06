@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
-  id: string;  // Added this line
+  id: string;
   email: string;
   isAdmin: boolean;
   name?: string;
@@ -18,11 +19,49 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (userData: User) => {
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const email = session.user.email;
+        // Set admin status based on email
+        const isAdmin = email === "admin@unvas.com";
+        setUser({
+          id: session.user.id,
+          email: email || "",
+          isAdmin,
+          name: isAdmin ? "Admin" : email?.split('@')[0]
+        });
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        const email = session.user.email;
+        const isAdmin = email === "admin@unvas.com";
+        setUser({
+          id: session.user.id,
+          email: email || "",
+          isAdmin,
+          name: isAdmin ? "Admin" : email?.split('@')[0]
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (userData: User) => {
     setUser(userData);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
