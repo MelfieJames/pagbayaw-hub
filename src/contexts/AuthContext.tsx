@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface User {
+  id: string;  // Added this line
   email: string;
   isAdmin: boolean;
   name?: string;
