@@ -41,6 +41,15 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create achievements",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       if (mode === 'add') {
         const { error } = await supabase
@@ -48,7 +57,7 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
           .insert([
             {
               ...formData,
-              user_id: user?.email // Using email as user_id since that's what we have in AuthContext
+              user_id: user.id // Using the actual user ID from auth
             }
           ]);
 
