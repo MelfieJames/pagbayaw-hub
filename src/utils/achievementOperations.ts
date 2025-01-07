@@ -16,7 +16,7 @@ export const createAchievement = async (data: AchievementData, user: User | null
     .from('achievements')
     .insert([{
       ...data,
-      user_id: user.id // Using the actual UUID from authenticated user
+      user_id: user.id
     }]);
 
   if (error) throw error;
