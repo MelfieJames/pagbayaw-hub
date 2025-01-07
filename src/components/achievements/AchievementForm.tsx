@@ -41,28 +41,23 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user?.id) {
+    if (!user?.isAdmin) {
       toast({
         title: "Error",
-        description: "You must be logged in to create achievements",
+        description: "Only admin users can manage achievements",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      // Only include user_id in the dataToSave object if we're adding a new achievement
-      const dataToSave = mode === 'add' 
-        ? {
-            ...formData,
-            user_id: user.id  // This will be a proper UUID from the authenticated user
-          }
-        : formData;  // For edit mode, don't include user_id
-
       if (mode === 'add') {
         const { error } = await supabase
           .from('achievements')
-          .insert([dataToSave]);
+          .insert([{
+            ...formData,
+            user_id: user.id
+          }]);
 
         if (error) throw error;
 
@@ -73,7 +68,7 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
       } else {
         const { error } = await supabase
           .from('achievements')
-          .update(dataToSave)
+          .update(formData)
           .eq('id', initialData?.id);
 
         if (error) throw error;
