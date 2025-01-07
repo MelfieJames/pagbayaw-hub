@@ -53,7 +53,7 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
     try {
       const dataToSave = {
         ...formData,
-        user_id: user.id
+        user_id: user.id // Using the actual UUID from the authenticated user
       };
 
       if (mode === 'add') {
@@ -61,10 +61,7 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
           .from('achievements')
           .insert([dataToSave]);
 
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
+        if (error) throw error;
 
         toast({
           title: "Success",
@@ -76,10 +73,7 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
           .update(dataToSave)
           .eq('id', initialData?.id);
 
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
+        if (error) throw error;
 
         toast({
           title: "Success",
