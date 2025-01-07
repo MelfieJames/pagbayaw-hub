@@ -2,22 +2,33 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
+interface CustomUser extends User {
+  isAdmin: boolean;
+  name: string;
+}
+
 interface AuthContextType {
-  user: User | null;
-  login: (user: User) => void;
+  user: CustomUser | null;
+  login: (user: CustomUser) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CustomUser | null>(null);
 
   useEffect(() => {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUser(session.user);
+      if (session?.user) {
+        const email = session.user.email;
+        const isAdmin = email === "admin@unvas.com";
+        setUser({
+          ...session.user,
+          isAdmin,
+          name: isAdmin ? "Admin" : email?.split('@')[0] || "User"
+        });
       }
     });
 
@@ -25,8 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setUser(session.user);
+      if (session?.user) {
+        const email = session.user.email;
+        const isAdmin = email === "admin@unvas.com";
+        setUser({
+          ...session.user,
+          isAdmin,
+          name: isAdmin ? "Admin" : email?.split('@')[0] || "User"
+        });
       } else {
         setUser(null);
       }
@@ -35,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (userData: User) => {
+  const login = (userData: CustomUser) => {
     setUser(userData);
   };
 

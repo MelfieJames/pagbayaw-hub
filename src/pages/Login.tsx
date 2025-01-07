@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ErrorModal from "@/components/ErrorModal";
+import { supabase } from "@/integrations/supabase/client";
 import bcrypt from "bcryptjs";
 
 // Simple in-memory storage for registered users
@@ -14,7 +15,6 @@ const registeredUsers: { email: string; password: string; name?: string; id: str
 // Admin credentials
 const ADMIN_EMAIL = "admin@unvas.com";
 const ADMIN_PASSWORD = "admin123!@#";
-const ADMIN_ID = "admin-id"; // Fixed admin ID
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -32,6 +32,16 @@ const Login = () => {
     message: "",
   });
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/");
+      }
+    };
+    checkSession();
+  }, [navigate]);
+
   const showError = (title: string, message: string) => {
     setErrorModalContent({ title, message });
     setIsErrorModalOpen(true);
@@ -40,85 +50,61 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Admin authentication
-    if (email === ADMIN_EMAIL) {
-      if (password === ADMIN_PASSWORD) {
-        login({ 
-          id: ADMIN_ID,
-          email, 
-          isAdmin: true, 
-          name: "Admin" 
-        });
-        toast({
-          title: "Admin Login Successful",
-          description: "Welcome back, Admin!",
-        });
-        navigate("/admin");
+    try {
+      if (email === ADMIN_EMAIL) {
+        if (password === ADMIN_PASSWORD) {
+          const { data: { user }, error } = await supabase.auth.signUp({
+            email,
+            password,
+          });
+
+          if (error) throw error;
+          if (user) {
+            navigate("/admin");
+          }
+        } else {
+          showError(
+            "Invalid Admin Credentials",
+            "The password you entered is incorrect."
+          );
+        }
         return;
+      }
+      
+      if (isLogin) {
+        const { data: { user }, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+        if (user) {
+          toast({
+            title: "Login Successful",
+            description: "Welcome back!",
+          });
+          navigate("/");
+        }
       } else {
-        showError(
-          "Invalid Admin Credentials",
-          "The password you entered is incorrect."
-        );
-        return;
+        const { data: { user }, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+        if (user) {
+          toast({
+            title: "Sign Up Successful",
+            description: "You can now log in with your credentials.",
+          });
+          setIsLogin(true);
+        }
       }
-    }
-    
-    if (isLogin) {
-      // Login logic
-      const user = registeredUsers.find(u => u.email === email);
-      if (!user) {
-        showError(
-          "Account Not Found",
-          "This email is not registered. Please sign up first."
-        );
-        return;
-      }
-      
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-        showError(
-          "Invalid Credentials",
-          "The password you entered is incorrect."
-        );
-        return;
-      }
-      
-      login({ 
-        id: user.id,
-        email, 
-        isAdmin: false, 
-        name: user.name 
-      });
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      navigate("/");
-    } else {
-      // Sign up logic
-      const existingUser = registeredUsers.find(u => u.email === email);
-      if (existingUser) {
-        showError(
-          "Email Already Registered",
-          "This email is already registered. Please log in instead."
-        );
-        return;
-      }
-      
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const userId = `user-${Date.now()}`; // Generate a unique ID for new users
-      registeredUsers.push({ 
-        id: userId,
-        email, 
-        password: hashedPassword, 
-        name 
-      });
-      toast({
-        title: "Sign Up Successful",
-        description: "You can now log in with your credentials.",
-      });
-      setIsLogin(true);
+    } catch (error: any) {
+      showError(
+        "Authentication Error",
+        error.message || "An error occurred during authentication"
+      );
     }
   };
 
