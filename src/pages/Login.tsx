@@ -7,14 +7,6 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ErrorModal from "@/components/ErrorModal";
 import { supabase } from "@/integrations/supabase/client";
-import bcrypt from "bcryptjs";
-
-// Simple in-memory storage for registered users
-const registeredUsers: { email: string; password: string; name?: string; id: string }[] = [];
-
-// Admin credentials
-const ADMIN_EMAIL = "admin@unvas.com";
-const ADMIN_PASSWORD = "admin123!@#";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -34,7 +26,7 @@ const Login = () => {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
       }
@@ -51,15 +43,15 @@ const Login = () => {
     e.preventDefault();
     
     try {
-      if (email === ADMIN_EMAIL) {
-        if (password === ADMIN_PASSWORD) {
-          const { data: { user }, error } = await supabase.auth.signUp({
+      if (email === "admin@unvas.com") {
+        if (password === "admin123!@#") {
+          const { data, error } = await supabase.auth.signUp({
             email,
             password,
           });
 
           if (error) throw error;
-          if (user) {
+          if (data.user) {
             navigate("/admin");
           }
         } else {
@@ -71,28 +63,30 @@ const Login = () => {
         return;
       }
       
+      let authResponse;
       if (isLogin) {
-        const { data: { user }, error } = await supabase.auth.signInWithPassword({
+        authResponse = await supabase.auth.signInWithPassword({
           email,
           password,
         });
+      } else {
+        authResponse = await supabase.auth.signUp({
+          email,
+          password,
+        });
+      }
 
-        if (error) throw error;
-        if (user) {
+      const { data, error } = authResponse;
+      if (error) throw error;
+
+      if (data.user) {
+        if (isLogin) {
           toast({
             title: "Login Successful",
             description: "Welcome back!",
           });
           navigate("/");
-        }
-      } else {
-        const { data: { user }, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-        if (user) {
+        } else {
           toast({
             title: "Sign Up Successful",
             description: "You can now log in with your credentials.",
