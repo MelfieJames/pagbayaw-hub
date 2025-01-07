@@ -51,17 +51,20 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
     }
 
     try {
+      const dataToSave = {
+        ...formData,
+        user_id: user.id
+      };
+
       if (mode === 'add') {
         const { error } = await supabase
           .from('achievements')
-          .insert([
-            {
-              ...formData,
-              user_id: user.id // Using the actual user ID from auth
-            }
-          ]);
+          .insert([dataToSave]);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
 
         toast({
           title: "Success",
@@ -70,10 +73,13 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
       } else {
         const { error } = await supabase
           .from('achievements')
-          .update(formData)
+          .update(dataToSave)
           .eq('id', initialData?.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
 
         toast({
           title: "Success",
@@ -82,11 +88,11 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
       }
 
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: "Failed to save achievement",
+        description: error.message || "Failed to save achievement",
         variant: "destructive"
       });
     }
