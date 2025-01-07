@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { AchievementFormInput } from "./AchievementFormInput";
+import { createAchievement, updateAchievement } from "@/utils/achievementOperations";
 
 interface AchievementFormProps {
   onSuccess: () => void;
@@ -52,27 +51,13 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
 
     try {
       if (mode === 'add') {
-        const { error } = await supabase
-          .from('achievements')
-          .insert([{
-            ...formData,
-            user_id: user.id
-          }]);
-
-        if (error) throw error;
-
+        await createAchievement(formData, user);
         toast({
           title: "Success",
           description: "Achievement added successfully",
         });
-      } else {
-        const { error } = await supabase
-          .from('achievements')
-          .update(formData)
-          .eq('id', initialData?.id);
-
-        if (error) throw error;
-
+      } else if (initialData?.id) {
+        await updateAchievement(initialData.id, formData);
         toast({
           title: "Success",
           description: "Achievement updated successfully",
@@ -92,49 +77,40 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="text-sm font-medium">Achievement Name</label>
-        <Input
-          name="achievement_name"
-          value={formData.achievement_name}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium">Description</label>
-        <Textarea
-          name="description"
-          value={formData.description}
-          onChange={handleInputChange}
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium">Date</label>
-        <Input
-          type="date"
-          name="date"
-          value={formData.date}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium">Image URL</label>
-        <Input
-          name="image"
-          value={formData.image}
-          onChange={handleInputChange}
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium">Video URL</label>
-        <Input
-          name="video"
-          value={formData.video}
-          onChange={handleInputChange}
-        />
-      </div>
+      <AchievementFormInput
+        label="Achievement Name"
+        name="achievement_name"
+        value={formData.achievement_name}
+        onChange={handleInputChange}
+        required
+      />
+      <AchievementFormInput
+        label="Description"
+        name="description"
+        value={formData.description}
+        onChange={handleInputChange}
+        isTextarea
+      />
+      <AchievementFormInput
+        label="Date"
+        name="date"
+        type="date"
+        value={formData.date}
+        onChange={handleInputChange}
+        required
+      />
+      <AchievementFormInput
+        label="Image URL"
+        name="image"
+        value={formData.image}
+        onChange={handleInputChange}
+      />
+      <AchievementFormInput
+        label="Video URL"
+        name="video"
+        value={formData.video}
+        onChange={handleInputChange}
+      />
       <Button type="submit" className="w-full bg-[#8B7355] hover:bg-[#9b815f]">
         {mode === 'add' ? 'Add Achievement' : 'Update Achievement'}
       </Button>
