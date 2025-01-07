@@ -51,10 +51,13 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
     }
 
     try {
-      const dataToSave = {
-        ...formData,
-        user_id: user.id // Using the actual UUID from the authenticated user
-      };
+      // Only include user_id in the dataToSave object if we're adding a new achievement
+      const dataToSave = mode === 'add' 
+        ? {
+            ...formData,
+            user_id: user.id  // This will be a proper UUID from the authenticated user
+          }
+        : formData;  // For edit mode, don't include user_id
 
       if (mode === 'add') {
         const { error } = await supabase
