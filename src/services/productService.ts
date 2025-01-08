@@ -1,0 +1,98 @@
+import { supabase } from "@/integrations/supabase/client";
+import { Product, ProductFormData } from "@/types/product";
+
+export async function createProduct(data: ProductFormData): Promise<Product> {
+  let imagePath = null;
+
+  if (data.image) {
+    const fileExt = data.image.name.split('.').pop();
+    const filePath = `${crypto.randomUUID()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, data.image);
+
+    if (uploadError) {
+      throw new Error('Error uploading image');
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('products')
+      .getPublicUrl(filePath);
+
+    imagePath = publicUrl;
+  }
+
+  const { data: product, error } = await supabase
+    .from('products')
+    .insert([{
+      product_name: data.product_name,
+      category: data.category,
+      description: data.description,
+      link: data.link,
+      image: imagePath,
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return product;
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+export async function updateProduct(id: number, data: ProductFormData): Promise<Product> {
+  let imagePath = null;
+
+  if (data.image) {
+    const fileExt = data.image.name.split('.').pop();
+    const filePath = `${crypto.randomUUID()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, data.image);
+
+    if (uploadError) {
+      throw new Error('Error uploading image');
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('products')
+      .getPublicUrl(filePath);
+
+    imagePath = publicUrl;
+  }
+
+  const { data: product, error } = await supabase
+    .from('products')
+    .update({
+      product_name: data.product_name,
+      category: data.category,
+      description: data.description,
+      link: data.link,
+      ...(imagePath && { image: imagePath }),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return product;
+}

@@ -49,29 +49,35 @@ export type Database = {
         Row: {
           category: string
           created_at: string | null
-          id: string
-          image_url: string | null
-          name: string
-          price: number
+          description: string
+          id: number
+          image: string | null
+          link: string
+          product_name: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           category: string
           created_at?: string | null
-          id?: string
-          image_url?: string | null
-          name: string
-          price: number
+          description: string
+          id?: number
+          image?: string | null
+          link: string
+          product_name: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           category?: string
           created_at?: string | null
-          id?: string
-          image_url?: string | null
-          name?: string
-          price?: number
+          description?: string
+          id?: number
+          image?: string | null
+          link?: string
+          product_name?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

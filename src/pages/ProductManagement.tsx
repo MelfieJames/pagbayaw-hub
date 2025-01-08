@@ -1,65 +1,79 @@
 import { useState } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileText, Pencil, Trash2, Plus, Star, Award, ShoppingBag, LogOut } from "lucide-react";
+import { FileText, Pencil, Trash2, Plus, Star, Award, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
-
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  image: string;
-}
-
-const initialProducts: Product[] = [
-  {
-    id: 1,
-    name: "Glamdaze",
-    category: "Necklace",
-    price: 150,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    name: "Shelly",
-    category: "Necklace",
-    price: 150,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 3,
-    name: "Greeler",
-    category: "Necklace",
-    price: 150,
-    image: "/placeholder.svg"
-  }
-];
+import { ProductForm } from "@/components/products/ProductForm";
+import { Product, ProductFormData } from "@/types/product";
+import { createProduct, getProducts, deleteProduct, updateProduct } from "@/services/productService";
+import { useToast } from "@/hooks/use-toast";
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const handleView = (id: number) => {
-    console.log("Viewing product:", id);
-  };
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: getProducts,
+  });
 
-  const handleEdit = (id: number) => {
-    console.log("Editing product:", id);
-  };
+  const createMutation = useMutation({
+    mutationFn: createProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast({ title: "Product created successfully" });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error creating product", 
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+  });
 
-  const handleDelete = (id: number) => {
-    setProducts(products.filter(product => product.id !== id));
-  };
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: ProductFormData }) => 
+      updateProduct(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsEditing(false);
+      setSelectedProduct(null);
+      toast({ title: "Product updated successfully" });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error updating product", 
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+  });
 
-  const handleAddNew = () => {
-    console.log("Adding new product");
+  const deleteMutation = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast({ title: "Product deleted successfully" });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error deleting product", 
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+  });
+
+  const handleSubmit = async (data: ProductFormData) => {
+    if (selectedProduct && isEditing) {
+      await updateMutation.mutateAsync({ id: selectedProduct.id, data });
+    } else {
+      await createMutation.mutateAsync(data);
+    }
   };
 
   return (
@@ -88,80 +102,79 @@ const ProductManagement = () => {
             <ShoppingBag className="w-6 h-6" />
             <span>Add Products</span>
           </Link>
-          <Link to="#" className="flex items-center gap-3 px-4 py-3 hover:bg-[#9b815f] text-white">
-            <Star className="w-6 h-6" />
-            <span>View Rating</span>
-          </Link>
         </nav>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-8 overflow-y-auto">
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-[#8B7355]">Products</h1>
-            <Button 
-              onClick={handleAddNew}
-              className="bg-[#8B7355] hover:bg-[#9b815f] text-white flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add New Product
-            </Button>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-[#8B7355] mb-4">
+              {isEditing ? "Edit Product" : "Add New Product"}
+            </h1>
+            <ProductForm
+              onSubmit={handleSubmit}
+              initialData={selectedProduct || undefined}
+              isLoading={createMutation.isPending || updateMutation.isPending}
+            />
           </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>₱ {product.price}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleView(product.id)}
-                        >
-                          <FileText className="w-4 h-4 text-blue-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleEdit(product.id)}
-                        >
-                          <Pencil className="w-4 h-4 text-green-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDelete(product.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          <div className="mt-8">
+            <h2 className="text-xl font-bold text-[#8B7355] mb-4">Products List</h2>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Link</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <img 
+                          src={product.image || "/placeholder.svg"} 
+                          alt={product.product_name} 
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{product.product_name}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>
+                        <a href={product.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          View
+                        </a>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedProduct(product);
+                              setIsEditing(true);
+                            }}
+                          >
+                            <Pencil className="w-4 h-4 text-green-500" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => deleteMutation.mutate(product.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
       </div>
