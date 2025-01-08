@@ -44,21 +44,40 @@ const Login = () => {
     
     try {
       if (email === "admin@unvas.com") {
-        if (password === "admin123!@#") {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-          });
+        // Try to sign in first for admin
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-          if (error) throw error;
-          if (data.user) {
-            navigate("/admin");
+        if (signInError) {
+          // If sign in fails, try to sign up
+          if (password === "admin123!@#") {
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email,
+              password,
+            });
+
+            if (signUpError) {
+              if (signUpError.message.includes("User already registered")) {
+                showError(
+                  "Authentication Error",
+                  "Invalid admin credentials. Please check your password."
+                );
+              } else {
+                throw signUpError;
+              }
+            } else if (signUpData.user) {
+              navigate("/admin");
+            }
+          } else {
+            showError(
+              "Invalid Admin Credentials",
+              "The password you entered is incorrect."
+            );
           }
-        } else {
-          showError(
-            "Invalid Admin Credentials",
-            "The password you entered is incorrect."
-          );
+        } else if (signInData.user) {
+          navigate("/admin");
         }
         return;
       }
