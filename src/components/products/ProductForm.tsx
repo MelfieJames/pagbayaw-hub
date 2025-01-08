@@ -8,7 +8,7 @@ import { ImageUpload } from "./ImageUpload";
 
 interface ProductFormProps {
   onSubmit: (data: ProductFormData) => Promise<void>;
-  initialData?: Partial<ProductFormData>;
+  initialData?: Partial<ProductFormData> & { image?: string | null };
   isLoading?: boolean;
 }
 

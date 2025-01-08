@@ -114,7 +114,7 @@ const ProductManagement = () => {
             </h1>
             <ProductForm
               onSubmit={handleSubmit}
-              initialData={selectedProduct || undefined}
+              initialData={selectedProduct}
               isLoading={createMutation.isPending || updateMutation.isPending}
             />
           </div>
