@@ -52,7 +52,6 @@ export type Database = {
           description: string
           id: number
           image: string | null
-          link: string
           product_name: string
           updated_at: string | null
           user_id: string | null
@@ -63,7 +62,6 @@ export type Database = {
           description: string
           id?: number
           image?: string | null
-          link: string
           product_name: string
           updated_at?: string | null
           user_id?: string | null
@@ -74,7 +72,6 @@ export type Database = {
           description?: string
           id?: number
           image?: string | null
-          link?: string
           product_name?: string
           updated_at?: string | null
           user_id?: string | null

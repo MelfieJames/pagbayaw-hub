@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ProductForm } from "@/components/products/ProductForm";
@@ -8,16 +8,36 @@ import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { Product } from "@/types/product";
 import { createProduct, getProducts, deleteProduct, updateProduct } from "@/services/productService";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-const ProductManagement = () => {
+// Create a new QueryClient instance
+const queryClient = new QueryClient();
+
+// Wrap the main component with QueryClientProvider
+const ProductManagementWithProvider = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ProductManagementContent />
+    </QueryClientProvider>
+  );
+};
+
+const ProductManagementContent = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const queryClient = useQueryClient();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Check authentication
   useEffect(() => {
     if (!user || !user.isAdmin) {
       navigate("/login");
@@ -32,13 +52,14 @@ const ProductManagement = () => {
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
-    enabled: !!user?.isAdmin, // Only fetch if user is admin
+    enabled: !!user?.isAdmin,
   });
 
   const createMutation = useMutation({
     mutationFn: createProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsAddDialogOpen(false);
       toast({ title: "Product created successfully" });
     },
     onError: (error: Error) => {
@@ -54,7 +75,7 @@ const ProductManagement = () => {
     mutationFn: updateProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      setIsEditing(false);
+      setIsEditDialogOpen(false);
       setSelectedProduct(null);
       toast({ title: "Product updated successfully" });
     },
@@ -83,7 +104,7 @@ const ProductManagement = () => {
   });
 
   const handleSubmit = async (data: any) => {
-    if (selectedProduct && isEditing) {
+    if (selectedProduct && isEditDialogOpen) {
       await updateMutation.mutateAsync({ id: selectedProduct.id, data });
     } else {
       await createMutation.mutateAsync(data);
@@ -92,11 +113,11 @@ const ProductManagement = () => {
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
-    setIsEditing(true);
+    setIsEditDialogOpen(true);
   };
 
   if (!user?.isAdmin) {
-    return null; // Don't render anything if not admin
+    return null;
   }
 
   return (
@@ -104,15 +125,27 @@ const ProductManagement = () => {
       <AdminSidebar />
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#8B7355] mb-4">
-              {isEditing ? "Edit Product" : "Add New Product"}
-            </h1>
-            <ProductForm
-              onSubmit={handleSubmit}
-              initialData={selectedProduct}
-              isLoading={createMutation.isPending || updateMutation.isPending}
-            />
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-[#8B7355]">Products</h1>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="bg-[#8B7355] hover:bg-[#9b815f] text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Product
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Product</DialogTitle>
+                </DialogHeader>
+                <ProductForm
+                  onSubmit={handleSubmit}
+                  isLoading={createMutation.isPending}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
 
           <ProductList 
@@ -122,8 +155,22 @@ const ProductManagement = () => {
           />
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+          <ProductForm
+            onSubmit={handleSubmit}
+            initialData={selectedProduct}
+            isLoading={updateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default ProductManagement;
+export default ProductManagementWithProvider;

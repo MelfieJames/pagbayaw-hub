@@ -20,7 +20,6 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
               <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Link</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -36,11 +35,6 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
                 </TableCell>
                 <TableCell className="font-medium">{product.product_name}</TableCell>
                 <TableCell>{product.category}</TableCell>
-                <TableCell>
-                  <a href={product.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                    View
-                  </a>
-                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button

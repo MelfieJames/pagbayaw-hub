@@ -14,7 +14,6 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
       product_name: initialData?.product_name || "",
       category: initialData?.category || "",
       description: initialData?.description || "",
-      link: initialData?.link || "",
       image: null,
     },
   });
@@ -73,20 +72,6 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Enter description" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="link"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Link</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Enter product link" />
               </FormControl>
               <FormMessage />
             </FormItem>

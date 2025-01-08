@@ -4,7 +4,6 @@ export interface Product {
   category: string;
   product_name: string;
   description: string;
-  link: string;
   created_at?: string;
   updated_at?: string;
   user_id?: string;
@@ -14,7 +13,6 @@ export interface ProductFormData {
   product_name: string;
   category: string;
   description: string;
-  link: string;
   image: File | null;
 }
 

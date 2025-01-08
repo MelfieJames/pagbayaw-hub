@@ -29,7 +29,6 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
       product_name: data.product_name,
       category: data.category,
       description: data.description,
-      link: data.link,
       image: imagePath,
     }])
     .select()
@@ -91,7 +90,6 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
       product_name: data.product_name,
       category: data.category,
       description: data.description,
-      link: data.link,
       ...(imagePath && { image: imagePath }),
     })
     .eq('id', id)
