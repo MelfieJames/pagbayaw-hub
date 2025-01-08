@@ -58,7 +58,12 @@ export async function deleteProduct(id: number): Promise<void> {
   if (error) throw error;
 }
 
-export async function updateProduct(id: number, data: ProductFormData): Promise<Product> {
+export interface UpdateProductParams {
+  id: number;
+  data: ProductFormData;
+}
+
+export async function updateProduct({ id, data }: UpdateProductParams): Promise<Product> {
   let imagePath = null;
 
   if (data.image) {

@@ -20,6 +20,6 @@ export interface ProductFormData {
 
 export interface ProductFormProps {
   onSubmit: (data: ProductFormData) => Promise<void>;
-  initialData?: Partial<Product>;
+  initialData?: Product | null;
   isLoading?: boolean;
 }
