@@ -11,9 +11,15 @@ export interface Product {
 }
 
 export interface ProductFormData {
-  image: File | null;
-  category: string;
   product_name: string;
+  category: string;
   description: string;
   link: string;
+  image: File | null;
+}
+
+export interface ProductFormProps {
+  onSubmit: (data: ProductFormData) => Promise<void>;
+  initialData?: Partial<Product>;
+  isLoading?: boolean;
 }

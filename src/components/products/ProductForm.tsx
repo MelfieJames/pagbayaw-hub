@@ -3,14 +3,8 @@ import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ProductFormData } from "@/types/product";
+import { ProductFormData, ProductFormProps } from "@/types/product";
 import { ImageUpload } from "./ImageUpload";
-
-interface ProductFormProps {
-  onSubmit: (data: ProductFormData) => Promise<void>;
-  initialData?: Partial<ProductFormData> & { image?: string | null };
-  isLoading?: boolean;
-}
 
 export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
