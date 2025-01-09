@@ -84,14 +84,16 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     imagePath = publicUrl;
   }
 
+  const updateData = {
+    product_name: data.product_name,
+    category: data.category,
+    description: data.description,
+    ...(imagePath && { image: imagePath }),
+  };
+
   const { data: product, error } = await supabase
     .from('products')
-    .update({
-      product_name: data.product_name,
-      category: data.category,
-      description: data.description,
-      ...(imagePath && { image: imagePath }),
-    })
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();

@@ -19,13 +19,17 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
   });
 
   const handleSubmit = async (data: ProductFormData) => {
-    const formData = {
-      ...data,
-      image: selectedImage,
-    };
-    await onSubmit(formData);
-    form.reset();
-    setSelectedImage(null);
+    try {
+      const formData = {
+        ...data,
+        image: selectedImage,
+      };
+      await onSubmit(formData);
+      form.reset();
+      setSelectedImage(null);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
   };
 
   return (
