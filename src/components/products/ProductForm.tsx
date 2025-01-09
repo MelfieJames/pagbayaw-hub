@@ -14,6 +14,7 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
       product_name: initialData?.product_name || "",
       category: initialData?.category || "",
       description: initialData?.description || "",
+      product_price: initialData?.product_price || 0,
       image: null,
     },
   });
@@ -62,6 +63,27 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
               <FormLabel>Category</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Enter category" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="product_price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Price</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  type="number" 
+                  step="0.01"
+                  min="0"
+                  placeholder="Enter price" 
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

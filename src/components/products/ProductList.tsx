@@ -20,6 +20,7 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
               <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -35,6 +36,7 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
                 </TableCell>
                 <TableCell className="font-medium">{product.product_name}</TableCell>
                 <TableCell>{product.category}</TableCell>
+                <TableCell>${product.product_price.toFixed(2)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button
