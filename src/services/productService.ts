@@ -23,6 +23,10 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
     imagePath = publicUrl;
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: product, error } = await supabase
     .from('products')
     .insert([{
@@ -30,6 +34,7 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
       category: data.category,
       description: data.description,
       image: imagePath,
+      user_id: user?.id
     }])
     .select()
     .single();
@@ -84,11 +89,16 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     imagePath = publicUrl;
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const updateData = {
     product_name: data.product_name,
     category: data.category,
     description: data.description,
     ...(imagePath && { image: imagePath }),
+    user_id: user?.id
   };
 
   const { data: product, error } = await supabase
