@@ -24,6 +24,7 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
     try {
       const formData = {
         ...data,
+        product_price: Number(data.product_price), // Ensure price is converted to number
         image: selectedImage,
       };
       await onSubmit(formData);
@@ -83,7 +84,8 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
                     type="number" 
                     step="0.01"
                     min="0"
-                    placeholder="Enter price in PHP" 
+                    placeholder="Enter price in PHP"
+                    value={field.value}
                     onChange={(e) => field.onChange(parseFloat(e.target.value))}
                   />
                 </FormControl>

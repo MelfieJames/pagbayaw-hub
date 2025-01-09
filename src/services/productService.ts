@@ -33,6 +33,7 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
       product_name: data.product_name,
       category: data.category,
       description: data.description,
+      product_price: data.product_price,
       image: imagePath,
       user_id: user?.id
     }])
@@ -97,6 +98,7 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     product_name: data.product_name,
     category: data.category,
     description: data.description,
+    product_price: data.product_price,
     ...(imagePath && { image: imagePath }),
     user_id: user?.id
   };
