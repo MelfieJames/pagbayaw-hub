@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
-interface CustomUser extends User {
+export interface CustomUser extends User {
   isAdmin: boolean;
   name: string;
 }

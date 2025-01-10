@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { createAchievement, updateAchievement } from "@/utils/achievementOperations";
+import { CustomUser } from "@/contexts/AuthContext"; // Import the custom user type
 
 interface AchievementFormData {
   achievement_name: string;
@@ -15,7 +16,7 @@ interface UseAchievementFormProps {
   initialData?: AchievementFormData & { id?: number };
   mode: 'add' | 'edit';
   onSuccess: () => void;
-  user: User | null;
+  user: CustomUser | null;  // Update the type to CustomUser
 }
 
 export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAchievementFormProps) => {
