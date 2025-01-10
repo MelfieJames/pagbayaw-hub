@@ -158,11 +158,11 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
       </div>
 
       <Dialog open={!!selectedAchievement} onOpenChange={() => setSelectedAchievement(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Achievement Details</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[80vh] overflow-y-auto">
+          <ScrollArea className="max-h-[70vh] overflow-y-auto">
             {selectedAchievement && (
               <div className="space-y-4 p-4">
                 {selectedAchievement.image && (
