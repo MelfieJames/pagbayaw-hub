@@ -4,11 +4,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProductFormData, ProductFormProps } from "@/types/product";
-import { ImageUpload } from "./ImageUpload";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImageUploadSection } from "./ImageUploadSection";
 
 export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormProps) {
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageType, setImageType] = useState<'url' | 'file'>('url');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+  const [imageUrl, setImageUrl] = useState(initialData?.image || '');
   
   const form = useForm<ProductFormData>({
     defaultValues: {
@@ -20,16 +23,36 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
     },
   });
 
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setImageUrl(url);
+    setImagePreview(url);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (data: ProductFormData) => {
     try {
       const formData = {
         ...data,
-        product_price: Number(data.product_price), // Ensure price is converted to number
-        image: selectedImage,
+        product_price: Number(data.product_price),
+        image: imageType === 'file' ? selectedFile : imageUrl,
       };
       await onSubmit(formData);
       form.reset();
-      setSelectedImage(null);
+      setSelectedFile(null);
+      setImagePreview(null);
+      setImageUrl('');
     } catch (error) {
       console.error("Error submitting form:", error);
     }
@@ -39,9 +62,13 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
     <ScrollArea className="h-[400px] pr-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          <ImageUpload
-            onImageSelected={setSelectedImage}
-            currentImage={initialData?.image}
+          <ImageUploadSection
+            imageType={imageType}
+            imageUrl={imageUrl}
+            imagePreview={imagePreview}
+            onImageTypeChange={setImageType}
+            onUrlChange={handleImageUrlChange}
+            onFileChange={handleFileChange}
           />
 
           <FormField
