@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ProductForm } from "@/components/products/ProductForm";
 import { ProductList } from "@/components/products/ProductList";
+import { InventoryList } from "@/components/products/InventoryList";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { Product } from "@/types/product";
 import { createProduct, getProducts, deleteProduct, updateProduct } from "@/services/productService";
@@ -17,11 +18,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
-// Wrap the main component with QueryClientProvider
 const ProductManagementWithProvider = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -59,6 +59,7 @@ const ProductManagementContent = () => {
     mutationFn: createProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       setIsAddDialogOpen(false);
       toast({ title: "Product created successfully" });
     },
@@ -92,6 +93,7 @@ const ProductManagementContent = () => {
     mutationFn: deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast({ title: "Product deleted successfully" });
     },
     onError: (error: Error) => {
@@ -126,7 +128,7 @@ const ProductManagementContent = () => {
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-[#8B7355]">Products</h1>
+            <h1 className="text-2xl font-bold text-[#8B7355]">Products Management</h1>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
@@ -148,11 +150,22 @@ const ProductManagementContent = () => {
             </Dialog>
           </div>
 
-          <ProductList 
-            products={products}
-            onEdit={handleEdit}
-            onDelete={(id) => deleteMutation.mutate(id)}
-          />
+          <Tabs defaultValue="products" className="w-full">
+            <TabsList>
+              <TabsTrigger value="products">Products</TabsTrigger>
+              <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            </TabsList>
+            <TabsContent value="products">
+              <ProductList 
+                products={products}
+                onEdit={handleEdit}
+                onDelete={(id) => deleteMutation.mutate(id)}
+              />
+            </TabsContent>
+            <TabsContent value="inventory">
+              <InventoryList />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
