@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProductFormData, ProductFormProps } from "@/types/product";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageUploadSection } from "./ImageUploadSection";
+import { ProductFormFields } from "./ProductFormFields";
 
 export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormProps) {
   const [imageType, setImageType] = useState<'url' | 'file'>('url');
@@ -42,20 +43,16 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
   };
 
   const handleSubmit = async (data: ProductFormData) => {
-    try {
-      const formData = {
-        ...data,
-        product_price: Number(data.product_price),
-        image: imageType === 'file' ? selectedFile : imageUrl,
-      };
-      await onSubmit(formData);
-      form.reset();
-      setSelectedFile(null);
-      setImagePreview(null);
-      setImageUrl('');
-    } catch (error) {
-      console.error("Error submitting form:", error);
-    }
+    const formData = {
+      ...data,
+      product_price: Number(data.product_price),
+      image: imageType === 'file' ? selectedFile : imageUrl,
+    };
+    await onSubmit(formData);
+    form.reset();
+    setSelectedFile(null);
+    setImagePreview(null);
+    setImageUrl('');
   };
 
   return (
@@ -70,71 +67,7 @@ export function ProductForm({ onSubmit, initialData, isLoading }: ProductFormPro
             onUrlChange={handleImageUrlChange}
             onFileChange={handleFileChange}
           />
-
-          <FormField
-            control={form.control}
-            name="product_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Product Name</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Enter product name" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Enter category" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="product_price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price (₱)</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    type="number" 
-                    step="0.01"
-                    min="0"
-                    placeholder="Enter price in PHP"
-                    value={field.value}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Enter description" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+          <ProductFormFields form={form} />
           <Button type="submit" disabled={isLoading}>
             {isLoading ? "Saving..." : "Save Product"}
           </Button>

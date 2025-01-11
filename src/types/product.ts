@@ -15,7 +15,7 @@ export interface ProductFormData {
   category: string;
   description: string;
   product_price: number;
-  image: File | null;
+  image: string | File | null;
 }
 
 export interface ProductFormProps {
