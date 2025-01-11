@@ -3,24 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Table, 
   TableBody, 
-  TableCell, 
   TableHead, 
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { FileText, Pencil, Trash2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { AchievementTableRow } from "./AchievementTableRow";
+import { AchievementDetailsModal } from "./AchievementDetailsModal";
 
 interface Achievement {
   id: number;
@@ -118,100 +110,22 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
           </TableHeader>
           <TableBody>
             {filteredAchievements?.map((achievement) => (
-              <TableRow 
+              <AchievementTableRow
                 key={achievement.id}
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={(e) => handleRowClick(achievement, e)}
-              >
-                <TableCell>
-                  <img 
-                    src={achievement.image || "/placeholder.svg"} 
-                    alt={achievement.achievement_name} 
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                </TableCell>
-                <TableCell className="font-medium">{achievement.achievement_name}</TableCell>
-                <TableCell>{achievement.description}</TableCell>
-                <TableCell>{achievement.date}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onEdit(achievement)}
-                    >
-                      <Pencil className="w-4 h-4 text-green-500" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDelete(achievement.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+                achievement={achievement}
+                onEdit={onEdit}
+                onDelete={handleDelete}
+                onClick={handleRowClick}
+              />
             ))}
           </TableBody>
         </Table>
       </div>
 
-      <Dialog open={!!selectedAchievement} onOpenChange={() => setSelectedAchievement(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Achievement Details</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[70vh] overflow-y-auto">
-            {selectedAchievement && (
-              <div className="space-y-4 p-4">
-                {selectedAchievement.image && (
-                  <div className="flex justify-center">
-                    <img
-                      src={selectedAchievement.image}
-                      alt={selectedAchievement.achievement_name}
-                      className="max-w-full h-auto rounded-lg"
-                    />
-                  </div>
-                )}
-                <div className="grid gap-4">
-                  <div>
-                    <h3 className="font-semibold text-sm">Achievement Name</h3>
-                    <p className="text-lg">{selectedAchievement.achievement_name}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">Description</h3>
-                    <p className="text-gray-700">{selectedAchievement.description}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">Date</h3>
-                    <p>{selectedAchievement.date}</p>
-                  </div>
-                  {selectedAchievement.video && (
-                    <div>
-                      <h3 className="font-semibold text-sm">Video URL</h3>
-                      <a href={selectedAchievement.video} target="_blank" rel="noopener noreferrer" 
-                         className="text-blue-500 hover:underline">
-                        View Video
-                      </a>
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-sm">Created At</h3>
-                    <p>{format(new Date(selectedAchievement.created_at), "PPpp")}</p>
-                  </div>
-                  {selectedAchievement.updated_at && (
-                    <div>
-                      <h3 className="font-semibold text-sm">Last Updated</h3>
-                      <p>{format(new Date(selectedAchievement.updated_at), "PPpp")}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+      <AchievementDetailsModal
+        achievement={selectedAchievement}
+        onClose={() => setSelectedAchievement(null)}
+      />
     </div>
   );
 };
