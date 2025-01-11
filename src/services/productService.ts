@@ -5,22 +5,28 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
   let imagePath = null;
 
   if (data.image) {
-    const fileExt = data.image.name.split('.').pop();
-    const filePath = `${crypto.randomUUID()}.${fileExt}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(filePath, data.image);
+    // Check if data.image is a File object
+    if (data.image instanceof File) {
+      const fileExt = data.image.name.split('.').pop();
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, data.image);
 
-    if (uploadError) {
-      throw new Error('Error uploading image');
+      if (uploadError) {
+        throw new Error('Error uploading image');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      imagePath = publicUrl;
+    } else {
+      // If it's a string (URL), use it directly
+      imagePath = data.image;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('products')
-      .getPublicUrl(filePath);
-
-    imagePath = publicUrl;
   }
 
   const {
@@ -72,22 +78,28 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
   let imagePath = null;
 
   if (data.image) {
-    const fileExt = data.image.name.split('.').pop();
-    const filePath = `${crypto.randomUUID()}.${fileExt}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(filePath, data.image);
+    // Check if data.image is a File object
+    if (data.image instanceof File) {
+      const fileExt = data.image.name.split('.').pop();
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, data.image);
 
-    if (uploadError) {
-      throw new Error('Error uploading image');
+      if (uploadError) {
+        throw new Error('Error uploading image');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      imagePath = publicUrl;
+    } else {
+      // If it's a string (URL), use it directly
+      imagePath = data.image;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('products')
-      .getPublicUrl(filePath);
-
-    imagePath = publicUrl;
   }
 
   const {
