@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { InventoryTable } from "./inventory/InventoryTable";
 import { UpdateQuantityDialog } from "./inventory/UpdateQuantityDialog";
 import { InventoryItem } from "@/types/inventory";
+import { fetchInventory, updateInventoryQuantity } from "@/services/inventoryService";
 
 export function InventoryList() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -12,55 +12,24 @@ export function InventoryList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: inventory = [], refetch } = useQuery({
+  const { data: inventory = [] } = useQuery({
     queryKey: ['inventory'],
-    queryFn: async () => {
-      console.log("Fetching inventory data...");
-      const { data, error } = await supabase
-        .from('inventory')
-        .select(`
-          id,
-          product_id,
-          quantity,
-          products (
-            product_name,
-            category,
-            image
-          )
-        `);
-
-      if (error) {
-        console.error("Error fetching inventory:", error);
-        throw error;
-      }
-      console.log("Fetched inventory data:", data);
-      return data as InventoryItem[];
-    },
+    queryFn: fetchInventory,
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
-      console.log("Updating quantity for id:", id, "to:", quantity);
-      const { data, error } = await supabase
-        .from('inventory')
-        .update({ 
-          quantity,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error("Error updating inventory:", error);
-        throw error;
-      }
-      console.log("Update response:", data);
-      return data;
+      return await updateInventoryQuantity(id, quantity);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      refetch(); // Explicitly refetch the inventory data
+    onSuccess: (updatedItem) => {
+      // Update the cache with the new data
+      queryClient.setQueryData(['inventory'], (oldData: InventoryItem[] | undefined) => {
+        if (!oldData) return [updatedItem];
+        return oldData.map(item => 
+          item.id === updatedItem.id ? updatedItem : item
+        );
+      });
+      
       setSelectedItem(null);
       setNewQuantity("");
       toast({ title: "Inventory updated successfully" });
