@@ -43,9 +43,13 @@ export function InventoryList() {
       console.log("Updating quantity for id:", id, "to:", quantity);
       const { data, error } = await supabase
         .from('inventory')
-        .update({ quantity })
+        .update({ 
+          quantity,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
-        .select();
+        .select('*')
+        .single();
 
       if (error) {
         console.error("Error updating inventory:", error);
