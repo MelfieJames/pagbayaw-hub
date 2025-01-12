@@ -15,6 +15,7 @@ export function InventoryList() {
   const { data: inventory = [], refetch } = useQuery({
     queryKey: ['inventory'],
     queryFn: async () => {
+      console.log("Fetching inventory data...");
       const { data, error } = await supabase
         .from('inventory')
         .select(`
@@ -28,27 +29,40 @@ export function InventoryList() {
           )
         `);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching inventory:", error);
+        throw error;
+      }
+      console.log("Fetched inventory data:", data);
       return data as InventoryItem[];
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
-      const { error } = await supabase
+      console.log("Updating quantity for id:", id, "to:", quantity);
+      const { data, error } = await supabase
         .from('inventory')
         .update({ quantity })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating inventory:", error);
+        throw error;
+      }
+      console.log("Update response:", data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       refetch(); // Explicitly refetch the inventory data
       setSelectedItem(null);
+      setNewQuantity("");
       toast({ title: "Inventory updated successfully" });
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({ 
         title: "Error updating inventory", 
         description: error.message,
@@ -70,6 +84,7 @@ export function InventoryList() {
       return;
     }
 
+    console.log("Saving new quantity:", quantity, "for item:", selectedItem.id);
     updateMutation.mutate({ id: selectedItem.id, quantity });
   };
 
