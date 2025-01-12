@@ -36,7 +36,7 @@ export function InventoryList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: inventory = [] } = useQuery({
+  const { data: inventory = [], refetch } = useQuery({
     queryKey: ['inventory'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -68,6 +68,7 @@ export function InventoryList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      refetch(); // Explicitly refetch the inventory data
       setSelectedItem(null);
       toast({ title: "Inventory updated successfully" });
     },
