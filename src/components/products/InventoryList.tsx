@@ -1,34 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-
-interface InventoryItem {
-  id: number;
-  product_id: number;
-  quantity: number;
-  products: {
-    product_name: string;
-    category: string;
-    image: string | null;
-  };
-}
+import { InventoryTable } from "./inventory/InventoryTable";
+import { UpdateQuantityDialog } from "./inventory/UpdateQuantityDialog";
+import { InventoryItem } from "@/types/inventory";
 
 export function InventoryList() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -104,81 +80,19 @@ export function InventoryList() {
 
   return (
     <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Image</TableHead>
-            <TableHead>Product Name</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Quantity</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {inventory.map((item) => (
-            <TableRow 
-              key={item.id}
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => handleItemClick(item)}
-            >
-              <TableCell>
-                {item.products.image && (
-                  <img
-                    src={item.products.image}
-                    alt={item.products.product_name}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                )}
-              </TableCell>
-              <TableCell className="font-medium">{item.products.product_name}</TableCell>
-              <TableCell>{item.products.category}</TableCell>
-              <TableCell>{item.quantity}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <InventoryTable 
+        inventory={inventory}
+        onItemClick={handleItemClick}
+      />
 
-      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Inventory Quantity</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              {selectedItem?.products.image && (
-                <img
-                  src={selectedItem.products.image}
-                  alt={selectedItem.products.product_name}
-                  className="w-20 h-20 object-cover rounded"
-                />
-              )}
-              <div>
-                <h3 className="font-semibold">{selectedItem?.products.product_name}</h3>
-                <p className="text-sm text-muted-foreground">{selectedItem?.products.category}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="quantity" className="text-sm font-medium">
-                Quantity
-              </label>
-              <Input
-                id="quantity"
-                type="number"
-                min="0"
-                value={newQuantity}
-                onChange={(e) => setNewQuantity(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setSelectedItem(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={updateMutation.isPending}>
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <UpdateQuantityDialog
+        item={selectedItem}
+        newQuantity={newQuantity}
+        onQuantityChange={setNewQuantity}
+        onClose={() => setSelectedItem(null)}
+        onSave={handleSave}
+        isLoading={updateMutation.isPending}
+      />
     </div>
   );
 }
