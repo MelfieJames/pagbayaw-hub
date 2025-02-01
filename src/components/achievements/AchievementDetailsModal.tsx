@@ -22,12 +22,6 @@ interface Achievement {
   user_id: string | null;
 }
 
-interface AchievementImage {
-  id: number;
-  achievement_id: number;
-  image_url: string;
-}
-
 interface AchievementDetailsModalProps {
   achievement: Achievement | null;
   onClose: () => void;
@@ -66,7 +60,7 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
 
   return (
     <Dialog open={!!achievement} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Achievement Details</DialogTitle>
         </DialogHeader>
