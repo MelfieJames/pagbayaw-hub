@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ReactNode } from "react";
 
 interface AchievementFormInputProps {
   label: string;
@@ -9,6 +10,7 @@ interface AchievementFormInputProps {
   type?: string;
   isTextarea?: boolean;
   required?: boolean;
+  icon?: ReactNode;
 }
 
 export const AchievementFormInput = ({
@@ -18,16 +20,21 @@ export const AchievementFormInput = ({
   onChange,
   type = "text",
   isTextarea = false,
-  required = false
+  required = false,
+  icon
 }: AchievementFormInputProps) => (
   <div>
-    <label className="text-sm font-medium">{label}</label>
+    <label className="text-sm font-medium flex items-center gap-2 mb-2">
+      {icon}
+      {label}
+    </label>
     {isTextarea ? (
       <Textarea
         name={name}
         value={value}
         onChange={onChange}
         required={required}
+        className="min-h-[100px]"
       />
     ) : (
       <Input

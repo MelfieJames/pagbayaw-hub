@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AchievementFormInput } from "./AchievementFormInput";
 import { ImageUploadSection } from "./ImageUploadSection";
 import { useAchievementForm } from "@/hooks/useAchievementForm";
+import { Award, FileText, Calendar, Image } from "lucide-react";
 
 interface AchievementFormProps {
   onSuccess: () => void;
@@ -32,39 +33,54 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <AchievementFormInput
-        label="Achievement Name"
-        name="achievement_name"
-        value={formData.achievement_name}
-        onChange={handleInputChange}
-        required
-      />
-      <AchievementFormInput
-        label="Description"
-        name="description"
-        value={formData.description}
-        onChange={handleInputChange}
-        isTextarea
-      />
-      <AchievementFormInput
-        label="Date"
-        name="date"
-        type="date"
-        value={formData.date}
-        onChange={handleInputChange}
-        required
-      />
+      <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <AchievementFormInput
+            label="Achievement Name"
+            name="achievement_name"
+            value={formData.achievement_name}
+            onChange={handleInputChange}
+            required
+            icon={<Award className="h-5 w-5 text-gray-500" />}
+          />
+          <AchievementFormInput
+            label="Description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            isTextarea
+            icon={<FileText className="h-5 w-5 text-gray-500" />}
+          />
+        </div>
+        
+        <div className="space-y-4">
+          <AchievementFormInput
+            label="Date"
+            name="date"
+            type="date"
+            value={formData.date}
+            onChange={handleInputChange}
+            required
+            icon={<Calendar className="h-5 w-5 text-gray-500" />}
+          />
 
-      <ImageUploadSection
-        imageType={imageType}
-        imageUrl={formData.image}
-        imagePreview={imagePreview}
-        onImageTypeChange={setImageType}
-        onUrlChange={handleInputChange}
-        onFileChange={handleMultipleFileChange}
-        multiple={true}
-        imagePreviews={imagePreviews}
-      />
+          <div className="relative">
+            <div className="absolute left-0 top-0">
+              <Image className="h-5 w-5 text-gray-500" />
+            </div>
+            <ImageUploadSection
+              imageType={imageType}
+              imageUrl={formData.image}
+              imagePreview={imagePreview}
+              onImageTypeChange={setImageType}
+              onUrlChange={handleInputChange}
+              onFileChange={handleMultipleFileChange}
+              multiple={true}
+              imagePreviews={imagePreviews}
+            />
+          </div>
+        </div>
+      </div>
 
       <Button type="submit" className="w-full bg-[#8B7355] hover:bg-[#9b815f]">
         {mode === 'add' ? 'Add Achievement' : 'Update Achievement'}

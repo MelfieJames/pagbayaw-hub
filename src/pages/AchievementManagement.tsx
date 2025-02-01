@@ -74,7 +74,7 @@ const AchievementManagement = () => {
                   Add New Achievement
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Add New Achievement</DialogTitle>
                 </DialogHeader>

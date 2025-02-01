@@ -25,7 +25,7 @@ export const ImageUploadSection = ({
   multiple = false,
 }: ImageUploadSectionProps) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pl-7">
       <Label>Image Upload Method</Label>
       <RadioGroup
         defaultValue={imageType}
