@@ -2,21 +2,20 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { createAchievement, updateAchievement } from "@/utils/achievementOperations";
-import { CustomUser } from "@/contexts/AuthContext"; // Import the custom user type
+import { CustomUser } from "@/contexts/AuthContext";
 
 interface AchievementFormData {
   achievement_name: string;
   description: string;
   date: string;
   image: string;
-  video: string;
 }
 
 interface UseAchievementFormProps {
   initialData?: AchievementFormData & { id?: number };
   mode: 'add' | 'edit';
   onSuccess: () => void;
-  user: CustomUser | null;  // Update the type to CustomUser
+  user: CustomUser | null;
 }
 
 export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAchievementFormProps) => {
@@ -25,12 +24,11 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     achievement_name: initialData?.achievement_name || "",
     description: initialData?.description || "",
     date: initialData?.date || "",
-    image: initialData?.image || "",
-    video: initialData?.video || ""
+    image: initialData?.image || ""
   });
   const [imageType, setImageType] = useState<'url' | 'file'>('url');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -40,25 +38,51 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     }));
 
     if (name === 'image' && imageType === 'url') {
-      setImagePreview(value);
+      setImagePreviews([value]);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleMultipleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles(files);
+
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews(previews);
+  };
+
+  const uploadImages = async (achievementId: number) => {
+    const uploadPromises = selectedFiles.map(async (file) => {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('achievements')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('achievements')
+        .getPublicUrl(filePath);
+
+      const { error: dbError } = await supabase
+        .from('achievement_images')
+        .insert({
+          achievement_id: achievementId,
+          image_url: publicUrl
+        });
+
+      if (dbError) throw dbError;
+
+      return publicUrl;
+    });
+
+    return Promise.all(uploadPromises);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user?.isAdmin) {
       toast({
         title: "Error",
@@ -69,52 +93,33 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     }
 
     try {
-      let imageUrl = formData.image;
-
-      if (imageType === 'file' && selectedFile) {
-        const fileExt = selectedFile.name.split('.').pop();
-        const filePath = `${crypto.randomUUID()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('achievements')
-          .upload(filePath, selectedFile);
-
-        if (uploadError) {
-          throw new Error('Error uploading image');
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('achievements')
-          .getPublicUrl(filePath);
-
-        imageUrl = publicUrl;
-      }
-
-      const dataToSubmit = {
-        ...formData,
-        image: imageUrl
-      };
+      let achievementId: number;
 
       if (mode === 'add') {
-        await createAchievement(dataToSubmit, user);
-        toast({
-          title: "Success",
-          description: "Achievement added successfully",
-        });
+        const result = await createAchievement(formData, user);
+        achievementId = result.id;
       } else if (initialData?.id) {
-        await updateAchievement(initialData.id, dataToSubmit);
-        toast({
-          title: "Success",
-          description: "Achievement updated successfully",
-        });
+        await updateAchievement(initialData.id, formData);
+        achievementId = initialData.id;
+      } else {
+        throw new Error('Invalid operation');
       }
+
+      if (selectedFiles.length > 0) {
+        await uploadImages(achievementId);
+      }
+
+      toast({
+        title: "Success",
+        description: `Achievement ${mode === 'add' ? 'added' : 'updated'} successfully`,
+      });
 
       onSuccess();
     } catch (error: any) {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save achievement",
+        description: error.message || `Failed to ${mode} achievement`,
         variant: "destructive"
       });
     }
@@ -123,11 +128,12 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
   return {
     formData,
     imageType,
-    selectedFile,
-    imagePreview,
+    imagePreview: imagePreviews[0],
+    imagePreviews,
     handleInputChange,
-    handleFileChange,
+    handleFileChange: handleMultipleFileChange,
     handleSubmit,
-    setImageType
+    setImageType,
+    handleMultipleFileChange
   };
 };

@@ -12,7 +12,6 @@ interface AchievementFormProps {
     description: string;
     date: string;
     image: string;
-    video: string;
   };
   mode: 'add' | 'edit';
 }
@@ -26,7 +25,9 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
     handleInputChange,
     handleFileChange,
     handleSubmit,
-    setImageType
+    setImageType,
+    handleMultipleFileChange,
+    imagePreviews
   } = useAchievementForm({ initialData, mode, onSuccess, user });
 
   return (
@@ -60,14 +61,9 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
         imagePreview={imagePreview}
         onImageTypeChange={setImageType}
         onUrlChange={handleInputChange}
-        onFileChange={handleFileChange}
-      />
-
-      <AchievementFormInput
-        label="Video URL"
-        name="video"
-        value={formData.video}
-        onChange={handleInputChange}
+        onFileChange={handleMultipleFileChange}
+        multiple={true}
+        imagePreviews={imagePreviews}
       />
 
       <Button type="submit" className="w-full bg-[#8B7355] hover:bg-[#9b815f]">

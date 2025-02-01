@@ -6,11 +6,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Achievement {
   id: number;
   image: string | null;
-  video: string | null;
   achievement_name: string;
   description: string | null;
   date: string;
@@ -19,13 +22,47 @@ interface Achievement {
   user_id: string | null;
 }
 
+interface AchievementImage {
+  id: number;
+  achievement_id: number;
+  image_url: string;
+}
+
 interface AchievementDetailsModalProps {
   achievement: Achievement | null;
   onClose: () => void;
 }
 
 export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDetailsModalProps) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [images, setImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      if (achievement?.id) {
+        const { data, error } = await supabase
+          .from('achievement_images')
+          .select('image_url')
+          .eq('achievement_id', achievement.id);
+
+        if (!error && data) {
+          setImages(data.map(img => img.image_url));
+        }
+      }
+    };
+
+    fetchImages();
+  }, [achievement]);
+
   if (!achievement) return null;
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const previousImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   return (
     <Dialog open={!!achievement} onOpenChange={onClose}>
@@ -35,13 +72,35 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-4 p-4">
-            {achievement.image && (
-              <div className="flex justify-center">
-                <img
-                  src={achievement.image}
-                  alt={achievement.achievement_name}
-                  className="max-w-full h-auto rounded-lg"
-                />
+            {images.length > 0 && (
+              <div className="relative">
+                <div className="flex justify-center items-center">
+                  <img
+                    src={images[currentImageIndex]}
+                    alt={`${achievement.achievement_name} - Image ${currentImageIndex + 1}`}
+                    className="max-w-full h-auto rounded-lg"
+                  />
+                </div>
+                {images.length > 1 && (
+                  <div className="absolute inset-0 flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-2 bg-black/20 hover:bg-black/40"
+                      onClick={previousImage}
+                    >
+                      <ChevronLeft className="h-6 w-6 text-white" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="mr-2 bg-black/20 hover:bg-black/40"
+                      onClick={nextImage}
+                    >
+                      <ChevronRight className="h-6 w-6 text-white" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
             <div className="grid gap-4">
@@ -57,15 +116,6 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
                 <h3 className="font-semibold text-sm">Date</h3>
                 <p>{achievement.date}</p>
               </div>
-              {achievement.video && (
-                <div>
-                  <h3 className="font-semibold text-sm">Video URL</h3>
-                  <a href={achievement.video} target="_blank" rel="noopener noreferrer" 
-                     className="text-blue-500 hover:underline">
-                    View Video
-                  </a>
-                </div>
-              )}
               <div>
                 <h3 className="font-semibold text-sm">Created At</h3>
                 <p>{format(new Date(achievement.created_at), "PPpp")}</p>

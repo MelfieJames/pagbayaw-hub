@@ -6,21 +6,22 @@ interface AchievementData {
   description: string;
   date: string;
   image: string;
-  video: string;
 }
 
 export const createAchievement = async (data: AchievementData, user: User | null) => {
   if (!user) throw new Error("User not authenticated");
   
-  const { error } = await supabase
+  const { data: achievement, error } = await supabase
     .from('achievements')
     .insert([{
       ...data,
       user_id: user.id
-    }]);
+    }])
+    .select()
+    .single();
 
   if (error) throw error;
-  return { success: true };
+  return achievement;
 };
 
 export const updateAchievement = async (id: number, data: AchievementData) => {
