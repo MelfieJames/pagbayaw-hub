@@ -1,6 +1,7 @@
-import { Award, FileText, Calendar, Image } from "lucide-react";
+import { Award, FileText, Calendar, Image, Plus } from "lucide-react";
 import { AchievementFormInput } from "../AchievementFormInput";
 import { ImageUploadSection } from "../ImageUploadSection";
+import { Button } from "@/components/ui/button";
 
 interface AchievementFormFieldsProps {
   formData: {
@@ -15,6 +16,7 @@ interface AchievementFormFieldsProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleMultipleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setImageType: (type: 'url' | 'file') => void;
+  onAddMoreImages?: () => void;
 }
 
 export const AchievementFormFields = ({
@@ -25,6 +27,7 @@ export const AchievementFormFields = ({
   handleInputChange,
   handleMultipleFileChange,
   setImageType,
+  onAddMoreImages,
 }: AchievementFormFieldsProps) => {
   return (
     <div className="grid grid-cols-2 gap-6">
@@ -61,6 +64,20 @@ export const AchievementFormFields = ({
         <div className="relative">
           <div className="absolute left-0 top-0">
             <Image className="h-5 w-5 text-gray-500" />
+          </div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Images</span>
+            {onAddMoreImages && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onAddMoreImages}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" /> Add More Images
+              </Button>
+            )}
           </div>
           <ImageUploadSection
             imageType={imageType}
