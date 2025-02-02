@@ -35,7 +35,7 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
-  const { data: achievements, refetch } = useQuery({
+  const { data: achievements, refetch, isError } = useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,7 +43,16 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        toast({
+          title: "Error fetching achievements",
+          description: error.message,
+          variant: "destructive"
+        });
+        throw error;
+      }
+
       return data as Achievement[];
     }
   });
@@ -62,11 +71,11 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
         description: "Achievement deleted successfully",
       });
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete achievement",
+        description: error.message || "Failed to delete achievement",
         variant: "destructive"
       });
     }
@@ -84,6 +93,14 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
     }
     setSelectedAchievement(achievement);
   };
+
+  if (isError) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-red-500">Error loading achievements. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
