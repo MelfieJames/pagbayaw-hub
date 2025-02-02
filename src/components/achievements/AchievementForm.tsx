@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAchievementForm } from "@/hooks/useAchievementForm";
+import { useAchievementForm } from "@/hooks/achievement/useAchievementForm";
 import { AchievementFormFields } from "./form/AchievementFormFields";
 import { useState } from "react";
 
@@ -18,54 +18,38 @@ interface AchievementFormProps {
 
 export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFormProps) => {
   const { user } = useAuth();
-  const [additionalImages, setAdditionalImages] = useState<Array<{ type: 'url' | 'file', value: string }>>([]);
+  const [additionalImageCount, setAdditionalImageCount] = useState(0);
   
   const {
     formData,
-    imageType,
-    imagePreview,
+    imagePreviews,
+    additionalPreviews,
     handleInputChange,
     handleSubmit,
-    setImageType,
-    handleMultipleFileChange,
-    imagePreviews,
-    handleAdditionalImageChange,
+    handleFileChange,
     handleAdditionalFileChange
   } = useAchievementForm({ 
     initialData, 
     mode, 
     onSuccess, 
-    user, 
-    additionalImages 
+    user
   });
 
   const handleAddMoreImages = () => {
-    setAdditionalImages(prev => [...prev, { type: 'url', value: '' }]);
-  };
-
-  const handleImageTypeChange = (index: number, type: 'url' | 'file') => {
-    setAdditionalImages(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], type, value: '' };
-      return updated;
-    });
+    setAdditionalImageCount(prev => prev + 1);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <AchievementFormFields
         formData={formData}
-        imageType={imageType}
-        imagePreview={imagePreview}
+        imagePreview={imagePreviews[0]}
         imagePreviews={imagePreviews}
         handleInputChange={handleInputChange}
-        handleMultipleFileChange={handleMultipleFileChange}
-        setImageType={setImageType}
+        handleMultipleFileChange={handleFileChange}
         onAddMoreImages={handleAddMoreImages}
-        additionalImages={additionalImages}
-        onAdditionalImageChange={handleAdditionalImageChange}
+        additionalPreviews={additionalPreviews.slice(0, additionalImageCount)}
         onAdditionalFileChange={handleAdditionalFileChange}
-        onImageTypeChange={handleImageTypeChange}
       />
 
       <Button type="submit" className="w-full bg-[#8B7355] hover:bg-[#9b815f]">

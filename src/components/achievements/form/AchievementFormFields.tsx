@@ -11,32 +11,24 @@ interface AchievementFormFieldsProps {
     date: string;
     image: string;
   };
-  imageType: 'url' | 'file';
   imagePreview: string | null;
   imagePreviews: string[];
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleMultipleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  setImageType: (type: 'url' | 'file') => void;
   onAddMoreImages?: () => void;
-  additionalImages?: Array<{ type: 'url' | 'file', value: string }>;
-  onAdditionalImageChange?: (index: number, value: string) => void;
+  additionalPreviews?: string[];
   onAdditionalFileChange?: (index: number, file: File) => void;
-  onImageTypeChange?: (index: number, type: 'url' | 'file') => void;
 }
 
 export const AchievementFormFields = ({
   formData,
-  imageType,
   imagePreview,
   imagePreviews,
   handleInputChange,
   handleMultipleFileChange,
-  setImageType,
   onAddMoreImages,
-  additionalImages = [],
-  onAdditionalImageChange,
+  additionalPreviews = [],
   onAdditionalFileChange,
-  onImageTypeChange,
 }: AchievementFormFieldsProps) => {
   return (
     <div className="grid grid-cols-2 gap-6">
@@ -92,24 +84,16 @@ export const AchievementFormFields = ({
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-6">
               <ImageUploadSection
-                imageType={imageType}
-                imageUrl={formData.image}
                 imagePreview={imagePreview}
-                onImageTypeChange={setImageType}
-                onUrlChange={handleInputChange}
                 onFileChange={handleMultipleFileChange}
                 multiple={true}
                 imagePreviews={imagePreviews}
               />
 
-              {additionalImages.map((img, index) => (
+              {additionalPreviews.map((preview, index) => (
                 <div key={index} className="pt-4 border-t">
                   <ImageUploadSection
-                    imageType={img.type}
-                    imageUrl={img.value}
-                    imagePreview={null}
-                    onImageTypeChange={(type) => onImageTypeChange?.(index, type)}
-                    onUrlChange={(e) => onAdditionalImageChange?.(index, e.target.value)}
+                    imagePreview={preview}
                     onFileChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file && onAdditionalFileChange) {
