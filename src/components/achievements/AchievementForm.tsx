@@ -18,7 +18,7 @@ interface AchievementFormProps {
 
 export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFormProps) => {
   const { user } = useAuth();
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [additionalImages, setAdditionalImages] = useState<Array<{ type: 'url' | 'file', value: string }>>([]);
   
   const {
     formData,
@@ -28,11 +28,27 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
     handleSubmit,
     setImageType,
     handleMultipleFileChange,
-    imagePreviews
-  } = useAchievementForm({ initialData, mode, onSuccess, user });
+    imagePreviews,
+    handleAdditionalImageChange,
+    handleAdditionalFileChange
+  } = useAchievementForm({ 
+    initialData, 
+    mode, 
+    onSuccess, 
+    user, 
+    additionalImages 
+  });
 
   const handleAddMoreImages = () => {
-    setImageUrls([...imageUrls, ""]);
+    setAdditionalImages(prev => [...prev, { type: 'url', value: '' }]);
+  };
+
+  const handleImageTypeChange = (index: number, type: 'url' | 'file') => {
+    setAdditionalImages(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], type, value: '' };
+      return updated;
+    });
   };
 
   return (
@@ -46,6 +62,10 @@ export const AchievementForm = ({ onSuccess, initialData, mode }: AchievementFor
         handleMultipleFileChange={handleMultipleFileChange}
         setImageType={setImageType}
         onAddMoreImages={handleAddMoreImages}
+        additionalImages={additionalImages}
+        onAdditionalImageChange={handleAdditionalImageChange}
+        onAdditionalFileChange={handleAdditionalFileChange}
+        onImageTypeChange={handleImageTypeChange}
       />
 
       <Button type="submit" className="w-full bg-[#8B7355] hover:bg-[#9b815f]">

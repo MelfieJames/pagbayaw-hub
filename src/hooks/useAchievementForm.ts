@@ -16,9 +16,10 @@ interface UseAchievementFormProps {
   mode: 'add' | 'edit';
   onSuccess: () => void;
   user: CustomUser | null;
+  additionalImages: Array<{ type: 'url' | 'file', value: string }>;
 }
 
-export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAchievementFormProps) => {
+export const useAchievementForm = ({ initialData, mode, onSuccess, user, additionalImages }: UseAchievementFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     achievement_name: initialData?.achievement_name || "",
@@ -48,6 +49,16 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
 
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
+  };
+
+  const handleAdditionalImageChange = (index: number, value: string) => {
+    const updatedImages = [...additionalImages];
+    updatedImages[index] = { ...updatedImages[index], value };
+  };
+
+  const handleAdditionalFileChange = (index: number, file: File) => {
+    const updatedImages = [...additionalImages];
+    updatedImages[index] = { ...updatedImages[index], value: URL.createObjectURL(file) };
   };
 
   const uploadImages = async (achievementId: number) => {
@@ -109,6 +120,18 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
         await uploadImages(achievementId);
       }
 
+      // Upload additional images
+      for (const img of additionalImages) {
+        if (img.type === 'url' && img.value) {
+          await supabase
+            .from('achievement_images')
+            .insert({
+              achievement_id: achievementId,
+              image_url: img.value
+            });
+        }
+      }
+
       toast({
         title: "Success",
         description: `Achievement ${mode === 'add' ? 'added' : 'updated'} successfully`,
@@ -134,6 +157,8 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     handleFileChange: handleMultipleFileChange,
     handleSubmit,
     setImageType,
-    handleMultipleFileChange
+    handleMultipleFileChange,
+    handleAdditionalImageChange,
+    handleAdditionalFileChange
   };
 };
