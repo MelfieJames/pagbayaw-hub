@@ -5,57 +5,62 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
   console.log('Creating product with data:', data);
   let imagePath = null;
 
-  if (data.image) {
-    if (data.image instanceof File) {
-      const fileExt = data.image.name.split('.').pop();
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(filePath, data.image);
+  try {
+    if (data.image) {
+      if (data.image instanceof File) {
+        const fileExt = data.image.name.split('.').pop();
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(filePath, data.image);
 
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        throw new Error('Error uploading image');
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          throw new Error('Error uploading image');
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('products')
+          .getPublicUrl(filePath);
+
+        imagePath = publicUrl;
+      } else {
+        imagePath = data.image;
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('products')
-        .getPublicUrl(filePath);
-
-      imagePath = publicUrl;
-    } else {
-      imagePath = data.image;
     }
-  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { data: product, error } = await supabase
-    .from('products')
-    .insert([{
-      product_name: data.product_name,
-      category: data.category,
-      description: data.description,
-      product_price: data.product_price,
-      image: imagePath,
-      user_id: user?.id
-    }])
-    .select()
-    .maybeSingle();
+    const { data: product, error } = await supabase
+      .from('products')
+      .insert([{
+        product_name: data.product_name,
+        category: data.category,
+        description: data.description,
+        product_price: data.product_price,
+        image: imagePath,
+        user_id: user?.id
+      }])
+      .select()
+      .maybeSingle();
 
-  if (error) {
-    console.error('Error creating product:', error);
+    if (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
+
+    if (!product) {
+      throw new Error('Failed to create product');
+    }
+
+    return product;
+  } catch (error) {
+    console.error('Unexpected error creating product:', error);
     throw error;
   }
-
-  if (!product) {
-    throw new Error('Failed to create product');
-  }
-
-  return product;
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -71,8 +76,12 @@ export async function getProducts(): Promise<Product[]> {
       throw error;
     }
 
+    if (!data) {
+      return [];
+    }
+
     console.log('Products fetched successfully:', data);
-    return data || [];
+    return data;
   } catch (error) {
     console.error('Unexpected error fetching products:', error);
     throw error;
@@ -81,17 +90,22 @@ export async function getProducts(): Promise<Product[]> {
 
 export async function deleteProduct(id: number): Promise<void> {
   console.log('Deleting product with ID:', id);
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', id);
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
 
-  if (error) {
-    console.error('Error deleting product:', error);
+    if (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+    
+    console.log('Product deleted successfully');
+  } catch (error) {
+    console.error('Unexpected error deleting product:', error);
     throw error;
   }
-  
-  console.log('Product deleted successfully');
 }
 
 export interface UpdateProductParams {
@@ -103,76 +117,81 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
   console.log('Updating product:', { id, data });
   let imagePath = null;
 
-  if (data.image) {
-    if (data.image instanceof File) {
-      const fileExt = data.image.name.split('.').pop();
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(filePath, data.image);
+  try {
+    if (data.image) {
+      if (data.image instanceof File) {
+        const fileExt = data.image.name.split('.').pop();
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(filePath, data.image);
 
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        throw new Error('Error uploading image');
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          throw new Error('Error uploading image');
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('products')
+          .getPublicUrl(filePath);
+
+        imagePath = publicUrl;
+      } else {
+        imagePath = data.image;
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('products')
-        .getPublicUrl(filePath);
-
-      imagePath = publicUrl;
-    } else {
-      imagePath = data.image;
     }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // First check if the product exists
+    const { data: existingProduct, error: fetchError } = await supabase
+      .from('products')
+      .select()
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error fetching product:', fetchError);
+      throw fetchError;
+    }
+
+    if (!existingProduct) {
+      console.error('Product not found with ID:', id);
+      throw new Error('Product not found');
+    }
+
+    const updateData = {
+      product_name: data.product_name,
+      category: data.category,
+      description: data.description,
+      product_price: data.product_price,
+      ...(imagePath && { image: imagePath }),
+      user_id: user?.id,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (updateError) {
+      console.error('Error updating product:', updateError);
+      throw updateError;
+    }
+
+    if (!updatedProduct) {
+      throw new Error('Failed to update product');
+    }
+
+    return updatedProduct;
+  } catch (error) {
+    console.error('Unexpected error updating product:', error);
+    throw error;
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // First check if the product exists
-  const { data: existingProduct, error: fetchError } = await supabase
-    .from('products')
-    .select()
-    .eq('id', id)
-    .maybeSingle();
-
-  if (fetchError) {
-    console.error('Error fetching product:', fetchError);
-    throw fetchError;
-  }
-
-  if (!existingProduct) {
-    console.error('Product not found with ID:', id);
-    throw new Error('Product not found');
-  }
-
-  const updateData = {
-    product_name: data.product_name,
-    category: data.category,
-    description: data.description,
-    product_price: data.product_price,
-    ...(imagePath && { image: imagePath }),
-    user_id: user?.id,
-    updated_at: new Date().toISOString()
-  };
-
-  const { data: updatedProduct, error: updateError } = await supabase
-    .from('products')
-    .update(updateData)
-    .eq('id', id)
-    .select()
-    .maybeSingle();
-
-  if (updateError) {
-    console.error('Error updating product:', updateError);
-    throw updateError;
-  }
-
-  if (!updatedProduct) {
-    throw new Error('Failed to update product');
-  }
-
-  return updatedProduct;
 }
