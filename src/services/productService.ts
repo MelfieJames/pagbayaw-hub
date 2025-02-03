@@ -43,12 +43,17 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
       user_id: user?.id
     }])
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error creating product:', error);
     throw error;
   }
+
+  if (!product) {
+    throw new Error('Failed to create product');
+  }
+
   return product;
 }
 
@@ -135,11 +140,16 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     .update(updateData)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error updating product:', error);
     throw error;
   }
+
+  if (!product) {
+    throw new Error('Product not found');
+  }
+
   return product;
 }
