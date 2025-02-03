@@ -105,7 +105,6 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
   );
 
   const handleRowClick = (achievement: Achievement, e: React.MouseEvent) => {
-    // Prevent row click when clicking buttons
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
@@ -136,7 +135,7 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {achievements?.map((achievement) => (
+            {filteredAchievements?.map((achievement) => (
               <AchievementTableRow
                 key={achievement.id}
                 achievement={achievement}
