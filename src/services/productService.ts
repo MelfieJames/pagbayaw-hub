@@ -51,13 +51,24 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
 }
 
 export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false });
+  console.log('Fetching products...');
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('Error fetching products:', error);
+      throw error;
+    }
+
+    console.log('Products fetched successfully:', data);
+    return data || [];
+  } catch (error) {
+    console.error('Unexpected error fetching products:', error);
+    throw error;
+  }
 }
 
 export async function deleteProduct(id: number): Promise<void> {

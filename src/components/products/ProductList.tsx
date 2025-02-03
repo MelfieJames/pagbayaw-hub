@@ -6,6 +6,7 @@ import { Product } from "@/types/product";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Search } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductListProps {
   products: Product[];
@@ -16,6 +17,7 @@ interface ProductListProps {
 export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const { toast } = useToast();
 
   const filteredProducts = products.filter((product) =>
     product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -24,6 +26,23 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
 
   const handleRowClick = (product: Product) => {
     setSelectedProduct(product);
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await onDelete(id);
+      toast({
+        title: "Product deleted",
+        description: "The product has been successfully deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the product. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -84,7 +103,7 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDelete(product.id);
+                      handleDelete(product.id);
                     }}
                   >
                     Delete
