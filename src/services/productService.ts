@@ -66,6 +66,13 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
 export async function getProducts(): Promise<Product[]> {
   console.log('Fetching products...');
   try {
+    const { data: session } = await supabase.auth.getSession();
+    
+    if (!session?.session?.access_token) {
+      console.error('No session found');
+      throw new Error('Authentication required');
+    }
+
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -77,6 +84,7 @@ export async function getProducts(): Promise<Product[]> {
     }
 
     if (!data) {
+      console.log('No products found, returning empty array');
       return [];
     }
 
@@ -118,6 +126,23 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
   let imagePath = null;
 
   try {
+    // First check if the product exists
+    const { data: existingProduct, error: fetchError } = await supabase
+      .from('products')
+      .select()
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error fetching product:', fetchError);
+      throw fetchError;
+    }
+
+    if (!existingProduct) {
+      console.error('Product not found with ID:', id);
+      throw new Error('Product not found');
+    }
+
     if (data.image) {
       if (data.image instanceof File) {
         const fileExt = data.image.name.split('.').pop();
@@ -145,23 +170,6 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
-    // First check if the product exists
-    const { data: existingProduct, error: fetchError } = await supabase
-      .from('products')
-      .select()
-      .eq('id', id)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error('Error fetching product:', fetchError);
-      throw fetchError;
-    }
-
-    if (!existingProduct) {
-      console.error('Product not found with ID:', id);
-      throw new Error('Product not found');
-    }
 
     const updateData = {
       product_name: data.product_name,
