@@ -131,30 +131,48 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     data: { user },
   } = await supabase.auth.getUser();
 
+  // First check if the product exists
+  const { data: existingProduct, error: fetchError } = await supabase
+    .from('products')
+    .select()
+    .eq('id', id)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error('Error fetching product:', fetchError);
+    throw fetchError;
+  }
+
+  if (!existingProduct) {
+    console.error('Product not found with ID:', id);
+    throw new Error('Product not found');
+  }
+
   const updateData = {
     product_name: data.product_name,
     category: data.category,
     description: data.description,
     product_price: data.product_price,
     ...(imagePath && { image: imagePath }),
-    user_id: user?.id
+    user_id: user?.id,
+    updated_at: new Date().toISOString()
   };
 
-  const { data: product, error } = await supabase
+  const { data: updatedProduct, error: updateError } = await supabase
     .from('products')
     .update(updateData)
     .eq('id', id)
     .select()
     .maybeSingle();
 
-  if (error) {
-    console.error('Error updating product:', error);
-    throw error;
+  if (updateError) {
+    console.error('Error updating product:', updateError);
+    throw updateError;
   }
 
-  if (!product) {
-    throw new Error('Product not found');
+  if (!updatedProduct) {
+    throw new Error('Failed to update product');
   }
 
-  return product;
+  return updatedProduct;
 }
