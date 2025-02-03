@@ -35,27 +35,41 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
-  const { data: achievements, refetch, isError } = useQuery({
+  const { data: achievements, refetch, isError, error } = useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('achievements')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('achievements')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Supabase error:', error);
-        toast({
-          title: "Error fetching achievements",
-          description: error.message,
-          variant: "destructive"
-        });
-        throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        return data as Achievement[];
+      } catch (err) {
+        console.error('Error fetching achievements:', err);
+        throw err;
       }
-
-      return data as Achievement[];
-    }
+    },
+    retry: 1
   });
+
+  if (isError) {
+    toast({
+      title: "Error fetching achievements",
+      description: error instanceof Error ? error.message : "Failed to load achievements",
+      variant: "destructive"
+    });
+    return (
+      <div className="text-center p-4">
+        <p className="text-red-500">Error loading achievements. Please try again later.</p>
+      </div>
+    );
+  }
 
   const handleDelete = async (id: number) => {
     try {
@@ -93,14 +107,6 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
     }
     setSelectedAchievement(achievement);
   };
-
-  if (isError) {
-    return (
-      <div className="text-center p-4">
-        <p className="text-red-500">Error loading achievements. Please try again later.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
