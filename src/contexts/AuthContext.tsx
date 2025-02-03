@@ -17,20 +17,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CustomUser | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const email = session.user.email;
-        const isAdmin = email === "admin@unvas.com";
-        setUser({
-          ...session.user,
-          isAdmin,
-          name: isAdmin ? "Admin" : email?.split('@')[0] || "User"
-        });
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const email = session.user.email;
+          const isAdmin = email === "admin@unvas.com";
+          setUser({
+            ...session.user,
+            isAdmin,
+            name: isAdmin ? "Admin" : email?.split('@')[0] || "User"
+          });
+        }
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setIsInitialized(true);
       }
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const {
@@ -57,9 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
+
+  if (!isInitialized) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>

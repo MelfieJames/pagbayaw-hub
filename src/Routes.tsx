@@ -18,10 +18,12 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   const { user } = useAuth();
 
   if (!user) {
+    console.log("No user found, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
   if (requireAdmin && !user.isAdmin) {
+    console.log("User is not admin, redirecting to home");
     return <Navigate to="/" replace />;
   }
 
