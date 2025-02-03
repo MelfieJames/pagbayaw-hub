@@ -6,6 +6,11 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
   let imagePath = null;
 
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Authentication required');
+    }
+
     if (data.image) {
       if (data.image instanceof File) {
         const fileExt = data.image.name.split('.').pop();
@@ -30,10 +35,6 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
       }
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     const { data: product, error } = await supabase
       .from('products')
       .insert([{
@@ -42,7 +43,7 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
         description: data.description,
         product_price: data.product_price,
         image: imagePath,
-        user_id: user?.id
+        user_id: session.user.id
       }])
       .select()
       .maybeSingle();
@@ -66,10 +67,9 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
 export async function getProducts(): Promise<Product[]> {
   console.log('Fetching products...');
   try {
-    const { data: session } = await supabase.auth.getSession();
-    
-    if (!session?.session?.access_token) {
-      console.error('No session found');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('No active session found');
       throw new Error('Authentication required');
     }
 
@@ -99,6 +99,11 @@ export async function getProducts(): Promise<Product[]> {
 export async function deleteProduct(id: number): Promise<void> {
   console.log('Deleting product with ID:', id);
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Authentication required');
+    }
+
     const { error } = await supabase
       .from('products')
       .delete()
@@ -126,7 +131,11 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
   let imagePath = null;
 
   try {
-    // First check if the product exists
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Authentication required');
+    }
+
     const { data: existingProduct, error: fetchError } = await supabase
       .from('products')
       .select()
@@ -167,17 +176,13 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
       }
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     const updateData = {
       product_name: data.product_name,
       category: data.category,
       description: data.description,
       product_price: data.product_price,
       ...(imagePath && { image: imagePath }),
-      user_id: user?.id,
+      user_id: session.user.id,
       updated_at: new Date().toISOString()
     };
 
