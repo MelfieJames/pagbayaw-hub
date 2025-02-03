@@ -1,27 +1,25 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const handleAdminAuth = async (email: string, password: string) => {
-  // Try to sign in first for admin
-  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (!signInError && signInData.user) {
-    return { user: signInData.user, error: null };
-  }
-
-  // If sign in fails and password is correct, try to sign up
-  if (password === "admin123!@#") {
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+  console.log('Attempting admin login...');
+  
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    return { user: signUpData.user, error: signUpError };
-  }
+    if (error) {
+      console.error('Auth error:', error);
+      throw error;
+    }
 
-  return { user: null, error: new Error("Invalid admin credentials") };
+    console.log('Login successful:', data);
+    return { user: data.user, error: null };
+  } catch (error) {
+    console.error('Login failed:', error);
+    return { user: null, error };
+  }
 };
 
 export const handleUserAuth = async (
@@ -29,17 +27,24 @@ export const handleUserAuth = async (
   email: string,
   password: string
 ) => {
-  if (isLogin) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { user: data.user, error };
-  } else {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    return { user: data.user, error };
+  console.log(`Attempting ${isLogin ? 'login' : 'signup'}...`);
+
+  try {
+    if (isLogin) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { user: data.user, error };
+    } else {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      return { user: data.user, error };
+    }
+  } catch (error) {
+    console.error('Auth operation failed:', error);
+    return { user: null, error };
   }
 };

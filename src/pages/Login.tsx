@@ -39,18 +39,24 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted:', { email, password });
     
     try {
       if (email === "admin@unvas.com") {
         const { user, error } = await handleAdminAuth(email, password);
         
         if (error) {
+          console.error('Admin auth error:', error);
           const errorInfo = getAuthErrorMessage(error);
           showError(errorInfo.title, errorInfo.message);
           return;
         }
 
         if (user) {
+          toast({
+            title: "Admin Login Successful",
+            description: "Welcome back, Admin!",
+          });
           navigate("/admin");
         }
         return;
@@ -59,6 +65,7 @@ const Login = () => {
       const { user, error } = await handleUserAuth(isLogin, email, password);
       
       if (error) {
+        console.error('User auth error:', error);
         const errorInfo = getAuthErrorMessage(error);
         showError(errorInfo.title, errorInfo.message);
         return;
@@ -80,6 +87,7 @@ const Login = () => {
         }
       }
     } catch (error: any) {
+      console.error('Unexpected error:', error);
       const errorInfo = getAuthErrorMessage(error);
       showError(errorInfo.title, errorInfo.message);
     }
