@@ -5,7 +5,6 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
   let imagePath = null;
 
   if (data.image) {
-    // Check if data.image is a File object
     if (data.image instanceof File) {
       const fileExt = data.image.name.split('.').pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
@@ -15,6 +14,7 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
         .upload(filePath, data.image);
 
       if (uploadError) {
+        console.error('Error uploading image:', uploadError);
         throw new Error('Error uploading image');
       }
 
@@ -24,7 +24,6 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
 
       imagePath = publicUrl;
     } else {
-      // If it's a string (URL), use it directly
       imagePath = data.image;
     }
   }
@@ -46,7 +45,10 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error creating product:', error);
+    throw error;
+  }
   return product;
 }
 
@@ -77,7 +79,10 @@ export async function deleteProduct(id: number): Promise<void> {
     .delete()
     .eq('id', id);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error deleting product:', error);
+    throw error;
+  }
 }
 
 export interface UpdateProductParams {
@@ -89,7 +94,6 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
   let imagePath = null;
 
   if (data.image) {
-    // Check if data.image is a File object
     if (data.image instanceof File) {
       const fileExt = data.image.name.split('.').pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
@@ -99,6 +103,7 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
         .upload(filePath, data.image);
 
       if (uploadError) {
+        console.error('Error uploading image:', uploadError);
         throw new Error('Error uploading image');
       }
 
@@ -108,7 +113,6 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
 
       imagePath = publicUrl;
     } else {
-      // If it's a string (URL), use it directly
       imagePath = data.image;
     }
   }
@@ -133,6 +137,9 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error updating product:', error);
+    throw error;
+  }
   return product;
 }
