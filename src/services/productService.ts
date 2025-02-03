@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFormData } from "@/types/product";
 
 export async function createProduct(data: ProductFormData): Promise<Product> {
+  console.log('Creating product with data:', data);
   let imagePath = null;
 
   if (data.image) {
@@ -79,6 +80,7 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function deleteProduct(id: number): Promise<void> {
+  console.log('Deleting product with ID:', id);
   const { error } = await supabase
     .from('products')
     .delete()
@@ -88,6 +90,8 @@ export async function deleteProduct(id: number): Promise<void> {
     console.error('Error deleting product:', error);
     throw error;
   }
+  
+  console.log('Product deleted successfully');
 }
 
 export interface UpdateProductParams {
@@ -96,6 +100,7 @@ export interface UpdateProductParams {
 }
 
 export async function updateProduct({ id, data }: UpdateProductParams): Promise<Product> {
+  console.log('Updating product:', { id, data });
   let imagePath = null;
 
   if (data.image) {
