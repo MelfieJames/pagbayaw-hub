@@ -35,7 +35,7 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
-  const { data: achievements, refetch, isError, error } = useQuery({
+  const { data: achievements, refetch, isError, error, isLoading } = useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
       try {
@@ -60,6 +60,14 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
+  if (isLoading) {
+    return (
+      <div className="text-center p-4">
+        <p>Loading achievements...</p>
+      </div>
+    );
+  }
 
   if (isError) {
     console.error('Query error:', error);
