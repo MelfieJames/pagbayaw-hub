@@ -39,6 +39,7 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
     queryKey: ['achievements'],
     queryFn: async () => {
       try {
+        console.log('Fetching achievements...');
         const { data, error } = await supabase
           .from('achievements')
           .select('*')
@@ -49,16 +50,19 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
           throw error;
         }
 
+        console.log('Achievements fetched:', data);
         return data as Achievement[];
       } catch (err) {
         console.error('Error fetching achievements:', err);
         throw err;
       }
     },
-    retry: 1
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   if (isError) {
+    console.error('Query error:', error);
     toast({
       title: "Error fetching achievements",
       description: error instanceof Error ? error.message : "Failed to load achievements",
@@ -132,7 +136,7 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAchievements?.map((achievement) => (
+            {achievements?.map((achievement) => (
               <AchievementTableRow
                 key={achievement.id}
                 achievement={achievement}
