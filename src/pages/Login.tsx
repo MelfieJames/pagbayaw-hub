@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ErrorModal from "@/components/ErrorModal";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase/client";
 import LoginForm from "@/components/auth/LoginForm";
 import { handleAdminAuth, handleUserAuth } from "@/services/authService";
 import { getAuthErrorMessage } from "@/utils/authErrors";
