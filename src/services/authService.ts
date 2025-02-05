@@ -1,4 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
+
+import { supabase } from "@/services/supabase/client";
 
 export const handleAdminAuth = async (email: string, password: string) => {
   console.log('Attempting admin login...');
