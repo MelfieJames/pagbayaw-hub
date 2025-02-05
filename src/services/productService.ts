@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase/client";
 import { Product, ProductFormData } from "@/types/product";
 
 export async function createProduct(data: ProductFormData): Promise<Product> {

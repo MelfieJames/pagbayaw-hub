@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { AchievementDetailsContent } from "@/components/achievements/details/AchievementDetailsContent";
