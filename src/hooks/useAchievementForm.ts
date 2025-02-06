@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase/client";
 import { createAchievement, updateAchievement } from "@/utils/achievementOperations";
 import { CustomUser } from "@/contexts/AuthContext";
 

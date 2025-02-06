@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase/client";
 import { User } from "@supabase/supabase-js";
 
 interface AchievementData {

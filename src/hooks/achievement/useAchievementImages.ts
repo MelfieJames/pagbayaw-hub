@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase/client";
 
 export const useAchievementImages = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
