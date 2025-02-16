@@ -65,7 +65,7 @@ const Products = () => {
                 <p className="text-gray-600 line-clamp-2">{product.description}</p>
               </CardContent>
               <CardFooter>
-                <p className="text-xl font-bold">${product.product_price.toFixed(2)}</p>
+                <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
               </CardFooter>
             </Card>
           ))}

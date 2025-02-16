@@ -1,3 +1,4 @@
+
 import { Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Index from "@/pages/Index";
@@ -38,16 +39,7 @@ const Routes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/products" element={<Products />} />
       <Route path="/contact" element={<Contact />} />
-
-      {/* Protected Routes */}
-      <Route
-        path="/achievements"
-        element={
-          <ProtectedRoute>
-            <Achievements />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/achievements" element={<Achievements />} />
 
       {/* Admin Routes */}
       <Route
