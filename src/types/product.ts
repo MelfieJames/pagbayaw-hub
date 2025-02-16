@@ -1,4 +1,7 @@
-export interface Product {
+
+import { ProductRow } from "./supabase";
+
+export interface Product extends ProductRow {
   id: number;
   image: string | null;
   category: string;
@@ -8,6 +11,9 @@ export interface Product {
   created_at?: string;
   updated_at?: string;
   user_id?: string;
+  status?: string | null;
+  featured?: boolean | null;
+  tags?: string[] | null;
 }
 
 export interface ProductFormData {
@@ -16,6 +22,9 @@ export interface ProductFormData {
   description: string;
   product_price: number;
   image: string | File | null;
+  status?: string;
+  featured?: boolean;
+  tags?: string[];
 }
 
 export interface ProductFormProps {

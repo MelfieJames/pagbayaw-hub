@@ -2,6 +2,7 @@
 import { supabase } from '../supabase/client';
 import { Product, ProductFormData } from '@/types/product';
 import { uploadProductImage } from './imageUpload';
+import { ProductRow } from '@/types/supabase';
 
 export async function createProduct(data: ProductFormData): Promise<Product> {
   console.log('Creating product with data:', data);
@@ -15,14 +16,17 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
 
   const { data: product, error } = await supabase
     .from('products')
-    .insert([{
+    .insert({
       product_name: data.product_name,
       category: data.category,
       description: data.description,
       product_price: data.product_price,
       image: imagePath,
-      user_id: session.user.id
-    }])
+      user_id: session.user.id,
+      status: data.status,
+      featured: data.featured,
+      tags: data.tags
+    })
     .select()
     .single();
 
@@ -31,7 +35,11 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
     throw error;
   }
 
-  return product;
+  if (!product) {
+    throw new Error('Failed to create product');
+  }
+
+  return product as Product;
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -54,7 +62,7 @@ export async function getProducts(): Promise<Product[]> {
   }
 
   console.log('Products fetched successfully:', data);
-  return data || [];
+  return (data || []) as Product[];
 }
 
 export async function deleteProduct(id: number): Promise<void> {
@@ -106,7 +114,10 @@ export async function updateProduct({ id, data }: { id: number; data: ProductFor
     product_price: data.product_price,
     ...(imagePath && { image: imagePath }),
     user_id: session.user.id,
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    status: data.status,
+    featured: data.featured,
+    tags: data.tags
   };
 
   const { data: updatedProduct, error: updateError } = await supabase
@@ -121,5 +132,9 @@ export async function updateProduct({ id, data }: { id: number; data: ProductFor
     throw updateError;
   }
 
-  return updatedProduct;
+  if (!updatedProduct) {
+    throw new Error('Failed to update product');
+  }
+
+  return updatedProduct as Product;
 }
