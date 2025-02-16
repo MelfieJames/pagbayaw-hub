@@ -8,6 +8,8 @@ import { format } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { AchievementDetailsContent } from "@/components/achievements/details/AchievementDetailsContent";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface Achievement {
   id: number;
@@ -25,6 +27,7 @@ const Achievements = () => {
   const { toast } = useToast();
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [achievementImages, setAchievementImages] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: achievements, isLoading, error } = useQuery({
     queryKey: ['achievements'],
@@ -38,6 +41,11 @@ const Achievements = () => {
       return data as Achievement[];
     }
   });
+
+  const filteredAchievements = achievements?.filter(achievement =>
+    achievement.achievement_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (achievement.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+  );
 
   const handleAchievementClick = async (achievement: Achievement) => {
     setSelectedAchievement(achievement);
@@ -76,10 +84,21 @@ const Achievements = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="container mx-auto pt-24 px-4">
-        <h1 className="text-4xl font-bold text-center mb-12">Our Achievements</h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Our Achievements</h1>
+        
+        {/* Search Bar */}
+        <div className="relative max-w-md mx-auto mb-12">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search achievements..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {achievements?.map((achievement) => (
+          {filteredAchievements?.map((achievement) => (
             <Card
               key={achievement.id}
               className="overflow-hidden cursor-pointer hover:shadow-lg transition-all"
@@ -105,13 +124,22 @@ const Achievements = () => {
           ))}
         </div>
 
-        <Dialog open={!!selectedAchievement} onOpenChange={() => setSelectedAchievement(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh]">
+        <Dialog 
+          open={!!selectedAchievement} 
+          onOpenChange={() => setSelectedAchievement(null)}
+        >
+          <DialogContent className="max-w-5xl">
             {selectedAchievement && (
-              <AchievementDetailsContent 
-                achievement={selectedAchievement}
-                images={achievementImages}
-              />
+              <div className="grid md:grid-cols-2 gap-6">
+                <AchievementImageCarousel 
+                  images={achievementImages.length > 0 ? achievementImages : [selectedAchievement.image || "/placeholder.svg"]}
+                  title={selectedAchievement.achievement_name}
+                />
+                <AchievementDetailsContent 
+                  achievement={selectedAchievement}
+                  images={achievementImages}
+                />
+              </div>
             )}
           </DialogContent>
         </Dialog>

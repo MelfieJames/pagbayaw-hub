@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface AchievementImageCarouselProps {
   images: string[];
@@ -9,6 +10,16 @@ interface AchievementImageCarouselProps {
 
 export const AchievementImageCarousel = ({ images, title }: AchievementImageCarouselProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [images.length]);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -20,11 +31,11 @@ export const AchievementImageCarousel = ({ images, title }: AchievementImageCaro
 
   return (
     <div className="relative">
-      <div className="flex justify-center items-center">
+      <div className="flex justify-center items-center h-[400px]">
         <img
           src={images[currentImageIndex]}
           alt={`${title} - Image ${currentImageIndex + 1}`}
-          className="max-w-full h-auto rounded-lg"
+          className="w-full h-full object-cover rounded-lg"
         />
       </div>
       {images.length > 1 && (
@@ -47,6 +58,16 @@ export const AchievementImageCarousel = ({ images, title }: AchievementImageCaro
           </Button>
         </div>
       )}
+      <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+        {images.map((_, index) => (
+          <div
+            key={index}
+            className={`h-2 w-2 rounded-full transition-all ${
+              index === currentImageIndex ? "bg-white" : "bg-white/50"
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };
