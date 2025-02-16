@@ -15,7 +15,10 @@ interface Achievement {
   description: string | null;
   date: string;
   created_at: string;
+  updated_at: string | null;
   image: string | null;
+  video: string | null;
+  user_id: string | null;
 }
 
 const Achievements = () => {

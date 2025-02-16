@@ -7,8 +7,5 @@ export type UpdateTables<T extends keyof Database['public']['Tables']> = Databas
 
 export type ProductRow = Tables<'products'>;
 export type AchievementRow = Tables<'achievements'>;
-export type AchievementImageRow = Tables<'achievement_images'>;
-export type InventoryRow = Tables<'inventory'>;
-export type UserRoleRow = Tables<'user_roles'>;
 
 export type Role = 'admin' | 'user';

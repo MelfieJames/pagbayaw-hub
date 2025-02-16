@@ -41,7 +41,7 @@ export async function fetchInventory(): Promise<InventoryItem[]> {
     products: {
       product_name: item.products.product_name,
       category: item.products.category,
-      image: item.products.image || null
+      image: item.products.image
     }
   }));
 
@@ -83,7 +83,7 @@ export async function updateInventoryQuantity(id: number, quantity: number): Pro
     products: {
       product_name: data.products.product_name,
       category: data.products.category,
-      image: data.products.image || null
+      image: data.products.image
     }
   };
 
