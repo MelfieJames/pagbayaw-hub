@@ -108,10 +108,13 @@ export type Database = {
           category: string
           created_at: string | null
           description: string
+          featured: boolean | null
           id: number
           image: string | null
           product_name: string
           product_price: number
+          status: string | null
+          tags: string[] | null
           updated_at: string | null
           user_id: string | null
         }
@@ -119,10 +122,13 @@ export type Database = {
           category: string
           created_at?: string | null
           description: string
+          featured?: boolean | null
           id?: number
           image?: string | null
           product_name: string
           product_price?: number
+          status?: string | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -130,10 +136,13 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string
+          featured?: boolean | null
           id?: number
           image?: string | null
           product_name?: string
           product_price?: number
+          status?: string | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id?: string | null
         }
