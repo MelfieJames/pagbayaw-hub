@@ -1,19 +1,19 @@
 
 import { ProductRow } from "./supabase";
 
-export interface Product extends ProductRow {
+export interface Product {
   id: number;
   image: string | null;
   category: string;
   product_name: string;
   description: string;
   product_price: number;
-  created_at?: string;
-  updated_at?: string;
-  user_id?: string;
-  status?: string | null;
-  featured?: boolean | null;
-  tags?: string[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+  user_id: string | null;
+  status: string | null;
+  featured: boolean | null;
+  tags: string[] | null;
 }
 
 export interface ProductFormData {

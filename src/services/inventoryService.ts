@@ -2,7 +2,7 @@
 import { supabase } from "@/services/supabase/client";
 import { InventoryItem } from "@/types/inventory";
 
-type SupabaseInventoryResponse = {
+interface SupabaseInventoryResponse {
   id: number;
   product_id: number;
   quantity: number;
@@ -15,7 +15,7 @@ type SupabaseInventoryResponse = {
 
 export async function fetchInventory(): Promise<InventoryItem[]> {
   console.log("Fetching inventory data...");
-  const { data, error } = await supabase
+  const { data: rawData, error } = await supabase
     .from('inventory')
     .select(`
       id,
@@ -33,8 +33,11 @@ export async function fetchInventory(): Promise<InventoryItem[]> {
     throw error;
   }
 
+  // Ensure the data is of the correct type and shape
+  const data = rawData as unknown as SupabaseInventoryResponse[];
+  
   // Transform the data to match InventoryItem type
-  const inventory: InventoryItem[] = (data as SupabaseInventoryResponse[]).map(item => ({
+  const inventory: InventoryItem[] = data.map(item => ({
     id: item.id,
     product_id: item.product_id,
     quantity: item.quantity,
@@ -51,7 +54,7 @@ export async function fetchInventory(): Promise<InventoryItem[]> {
 
 export async function updateInventoryQuantity(id: number, quantity: number): Promise<InventoryItem> {
   console.log("Updating quantity for id:", id, "to:", quantity);
-  const { data, error } = await supabase
+  const { data: rawData, error } = await supabase
     .from('inventory')
     .update({ 
       quantity,
@@ -74,6 +77,13 @@ export async function updateInventoryQuantity(id: number, quantity: number): Pro
     console.error("Error updating inventory:", error);
     throw error;
   }
+
+  if (!rawData) {
+    throw new Error('No data returned from update operation');
+  }
+
+  // Ensure the data is of the correct type and shape
+  const data = rawData as unknown as SupabaseInventoryResponse;
 
   // Transform the response to match InventoryItem type
   const updatedItem: InventoryItem = {
