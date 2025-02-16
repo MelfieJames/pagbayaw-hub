@@ -1,6 +1,10 @@
+
 import Navbar from "@/components/Navbar";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { AchievementDetailsContent } from "@/components/achievements/details/AchievementDetailsContent";
@@ -11,14 +15,15 @@ interface Achievement {
   description: string | null;
   date: string;
   created_at: string;
-  updated_at: string | null;
+  image: string | null;
 }
 
 const Achievements = () => {
+  const { toast } = useToast();
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [achievementImages, setAchievementImages] = useState<string[]>([]);
 
-  const { data: achievements } = useQuery({
+  const { data: achievements, isLoading, error } = useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,7 +32,7 @@ const Achievements = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Achievement[];
     }
   });
 
@@ -40,9 +45,29 @@ const Achievements = () => {
       .eq('achievement_id', achievement.id);
 
     if (!error && imageData) {
-      setAchievementImages(imageData.map(img => img.image_url));
+      setAchievementImages(imageData.map(img => img.image_url || '').filter(Boolean));
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="pt-20 container mx-auto">
+          <h1 className="text-4xl font-bold text-center">Achievements</h1>
+          <div className="text-center mt-8">Loading achievements...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load achievements. Please try again later.",
+      variant: "destructive",
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,24 +77,28 @@ const Achievements = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {achievements?.map((achievement) => (
-            <div
+            <Card
               key={achievement.id}
+              className="overflow-hidden cursor-pointer hover:shadow-lg transition-all"
               onClick={() => handleAchievementClick(achievement)}
-              className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
             >
               <div className="aspect-w-16 aspect-h-9">
                 <img
                   src={achievement.image || "/placeholder.svg"}
                   alt={achievement.achievement_name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-48 object-cover"
                 />
               </div>
-              <div className="p-4">
-                <h3 className="text-xl font-semibold mb-2">{achievement.achievement_name}</h3>
+              <CardHeader>
+                <CardTitle>{achievement.achievement_name}</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-gray-600 line-clamp-2">{achievement.description}</p>
-                <p className="text-sm text-gray-500 mt-2">{achievement.date}</p>
-              </div>
-            </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  {format(new Date(achievement.date), 'PP')}
+                </p>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
