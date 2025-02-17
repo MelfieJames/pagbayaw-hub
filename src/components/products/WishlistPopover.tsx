@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
+import { WishlistItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, ShoppingCart, X } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +21,7 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: wishlistItems = [] } = useQuery({
+  const { data: wishlistItems = [] } = useQuery<WishlistItem[]>({
     queryKey: ['wishlist-details'],
     queryFn: async () => {
       if (!user?.id) return [];

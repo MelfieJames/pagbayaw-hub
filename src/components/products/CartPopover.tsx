@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
+import { CartItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ShoppingCart, X } from "lucide-react";
@@ -23,7 +24,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: cartItems = [] } = useQuery({
+  const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ['cart'],
     queryFn: async () => {
       if (!user?.id) return [];
