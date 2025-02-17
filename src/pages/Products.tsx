@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/services/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -63,8 +64,8 @@ const Products = () => {
         throw new Error('Failed to load products. Please try again later.');
       }
     },
-    retry: 3, // Retry failed requests up to 3 times
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Fetch cart items
@@ -83,7 +84,7 @@ const Products = () => {
     enabled: !!user
   });
 
-  // Fetch wishlist items - Only when user is logged in
+  // Fetch wishlist items
   const { data: wishlistItems = [] } = useQuery({
     queryKey: ['wishlist'],
     queryFn: async () => {
@@ -96,8 +97,28 @@ const Products = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user // Only fetch when user is logged in
+    enabled: !!user
   });
+
+  // Filter products based on search and category
+  const filteredProducts = products?.filter(product => {
+    const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Get unique categories
+  const categories = products ? [...new Set(products.map(product => product.category))] : [];
+
+  // Group products by category
+  const groupedProducts = filteredProducts?.reduce((acc, product) => {
+    if (!acc[product.category]) {
+      acc[product.category] = [];
+    }
+    acc[product.category].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>) || {};
 
   // Calculate total for selected items
   const calculateTotal = () => {
@@ -108,15 +129,6 @@ const Products = () => {
         return total + (product.product_price * (cartItem?.quantity || 1));
       }, 0) || 0;
   };
-
-  // Group products by category
-  const groupedProducts = filteredProducts?.reduce((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
-    }
-    acc[product.category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>) || {};
 
   // Handle item selection
   const toggleItemSelection = (productId: number) => {
@@ -148,7 +160,6 @@ const Products = () => {
       return;
     }
 
-    // TODO: Implement checkout process
     toast({
       title: "Proceeding to checkout",
       description: `Total amount: ₱${calculateTotal().toFixed(2)}`,
