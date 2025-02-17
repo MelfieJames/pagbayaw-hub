@@ -17,6 +17,15 @@ interface WishlistPopoverProps {
   onToggleWishlist: () => void;
 }
 
+interface WishlistResponse {
+  product_id: number;
+  products: {
+    product_name: string;
+    product_price: number;
+    image: string | null;
+  };
+}
+
 export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopoverProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -42,15 +51,14 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
         return [];
       }
       
-      // Properly transform the data to match WishlistItem type
-      return (data || []).map(item => ({
+      return (data || []).map((item: WishlistResponse) => ({
         product_id: item.product_id,
-        products: item.products ? {
+        products: {
           product_name: item.products.product_name,
           product_price: item.products.product_price,
           image: item.products.image
-        } : null
-      } as WishlistItem));
+        }
+      }));
     },
     enabled: !!user?.id
   });

@@ -19,6 +19,16 @@ interface CartPopoverProps {
   onAddToCart: () => void;
 }
 
+interface CartResponse {
+  quantity: number;
+  product_id: number;
+  products: {
+    product_name: string;
+    product_price: number;
+    image: string | null;
+  };
+}
+
 export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -46,16 +56,15 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
         return [];
       }
       
-      // Properly transform the data to match CartItem type
-      return (data || []).map(item => ({
+      return (data || []).map((item: CartResponse) => ({
         quantity: item.quantity,
         product_id: item.product_id,
-        products: item.products ? {
+        products: {
           product_name: item.products.product_name,
           product_price: item.products.product_price,
           image: item.products.image
-        } : null
-      } as CartItem));
+        }
+      }));
     },
     enabled: !!user?.id
   });
