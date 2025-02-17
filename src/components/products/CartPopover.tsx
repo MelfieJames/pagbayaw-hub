@@ -19,7 +19,7 @@ interface CartPopoverProps {
   onAddToCart: () => void;
 }
 
-interface CartResponse {
+type SupabaseCartResponse = {
   quantity: number;
   product_id: number;
   products: {
@@ -38,7 +38,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
     queryKey: ['cart'],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
+      const { data: responseData, error } = await supabase
         .from('cart')
         .select(`
           quantity,
@@ -49,14 +49,15 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
             image
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .returns<SupabaseCartResponse[]>();
 
       if (error) {
         console.error('Cart fetch error:', error);
         return [];
       }
       
-      return (data || []).map((item: CartResponse) => ({
+      return responseData.map(item => ({
         quantity: item.quantity,
         product_id: item.product_id,
         products: {

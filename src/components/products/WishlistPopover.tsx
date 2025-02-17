@@ -17,7 +17,7 @@ interface WishlistPopoverProps {
   onToggleWishlist: () => void;
 }
 
-interface WishlistResponse {
+type SupabaseWishlistResponse = {
   product_id: number;
   products: {
     product_name: string;
@@ -34,7 +34,7 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
     queryKey: ['wishlist-details'],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
+      const { data: responseData, error } = await supabase
         .from('wishlist')
         .select(`
           product_id,
@@ -44,14 +44,15 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
             image
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .returns<SupabaseWishlistResponse[]>();
 
       if (error) {
         console.error('Wishlist fetch error:', error);
         return [];
       }
       
-      return (data || []).map((item: WishlistResponse) => ({
+      return responseData.map(item => ({
         product_id: item.product_id,
         products: {
           product_name: item.products.product_name,
