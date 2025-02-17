@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Heart, Search, ShoppingCart, HeartOff } from "lucide-react";
+import { Heart, Search, ShoppingCart, HeartOff, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Product {
   id: number;
@@ -35,6 +36,7 @@ const Products = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   // Fetch products with error handling
   const { data: products, isLoading, error: productsError } = useQuery({
@@ -81,7 +83,7 @@ const Products = () => {
     enabled: !!user
   });
 
-  // Fetch wishlist items
+  // Fetch wishlist items - Only when user is logged in
   const { data: wishlistItems = [] } = useQuery({
     queryKey: ['wishlist'],
     queryFn: async () => {
@@ -94,8 +96,64 @@ const Products = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user
+    enabled: !!user // Only fetch when user is logged in
   });
+
+  // Calculate total for selected items
+  const calculateTotal = () => {
+    return filteredProducts
+      ?.filter(product => selectedItems.includes(product.id))
+      .reduce((total, product) => {
+        const cartItem = cartItems.find(item => item.product_id === product.id);
+        return total + (product.product_price * (cartItem?.quantity || 1));
+      }, 0) || 0;
+  };
+
+  // Group products by category
+  const groupedProducts = filteredProducts?.reduce((acc, product) => {
+    if (!acc[product.category]) {
+      acc[product.category] = [];
+    }
+    acc[product.category].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>) || {};
+
+  // Handle item selection
+  const toggleItemSelection = (productId: number) => {
+    setSelectedItems(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  // Handle buy now
+  const handleBuyNow = () => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to make a purchase",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    
+    if (selectedItems.length === 0) {
+      toast({
+        title: "No items selected",
+        description: "Please select items to purchase",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // TODO: Implement checkout process
+    toast({
+      title: "Proceeding to checkout",
+      description: `Total amount: ₱${calculateTotal().toFixed(2)}`,
+    });
+  };
 
   // Add to cart mutation
   const addToCartMutation = useMutation({
@@ -276,62 +334,93 @@ const Products = () => {
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredProducts?.map((product) => {
-            const isInWishlist = wishlistItems.some(item => item.product_id === product.id);
-            const cartItem = cartItems.find(item => item.product_id === product.id);
-            
-            return (
-              <Card key={product.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="absolute top-2 right-2 z-10 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="bg-white/80 hover:bg-white"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleWishlist(product);
-                    }}
-                  >
-                    {isInWishlist ? (
-                      <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                    ) : (
-                      <Heart className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                <div 
-                  className="aspect-w-16 aspect-h-9 cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
-                >
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.product_name}
-                    className="w-full h-48 object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle>{product.product_name}</CardTitle>
-                  <CardDescription>
-                    <Badge variant="secondary">{product.category}</Badge>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button 
-                    className="w-full"
-                    onClick={() => handleAddToCart(product)}
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    {cartItem ? 'Update Cart' : 'Add to Cart'}
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+        {/* Selected Items Summary */}
+        {selectedItems.length > 0 && (
+          <div className="mb-8 p-4 bg-secondary rounded-lg">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-lg font-semibold">Selected Items: {selectedItems.length}</p>
+                <p className="text-2xl font-bold">Total: ₱{calculateTotal().toFixed(2)}</p>
+              </div>
+              <Button onClick={handleBuyNow}>
+                Buy Now
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Products Grid - Grouped by Category */}
+        <div className="space-y-8 mb-12">
+          {Object.entries(groupedProducts).map(([category, products]) => (
+            <div key={category}>
+              <h2 className="text-2xl font-semibold mb-4">{category}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => {
+                  const isInWishlist = user && wishlistItems.some(item => item.product_id === product.id);
+                  const cartItem = cartItems.find(item => item.product_id === product.id);
+                  const isSelected = selectedItems.includes(product.id);
+                  
+                  return (
+                    <Card key={product.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+                      <div className="absolute top-2 right-2 z-10 flex gap-2">
+                        {user && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="bg-white/80 hover:bg-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleWishlist(product);
+                            }}
+                          >
+                            {isInWishlist ? (
+                              <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                            ) : (
+                              <Heart className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      <div className="absolute top-2 left-2 z-10">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleItemSelection(product.id)}
+                        />
+                      </div>
+                      <div 
+                        className="aspect-w-16 aspect-h-9 cursor-pointer"
+                        onClick={() => setSelectedProduct(product)}
+                      >
+                        <img
+                          src={product.image || "/placeholder.svg"}
+                          alt={product.product_name}
+                          className="w-full h-48 object-cover"
+                        />
+                      </div>
+                      <CardHeader>
+                        <CardTitle>{product.product_name}</CardTitle>
+                        <CardDescription>
+                          <Badge variant="secondary">{product.category}</Badge>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
+                      </CardContent>
+                      <CardFooter className="flex justify-between">
+                        <Button 
+                          className="w-full"
+                          onClick={() => handleAddToCart(product)}
+                        >
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          {cartItem ? 'Update Cart' : 'Add to Cart'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Product Detail Modal */}
