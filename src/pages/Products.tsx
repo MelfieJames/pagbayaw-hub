@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/services/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,18 +36,33 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Fetch products
-  const { data: products, isLoading } = useQuery({
+  // Fetch products with error handling
+  const { data: products, isLoading, error: productsError } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as Product[];
-    }
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        if (!data) {
+          return [];
+        }
+
+        return data as Product[];
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+        throw new Error('Failed to load products. Please try again later.');
+      }
+    },
+    retry: 3, // Retry failed requests up to 3 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
   // Fetch cart items
@@ -192,6 +206,26 @@ const Products = () => {
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  if (productsError) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="pt-20 container mx-auto px-4">
+          <h1 className="text-4xl font-bold text-center mb-8">Our Products</h1>
+          <div className="text-center">
+            <p className="text-red-500 mb-4">Failed to load products</p>
+            <Button 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['products'] })}
+              variant="secondary"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
