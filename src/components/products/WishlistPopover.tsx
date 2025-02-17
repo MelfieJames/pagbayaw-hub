@@ -50,7 +50,7 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
           product_price: item.products.product_price,
           image: item.products.image
         } : null
-      }));
+      } as WishlistItem));
     },
     enabled: !!user?.id
   });

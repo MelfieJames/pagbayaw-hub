@@ -55,7 +55,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
           product_price: item.products.product_price,
           image: item.products.image
         } : null
-      }));
+      } as CartItem));
     },
     enabled: !!user?.id
   });
