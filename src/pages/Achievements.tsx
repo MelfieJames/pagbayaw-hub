@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { AchievementDetailsContent } from "@/components/achievements/details/AchievementDetailsContent";
+import { AchievementImageCarousel } from "@/components/achievements/details/AchievementImageCarousel";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
