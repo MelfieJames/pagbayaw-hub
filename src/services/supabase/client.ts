@@ -9,6 +9,9 @@ export const supabase = createClient<Database>(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
+    },
+    db: {
+      schema: 'public'
     }
   }
 )
