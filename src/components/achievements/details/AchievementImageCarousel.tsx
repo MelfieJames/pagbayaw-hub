@@ -71,3 +71,5 @@ export const AchievementImageCarousel = ({ images, title }: AchievementImageCaro
     </div>
   );
 };
+
+export default AchievementImageCarousel;
