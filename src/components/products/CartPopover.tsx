@@ -45,7 +45,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
         console.error('Cart fetch error:', error);
         return [];
       }
-      return data || [];
+      return (data as CartItem[]) || [];
     },
     enabled: !!user?.id
   });

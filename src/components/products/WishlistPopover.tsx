@@ -41,7 +41,7 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
         console.error('Wishlist fetch error:', error);
         return [];
       }
-      return data || [];
+      return (data as WishlistItem[]) || [];
     },
     enabled: !!user?.id
   });
