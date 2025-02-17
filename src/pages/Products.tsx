@@ -38,7 +38,6 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
-  // Fetch products with error handling
   const { data: products, isLoading, error: productsError } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
@@ -67,23 +66,24 @@ const Products = () => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Fetch cart items
   const { data: cartItems = [] } = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from('cart')
         .select('product_id, quantity')
         .eq('user_id', user.id);
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Cart fetch error:', error);
+        return [];
+      }
+      return data || [];
     },
-    enabled: !!user
+    enabled: !!user?.id
   });
 
-  // Fetch wishlist items
   const { data: wishlistItems = [] } = useQuery({
     queryKey: ['wishlist'],
     queryFn: async () => {
@@ -99,10 +99,8 @@ const Products = () => {
     enabled: !!user
   });
 
-  // Get unique categories
   const categories = products ? [...new Set(products.map(product => product.category))] : [];
 
-  // Filter products based on search and category
   const filteredProducts = products?.filter(product => {
     const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -110,7 +108,6 @@ const Products = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Group products by category
   const groupedProducts = filteredProducts?.reduce((acc, product) => {
     if (!acc[product.category]) {
       acc[product.category] = [];
@@ -119,7 +116,6 @@ const Products = () => {
     return acc;
   }, {} as Record<string, Product[]>) || {};
 
-  // Calculate total for selected items
   const calculateTotal = () => {
     return filteredProducts
       ?.filter(product => selectedItems.includes(product.id))
@@ -129,7 +125,6 @@ const Products = () => {
       }, 0) || 0;
   };
 
-  // Handle item selection
   const toggleItemSelection = (productId: number) => {
     setSelectedItems(prev => 
       prev.includes(productId) 
@@ -138,7 +133,6 @@ const Products = () => {
     );
   };
 
-  // Handle buy now
   const handleBuyNow = () => {
     if (!user) {
       toast({
@@ -165,35 +159,36 @@ const Products = () => {
     });
   };
 
-  // Add to cart mutation
   const addToCartMutation = useMutation({
     mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
-      if (!user) throw new Error('Must be logged in');
+      if (!user?.id) throw new Error('Must be logged in');
       
-      // Check if the product is already in the cart
-      const { data: existingItem, error: fetchError } = await supabase
-        .from('cart')
-        .select('quantity')
-        .eq('user_id', user.id)
-        .eq('product_id', productId)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      if (existingItem) {
-        // If item exists, update the quantity
-        const { error } = await supabase
+      try {
+        const { data: existingItem, error: fetchError } = await supabase
           .from('cart')
-          .update({ quantity: existingItem.quantity + quantity })
+          .select('quantity')
           .eq('user_id', user.id)
-          .eq('product_id', productId);
-        if (error) throw error;
-      } else {
-        // If item doesn't exist, insert new record
-        const { error } = await supabase
-          .from('cart')
-          .insert({ user_id: user.id, product_id: productId, quantity });
-        if (error) throw error;
+          .eq('product_id', productId)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+
+        if (existingItem) {
+          const { error } = await supabase
+            .from('cart')
+            .update({ quantity: existingItem.quantity + quantity })
+            .eq('user_id', user.id)
+            .eq('product_id', productId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('cart')
+            .insert({ user_id: user.id, product_id: productId, quantity });
+          if (error) throw error;
+        }
+      } catch (error) {
+        console.error('Cart mutation error:', error);
+        throw error;
       }
     },
     onSuccess: () => {
@@ -201,15 +196,23 @@ const Products = () => {
       toast({ title: "Added to cart" });
     },
     onError: (error: Error) => {
-      toast({ 
-        title: "Error", 
-        description: error.message,
-        variant: "destructive" 
-      });
+      if (error.message.includes('Must be logged in')) {
+        navigate('/login');
+        toast({ 
+          title: "Please log in", 
+          description: "You need to be logged in to add items to your cart",
+          variant: "destructive" 
+        });
+      } else {
+        toast({ 
+          title: "Error", 
+          description: error.message,
+          variant: "destructive" 
+        });
+      }
     }
   });
 
-  // Toggle wishlist mutation
   const toggleWishlistMutation = useMutation({
     mutationFn: async (productId: number) => {
       if (!user) throw new Error('Must be logged in');
@@ -306,7 +309,6 @@ const Products = () => {
       <div className="pt-20 container mx-auto px-4">
         <h1 className="text-4xl font-bold text-center mb-8">Our Products</h1>
         
-        {/* Search and Filters */}
         <div className="mb-8 space-y-4">
           <div className="relative max-w-md mx-auto">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -337,7 +339,6 @@ const Products = () => {
           </div>
         </div>
 
-        {/* Selected Items Summary */}
         {selectedItems.length > 0 && (
           <div className="mb-8 p-4 bg-secondary rounded-lg">
             <div className="flex justify-between items-center">
@@ -352,7 +353,6 @@ const Products = () => {
           </div>
         )}
 
-        {/* Products Grid - Grouped by Category */}
         <div className="space-y-8 mb-12">
           {Object.entries(groupedProducts).map(([category, products]) => (
             <div key={category}>
@@ -426,7 +426,6 @@ const Products = () => {
           ))}
         </div>
 
-        {/* Product Detail Modal */}
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
           <DialogContent className="max-w-3xl">
             {selectedProduct && (
