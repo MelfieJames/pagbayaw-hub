@@ -5,13 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Heart, Search, ShoppingCart, HeartOff, Check } from "lucide-react";
+import { Search, ShoppingCart, Heart, HeartOff, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CartPopover } from "@/components/products/CartPopover";
+import { WishlistPopover } from "@/components/products/WishlistPopover";
 
 interface Product {
   id: number;
@@ -346,84 +348,61 @@ const Products = () => {
                 <p className="text-lg font-semibold">Selected Items: {selectedItems.length}</p>
                 <p className="text-2xl font-bold">Total: ₱{calculateTotal().toFixed(2)}</p>
               </div>
-              <Button onClick={handleBuyNow}>
-                Buy Now
-              </Button>
+              <Button onClick={handleBuyNow}>Buy Now</Button>
             </div>
           </div>
         )}
 
-        <div className="space-y-8 mb-12">
-          {Object.entries(groupedProducts).map(([category, products]) => (
-            <div key={category}>
-              <h2 className="text-2xl font-semibold mb-4">{category}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product) => {
-                  const isInWishlist = user && wishlistItems.some(item => item.product_id === product.id);
-                  const cartItem = cartItems.find(item => item.product_id === product.id);
-                  const isSelected = selectedItems.includes(product.id);
-                  
-                  return (
-                    <Card key={product.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="absolute top-2 right-2 z-10 flex gap-2">
-                        {user && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="bg-white/80 hover:bg-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleWishlist(product);
-                            }}
-                          >
-                            {isInWishlist ? (
-                              <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                            ) : (
-                              <Heart className="h-4 w-4" />
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                      <div className="absolute top-2 left-2 z-10">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleItemSelection(product.id)}
-                        />
-                      </div>
-                      <div 
-                        className="aspect-w-16 aspect-h-9 cursor-pointer"
-                        onClick={() => setSelectedProduct(product)}
-                      >
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.product_name}
-                          className="w-full h-48 object-cover"
-                        />
-                      </div>
-                      <CardHeader>
-                        <CardTitle>{product.product_name}</CardTitle>
-                        <CardDescription>
-                          <Badge variant="secondary">{product.category}</Badge>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        <Button 
-                          className="w-full"
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          {cartItem ? 'Update Cart' : 'Add to Cart'}
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts?.map((product) => {
+            const isInWishlist = wishlistItems.some(item => item.product_id === product.id);
+            const cartItem = cartItems.find(item => item.product_id === product.id);
+            const isSelected = selectedItems.includes(product.id);
+            
+            return (
+              <Card key={product.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="absolute top-2 right-2 z-10 flex gap-2">
+                  {user && (
+                    <>
+                      <CartPopover 
+                        isInCart={!!cartItem}
+                        onAddToCart={() => handleAddToCart(product)}
+                      />
+                      <WishlistPopover
+                        isInWishlist={isInWishlist}
+                        onToggleWishlist={() => handleToggleWishlist(product)}
+                      />
+                    </>
+                  )}
+                </div>
+                <div className="absolute top-2 left-2 z-10">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleItemSelection(product.id)}
+                  />
+                </div>
+                <div 
+                  className="aspect-w-16 aspect-h-9 cursor-pointer"
+                  onClick={() => setSelectedProduct(product)}
+                >
+                  <img
+                    src={product.image || "/placeholder.svg"}
+                    alt={product.product_name}
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+                <CardHeader>
+                  <CardTitle>{product.product_name}</CardTitle>
+                  <CardDescription>
+                    <Badge variant="secondary">{product.category}</Badge>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
