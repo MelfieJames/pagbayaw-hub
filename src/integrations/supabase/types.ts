@@ -71,6 +71,38 @@ export type Database = {
         }
         Relationships: []
       }
+      cart: {
+        Row: {
+          created_at: string | null
+          id: number
+          product_id: number | null
+          quantity: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          product_id?: number | null
+          quantity?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          product_id?: number | null
+          quantity?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory: {
         Row: {
           created_at: string | null
@@ -189,6 +221,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wishlist: {
+        Row: {
+          created_at: string | null
+          id: number
+          product_id: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          product_id?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          product_id?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

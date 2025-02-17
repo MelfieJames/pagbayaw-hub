@@ -1,24 +1,44 @@
 
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/services/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { Product } from "@/types/product";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Search, ShoppingCart } from "lucide-react";
+import { Heart, Search, ShoppingCart, HeartOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Product {
+  id: number;
+  image: string | null;
+  category: string;
+  product_name: string;
+  description: string;
+  product_price: number;
+  created_at: string | null;
+  updated_at: string | null;
+  user_id: string | null;
+  status: string | null;
+  featured: boolean | null;
+  tags: string[] | null;
+}
 
 const Products = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  
-  const { data: products, isLoading, error } = useQuery({
+
+  // Fetch products
+  const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,6 +51,123 @@ const Products = () => {
     }
   });
 
+  // Fetch cart items
+  const { data: cartItems = [] } = useQuery({
+    queryKey: ['cart'],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('cart')
+        .select('product_id, quantity')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  // Fetch wishlist items
+  const { data: wishlistItems = [] } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('wishlist')
+        .select('product_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  // Add to cart mutation
+  const addToCartMutation = useMutation({
+    mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
+      if (!user) throw new Error('Must be logged in');
+      const { error } = await supabase
+        .from('cart')
+        .upsert({ 
+          user_id: user.id, 
+          product_id: productId, 
+          quantity 
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast({ title: "Added to cart" });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Error", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Toggle wishlist mutation
+  const toggleWishlistMutation = useMutation({
+    mutationFn: async (productId: number) => {
+      if (!user) throw new Error('Must be logged in');
+      const isInWishlist = wishlistItems.some(item => item.product_id === productId);
+      
+      if (isInWishlist) {
+        const { error } = await supabase
+          .from('wishlist')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_id', productId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('wishlist')
+          .insert({ user_id: user.id, product_id: productId });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      toast({ title: "Wishlist updated" });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Error", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const handleAddToCart = (product: Product) => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to add items to your cart",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    addToCartMutation.mutate({ productId: product.id, quantity: 1 });
+  };
+
+  const handleToggleWishlist = (product: Product) => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to add items to your wishlist",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    toggleWishlistMutation.mutate(product.id);
+  };
+
   const categories = products ? [...new Set(products.map(product => product.category))] : [];
 
   const filteredProducts = products?.filter(product => {
@@ -39,13 +176,6 @@ const Products = () => {
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  const handleBuyNow = (product: Product) => {
-    toast({
-      title: "Coming Soon",
-      description: "The buy now feature will be available soon!",
-    });
-  };
 
   if (isLoading) {
     return (
@@ -57,14 +187,6 @@ const Products = () => {
         </div>
       </div>
     );
-  }
-
-  if (error) {
-    toast({
-      title: "Error",
-      description: "Failed to load products. Please try again later.",
-      variant: "destructive",
-    });
   }
 
   return (
@@ -106,63 +228,112 @@ const Products = () => {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredProducts?.map((product) => (
-            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div 
-                className="aspect-w-16 aspect-h-9 cursor-pointer"
-                onClick={() => setSelectedProduct(product)}
-              >
-                <img
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.product_name}
-                  className="w-full h-48 object-cover hover:opacity-90 transition-opacity"
-                />
-              </div>
-              <CardHeader>
-                <CardTitle>{product.product_name}</CardTitle>
-                <CardDescription>
-                  <Badge variant="secondary">{product.category}</Badge>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 line-clamp-2">{product.description}</p>
-              </CardContent>
-              <CardFooter>
-                <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
-              </CardFooter>
-            </Card>
-          ))}
+          {filteredProducts?.map((product) => {
+            const isInWishlist = wishlistItems.some(item => item.product_id === product.id);
+            const cartItem = cartItems.find(item => item.product_id === product.id);
+            
+            return (
+              <Card key={product.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="absolute top-2 right-2 z-10 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="bg-white/80 hover:bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleWishlist(product);
+                    }}
+                  >
+                    {isInWishlist ? (
+                      <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                    ) : (
+                      <Heart className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <div 
+                  className="aspect-w-16 aspect-h-9 cursor-pointer"
+                  onClick={() => setSelectedProduct(product)}
+                >
+                  <img
+                    src={product.image || "/placeholder.svg"}
+                    alt={product.product_name}
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+                <CardHeader>
+                  <CardTitle>{product.product_name}</CardTitle>
+                  <CardDescription>
+                    <Badge variant="secondary">{product.category}</Badge>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button 
+                    className="w-full"
+                    onClick={() => handleAddToCart(product)}
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    {cartItem ? 'Update Cart' : 'Add to Cart'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Product Detail Modal */}
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
           <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{selectedProduct?.product_name}</DialogTitle>
-            </DialogHeader>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="aspect-w-16 aspect-h-9">
-                <img
-                  src={selectedProduct?.image || "/placeholder.svg"}
-                  alt={selectedProduct?.product_name}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              </div>
-              <div className="space-y-4">
-                <Badge variant="secondary">{selectedProduct?.category}</Badge>
-                <p className="text-gray-600">{selectedProduct?.description}</p>
-                <p className="text-2xl font-bold">₱{selectedProduct?.product_price.toFixed(2)}</p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button 
-                className="w-full" 
-                onClick={() => selectedProduct && handleBuyNow(selectedProduct)}
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Buy Now
-              </Button>
-            </DialogFooter>
+            {selectedProduct && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{selectedProduct.product_name}</DialogTitle>
+                </DialogHeader>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="aspect-w-16 aspect-h-9">
+                    <img
+                      src={selectedProduct.image || "/placeholder.svg"}
+                      alt={selectedProduct.product_name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <Badge variant="secondary">{selectedProduct.category}</Badge>
+                    <p className="text-gray-600">{selectedProduct.description}</p>
+                    <p className="text-2xl font-bold">₱{selectedProduct.product_price.toFixed(2)}</p>
+                  </div>
+                </div>
+                <DialogFooter className="flex gap-2">
+                  <Button 
+                    className="flex-1"
+                    onClick={() => handleAddToCart(selectedProduct)}
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Add to Cart
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleToggleWishlist(selectedProduct)}
+                    className="flex-1"
+                  >
+                    {wishlistItems.some(item => item.product_id === selectedProduct.id) ? (
+                      <>
+                        <HeartOff className="mr-2 h-4 w-4" />
+                        Remove from Wishlist
+                      </>
+                    ) : (
+                      <>
+                        <Heart className="mr-2 h-4 w-4" />
+                        Add to Wishlist
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>
