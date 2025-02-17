@@ -86,8 +86,9 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
+          className="relative"
           onClick={(e) => {
             if (!isInWishlist) {
               e.preventDefault();
@@ -96,8 +97,13 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
           }}
         >
           <Heart 
-            className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} 
+            className={`h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} 
           />
+          {wishlistItems.length > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              {wishlistItems.length}
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
@@ -105,11 +111,11 @@ export function WishlistPopover({ isInWishlist, onToggleWishlist }: WishlistPopo
           <div className="flex justify-between items-center">
             <h4 className="font-medium">Wishlist</h4>
           </div>
-          <div className="space-y-2 max-h-60 overflow-auto">
+          <div className="space-y-2 max-h-[60vh] overflow-auto">
             {wishlistItems.map((item) => (
               <div 
                 key={item.product_id} 
-                className="flex items-center gap-2 p-2 border rounded-lg"
+                className="flex items-center gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95"
               >
                 <img 
                   src={item.products?.image || "/placeholder.svg"} 

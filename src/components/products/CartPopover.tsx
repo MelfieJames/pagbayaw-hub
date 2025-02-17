@@ -1,6 +1,5 @@
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -11,7 +10,7 @@ import { supabase } from "@/services/supabase/client";
 import { CartItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, X } from "lucide-react";
+import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface CartPopoverProps {
@@ -70,6 +69,25 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
     enabled: !!user?.id
   });
 
+  const updateQuantity = async (productId: number, newQuantity: number) => {
+    if (!user?.id || newQuantity < 1) return;
+
+    try {
+      const { error } = await supabase
+        .from('cart')
+        .update({ quantity: newQuantity })
+        .eq('user_id', user.id)
+        .eq('product_id', productId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      toast("Failed to update quantity");
+    }
+  };
+
   const removeFromCart = async (productId: number) => {
     if (!user?.id) return;
 
@@ -98,8 +116,9 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
     <Popover>
       <PopoverTrigger asChild>
         <Button 
-          variant={isInCart ? "secondary" : "default"}
+          variant="ghost"
           size="icon"
+          className="relative"
           onClick={(e) => {
             if (!isInCart) {
               e.preventDefault();
@@ -107,7 +126,12 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
             }
           }}
         >
-          <ShoppingCart className="h-4 w-4" />
+          <ShoppingCart className="h-5 w-5" />
+          {cartItems.length > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              {cartItems.length}
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
@@ -122,13 +146,12 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
               View Cart
             </Button>
           </div>
-          <div className="space-y-2 max-h-60 overflow-auto">
+          <div className="space-y-2 max-h-[60vh] overflow-auto">
             {cartItems.map((item) => (
               <div 
                 key={item.product_id} 
-                className="flex items-center gap-2 p-2 border rounded-lg"
+                className="flex items-center gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95"
               >
-                <Checkbox />
                 <img 
                   src={item.products?.image || "/placeholder.svg"} 
                   alt={item.products?.product_name} 
@@ -139,8 +162,27 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
                     {item.products?.product_name}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    ₱{item.products?.product_price.toFixed(2)} × {item.quantity}
+                    ₱{item.products?.product_price.toFixed(2)}
                   </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-sm w-8 text-center">{item.quantity}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
