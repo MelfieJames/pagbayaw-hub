@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/services/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -100,6 +99,9 @@ const Products = () => {
     enabled: !!user
   });
 
+  // Get unique categories
+  const categories = products ? [...new Set(products.map(product => product.category))] : [];
+
   // Filter products based on search and category
   const filteredProducts = products?.filter(product => {
     const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,9 +109,6 @@ const Products = () => {
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  // Get unique categories
-  const categories = products ? [...new Set(products.map(product => product.category))] : [];
 
   // Group products by category
   const groupedProducts = filteredProducts?.reduce((acc, product) => {
@@ -266,15 +265,6 @@ const Products = () => {
     }
     toggleWishlistMutation.mutate(product.id);
   };
-
-  const categories = products ? [...new Set(products.map(product => product.category))] : [];
-
-  const filteredProducts = products?.filter(product => {
-    const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
 
   if (productsError) {
     return (
