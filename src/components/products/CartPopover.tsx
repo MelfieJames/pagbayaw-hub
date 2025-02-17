@@ -34,7 +34,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
   const queryClient = useQueryClient();
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
-    queryKey: ['cart'],
+    queryKey: ['cart-details'],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data: responseData, error } = await supabase
@@ -81,7 +81,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
 
       if (error) throw error;
 
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
     } catch (error) {
       console.error('Error updating quantity:', error);
       toast("Failed to update quantity");
@@ -100,7 +100,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
 
       if (error) throw error;
 
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       toast("Item removed from cart");
     } catch (error) {
       console.error('Error removing from cart:', error);
@@ -138,13 +138,6 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">Shopping Cart</h4>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate('/cart')}
-            >
-              View Cart
-            </Button>
           </div>
           <div className="space-y-2 max-h-[60vh] overflow-auto">
             {cartItems.map((item) => (
@@ -200,7 +193,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
                 <span className="font-medium">Total:</span>
                 <span className="font-medium">₱{total.toFixed(2)}</span>
               </div>
-              <Button className="w-full" onClick={() => navigate('/cart')}>
+              <Button className="w-full" onClick={() => navigate('/checkout')}>
                 Proceed to Checkout
               </Button>
             </div>

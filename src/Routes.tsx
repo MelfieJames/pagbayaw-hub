@@ -9,6 +9,7 @@ import Achievements from "@/pages/Achievements";
 import AdminDashboard from "@/pages/AdminDashboard";
 import ProductManagement from "@/pages/ProductManagement";
 import AchievementManagement from "@/pages/AchievementManagement";
+import Checkout from "@/pages/Checkout";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -40,6 +41,16 @@ const Routes = () => {
       <Route path="/products" element={<Products />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/achievements" element={<Achievements />} />
+
+      {/* Protected Routes */}
+      <Route
+        path="/checkout"
+        element={
+          <ProtectedRoute>
+            <Checkout />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin Routes */}
       <Route
