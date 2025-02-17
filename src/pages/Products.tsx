@@ -87,14 +87,30 @@ const Products = () => {
   const addToCartMutation = useMutation({
     mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
       if (!user) throw new Error('Must be logged in');
-      const { error } = await supabase
+      
+      // Check if the product is already in the cart
+      const { data: existingItem } = await supabase
         .from('cart')
-        .upsert({ 
-          user_id: user.id, 
-          product_id: productId, 
-          quantity 
-        });
-      if (error) throw error;
+        .select('quantity')
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+        .single();
+
+      if (existingItem) {
+        // If item exists, update the quantity
+        const { error } = await supabase
+          .from('cart')
+          .update({ quantity: existingItem.quantity + quantity })
+          .eq('user_id', user.id)
+          .eq('product_id', productId);
+        if (error) throw error;
+      } else {
+        // If item doesn't exist, insert new record
+        const { error } = await supabase
+          .from('cart')
+          .insert({ user_id: user.id, product_id: productId, quantity });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
