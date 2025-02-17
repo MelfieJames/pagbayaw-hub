@@ -171,12 +171,14 @@ const Products = () => {
       if (!user) throw new Error('Must be logged in');
       
       // Check if the product is already in the cart
-      const { data: existingItem } = await supabase
+      const { data: existingItem, error: fetchError } = await supabase
         .from('cart')
         .select('quantity')
         .eq('user_id', user.id)
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
 
       if (existingItem) {
         // If item exists, update the quantity
