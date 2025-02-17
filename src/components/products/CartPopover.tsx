@@ -45,7 +45,17 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
         console.error('Cart fetch error:', error);
         return [];
       }
-      return (data as CartItem[]) || [];
+      
+      // Properly transform the data to match CartItem type
+      return (data || []).map(item => ({
+        quantity: item.quantity,
+        product_id: item.product_id,
+        products: item.products ? {
+          product_name: item.products.product_name,
+          product_price: item.products.product_price,
+          image: item.products.image
+        } : null
+      }));
     },
     enabled: !!user?.id
   });
