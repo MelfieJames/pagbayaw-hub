@@ -133,11 +133,18 @@ const Products = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
-      toast("Item added to cart");
+      toast({
+        title: "Success",
+        description: "Item added to cart"
+      });
     },
     onError: (error) => {
       console.error('Error adding to cart:', error);
-      toast("Failed to add item to cart");
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart",
+        variant: "destructive"
+      });
     }
   });
 
