@@ -16,6 +16,7 @@ type SupabaseCartResponse = {
     product_name: string;
     product_price: number;
     image: string | null;
+    category: string;
   };
 }
 
@@ -35,7 +36,8 @@ export default function Checkout() {
           products (
             product_name,
             product_price,
-            image
+            image,
+            category
           )
         `)
         .eq('user_id', user.id)
@@ -52,7 +54,8 @@ export default function Checkout() {
         products: {
           product_name: item.products.product_name,
           product_price: item.products.product_price,
-          image: item.products.image
+          image: item.products.image,
+          category: item.products.category
         }
       }));
     },

@@ -38,7 +38,6 @@ const Products = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   const { data: products, isLoading, error: productsError } = useQuery({
     queryKey: ['products'],
@@ -117,6 +116,30 @@ const Products = () => {
     acc[product.category].push(product);
     return acc;
   }, {} as Record<string, Product[]>) || {};
+
+  const addToCartMutation = useMutation({
+    mutationFn: async ({ productId, quantity }: { productId: number; quantity: number }) => {
+      if (!user?.id) throw new Error('User must be logged in');
+      
+      const { error } = await supabase
+        .from('cart')
+        .upsert({
+          user_id: user.id,
+          product_id: productId,
+          quantity
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
+      toast("Item added to cart");
+    },
+    onError: (error) => {
+      console.error('Error adding to cart:', error);
+      toast("Failed to add item to cart");
+    }
+  });
 
   return (
     <div className="min-h-screen">
