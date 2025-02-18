@@ -40,6 +40,7 @@ export interface CartItem {
     product_name: string;
     product_price: number;
     image: string | null;
+    category: string;
   } | null;
 }
 

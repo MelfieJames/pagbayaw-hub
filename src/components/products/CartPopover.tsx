@@ -10,13 +10,10 @@ import { supabase } from "@/services/supabase/client";
 import { CartItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import { toast } from "sonner";
-
-interface CartPopoverProps {
-  isInCart: boolean;
-  onAddToCart: () => void;
-}
+import { useState } from "react";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -25,13 +22,15 @@ type SupabaseCartResponse = {
     product_name: string;
     product_price: number;
     image: string | null;
+    category: string;
   };
 }
 
-export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
+export function CartPopover() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ['cart-details'],
@@ -45,7 +44,8 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
           products (
             product_name,
             product_price,
-            image
+            image,
+            category
           )
         `)
         .eq('user_id', user.id)
@@ -62,7 +62,8 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
         products: {
           product_name: item.products.product_name,
           product_price: item.products.product_price,
-          image: item.products.image
+          image: item.products.image,
+          category: item.products.category
         }
       }));
     },
@@ -100,6 +101,7 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
 
       if (error) throw error;
 
+      setSelectedItems(prev => prev.filter(id => id !== productId));
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       toast("Item removed from cart");
     } catch (error) {
@@ -108,9 +110,26 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
     }
   };
 
-  const total = cartItems.reduce((sum, item) => {
-    return sum + (item.quantity * (item.products?.product_price || 0));
-  }, 0);
+  const toggleItemSelection = (productId: number) => {
+    setSelectedItems(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const groupedCartItems = cartItems.reduce((acc, item) => {
+    const category = item.products?.category || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, CartItem[]>);
+
+  const selectedTotal = cartItems
+    .filter(item => selectedItems.includes(item.product_id))
+    .reduce((sum, item) => sum + (item.quantity * (item.products?.product_price || 0)), 0);
 
   return (
     <Popover>
@@ -119,12 +138,6 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
           variant="ghost"
           size="icon"
           className="relative"
-          onClick={(e) => {
-            if (!isInCart) {
-              e.preventDefault();
-              onAddToCart();
-            }
-          }}
         >
           <ShoppingCart className="h-5 w-5" />
           {cartItems.length > 0 && (
@@ -139,61 +152,75 @@ export function CartPopover({ isInCart, onAddToCart }: CartPopoverProps) {
           <div className="flex justify-between items-center">
             <h4 className="font-medium">Shopping Cart</h4>
           </div>
-          <div className="space-y-2 max-h-[60vh] overflow-auto">
-            {cartItems.map((item) => (
-              <div 
-                key={item.product_id} 
-                className="flex items-center gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95"
-              >
-                <img 
-                  src={item.products?.image || "/placeholder.svg"} 
-                  alt={item.products?.product_name} 
-                  className="w-12 h-12 object-cover rounded"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {item.products?.product_name}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    ₱{item.products?.product_price.toFixed(2)}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
+          <div className="space-y-4 max-h-[60vh] overflow-auto">
+            {Object.entries(groupedCartItems).map(([category, items]) => (
+              <div key={category} className="space-y-2">
+                <h5 className="font-medium text-sm text-muted-foreground">{category}</h5>
+                {items.map((item) => (
+                  <div 
+                    key={item.product_id} 
+                    className="flex items-start gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95"
+                  >
+                    <Checkbox 
+                      checked={selectedItems.includes(item.product_id)}
+                      onCheckedChange={() => toggleItemSelection(item.product_id)}
+                      className="mt-2"
+                    />
+                    <img 
+                      src={item.products?.image || "/placeholder.svg"} 
+                      alt={item.products?.product_name} 
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {item.products?.product_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        ₱{item.products?.product_price.toFixed(2)}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="text-sm w-8 text-center">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
-                      onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                      onClick={() => removeFromCart(item.product_id)}
                     >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-sm w-8 text-center">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                    >
-                      <Plus className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeFromCart(item.product_id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                ))}
               </div>
             ))}
           </div>
           {cartItems.length > 0 ? (
             <div className="pt-4 border-t">
               <div className="flex justify-between mb-4">
-                <span className="font-medium">Total:</span>
-                <span className="font-medium">₱{total.toFixed(2)}</span>
+                <span className="font-medium">Selected Total:</span>
+                <span className="font-medium">₱{selectedTotal.toFixed(2)}</span>
               </div>
-              <Button className="w-full" onClick={() => navigate('/checkout')}>
+              <Button 
+                className="w-full" 
+                onClick={() => navigate('/checkout')}
+                disabled={selectedItems.length === 0}
+              >
                 Proceed to Checkout
               </Button>
             </div>
