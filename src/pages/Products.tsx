@@ -160,8 +160,8 @@ const Products = () => {
         <div className="mb-8 space-y-4">
           <div className="flex justify-between items-center gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search products..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 bg-green-50 rounded-2xl py-0 my-0 mx-[240px] px-0" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground mx-[240px]" />
+              <Input placeholder="Search products..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 bg-green-50 rounded-2xl py-0 mx-[240px] my-0 px-[41px]" />
             </div>
             <CartPopover />
           </div>
