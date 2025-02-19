@@ -5,13 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Search, ShoppingCart, Star } from "lucide-react";
+import { Search, ShoppingCart, Star, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { CartPopover } from "@/components/products/CartPopover";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Product {
   id: number;
@@ -46,6 +48,10 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPriceRange, setSelectedPriceRange] = useState(priceRanges[0]);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
+  const [showReviews, setShowReviews] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   const {
     data: products,
@@ -161,12 +167,52 @@ const Products = () => {
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
+  const handleRatingSubmit = async () => {
+    if (!user || !selectedProduct) return;
+    
+    try {
+      toast({
+        title: "Thank you!",
+        description: "Your rating has been submitted successfully.",
+      });
+      setRating(0);
+      setReview("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit rating",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleItemSelection = (productId: number) => {
+    setSelectedItems(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleBuyNow = (productId: number) => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to purchase items",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    addToCartMutation.mutate({ productId, quantity: 1 }, {
+      onSuccess: () => navigate("/checkout")
+    });
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#FDE1D3]">
       <Navbar />
-      <div className="container mx-auto px-4 pt-20">
-        <h1 className="text-4xl font-bold text-center mb-8">Our Products</h1>
-        
+      <div className="container mx-auto px-4 pt-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-6">
             <div>
@@ -225,7 +271,7 @@ const Products = () => {
 
           <div className="md:col-span-3">
             <div className="flex justify-between items-center mb-6">
-              <div className="relative flex-1 max-w-md">
+              <div className="relative flex-1 mr-4">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search products..." 
@@ -241,23 +287,33 @@ const Products = () => {
               {filteredProducts?.map((product) => (
                 <Card 
                   key={product.id} 
-                  className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
+                  className="relative overflow-hidden hover:shadow-lg transition-shadow"
                 >
-                  <div className="aspect-w-1 aspect-h-1">
-                    <img 
-                      src={product.image || "/placeholder.svg"} 
-                      alt={product.product_name} 
-                      className="w-full h-48 object-cover"
+                  <div className="absolute top-2 left-2 z-10">
+                    <Checkbox
+                      checked={selectedItems.includes(product.id)}
+                      onCheckedChange={() => toggleItemSelection(product.id)}
                     />
                   </div>
-                  <CardHeader className="space-y-1">
-                    <Badge variant="secondary" className="bg-[#F2FCE2] text-foreground w-fit">
-                      {product.category}
-                    </Badge>
-                    <CardTitle className="text-lg">{product.product_name}</CardTitle>
-                    <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
-                  </CardHeader>
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    <div className="aspect-w-1 aspect-h-1">
+                      <img 
+                        src={product.image || "/placeholder.svg"} 
+                        alt={product.product_name} 
+                        className="w-full h-48 object-cover"
+                      />
+                    </div>
+                    <CardHeader className="space-y-1">
+                      <Badge variant="secondary" className="bg-[#F2FCE2] text-foreground w-fit">
+                        {product.category}
+                      </Badge>
+                      <CardTitle className="text-lg">{product.product_name}</CardTitle>
+                      <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
+                    </CardHeader>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -278,25 +334,67 @@ const Products = () => {
                     <Badge variant="secondary">{selectedProduct.category}</Badge>
                     <p className="text-gray-600">{selectedProduct.description}</p>
                     <p className="text-2xl font-bold">₱{selectedProduct.product_price.toFixed(2)}</p>
+                    
+                    <div className="flex space-x-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-6 w-6 cursor-pointer ${
+                            rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                          }`}
+                          onClick={() => setRating(star)}
+                        />
+                      ))}
+                    </div>
+                    
+                    <Textarea
+                      placeholder="Write your review..."
+                      value={review}
+                      onChange={(e) => setReview(e.target.value)}
+                      className="h-24"
+                    />
+                    
+                    <Button onClick={handleRatingSubmit} disabled={rating === 0}>
+                      Submit Review
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowReviews(true)}
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      View Ratings
+                    </Button>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button className="w-full" onClick={() => {
-                if (!user) {
-                  toast({
-                    title: "Please log in",
-                    description: "You need to be logged in to add items to your cart",
-                    variant: "destructive"
-                  });
-                  navigate("/login");
-                  return;
-                }
-                addToCartMutation.mutate({
-                  productId: selectedProduct.id,
-                  quantity: 1
-                });
-                setSelectedProduct(null);
-              }}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleBuyNow(selectedProduct.id)}
+                    className="w-full sm:w-auto"
+                  >
+                    Buy Now
+                  </Button>
+                  <Button
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      if (!user) {
+                        toast({
+                          title: "Please log in",
+                          description: "You need to be logged in to add items to your cart",
+                          variant: "destructive"
+                        });
+                        navigate("/login");
+                        return;
+                      }
+                      addToCartMutation.mutate({
+                        productId: selectedProduct.id,
+                        quantity: 1
+                      });
+                      setSelectedProduct(null);
+                    }}
+                  >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart
                   </Button>
