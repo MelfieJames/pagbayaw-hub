@@ -24,7 +24,7 @@ export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const { data: cartItems = [], refetch: refetchCart } = useQuery<CartItem[]>({
+  const { data: cartItems = [], refetch: refetchCart } = useQuery<CartItem[], Error>({
     queryKey: ['cart-details'],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -59,7 +59,8 @@ export default function Checkout() {
         }
       }));
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    initialData: []
   });
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
@@ -75,10 +76,10 @@ export default function Checkout() {
       if (error) throw error;
 
       refetchCart();
-      toast("Cart updated");
+      toast.success("Cart updated");
     } catch (error) {
       console.error('Error updating quantity:', error);
-      toast("Failed to update cart");
+      toast.error("Failed to update cart");
     }
   };
 
@@ -95,10 +96,10 @@ export default function Checkout() {
       if (error) throw error;
 
       refetchCart();
-      toast("Item removed from cart");
+      toast.success("Item removed from cart");
     } catch (error) {
       console.error('Error removing from cart:', error);
-      toast("Failed to remove item");
+      toast.error("Failed to remove item");
     }
   };
 
@@ -108,7 +109,7 @@ export default function Checkout() {
 
   const handleCheckout = () => {
     // TODO: Implement payment processing
-    toast("Checkout functionality coming soon!");
+    toast.info("Checkout functionality coming soon!");
   };
 
   if (!user) {
