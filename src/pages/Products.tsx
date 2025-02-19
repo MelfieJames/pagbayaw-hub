@@ -1,19 +1,18 @@
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/services/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Search, ShoppingCart, Heart, HeartOff, Check } from "lucide-react";
+import { Search, ShoppingCart, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Checkbox } from "@/components/ui/checkbox";
 import { CartPopover } from "@/components/products/CartPopover";
-import { WishlistPopover } from "@/components/products/WishlistPopover";
+
 interface Product {
   id: number;
   image: string | null;
@@ -28,18 +27,26 @@ interface Product {
   featured: boolean | null;
   tags: string[] | null;
 }
+
+const priceRanges = [
+  { label: 'All', min: 0, max: Infinity },
+  { label: 'Under ₱100', min: 0, max: 100 },
+  { label: 'Under ₱200', min: 0, max: 200 },
+  { label: 'Under ₱300', min: 0, max: 300 },
+  { label: 'Under ₱500', min: 0, max: 500 },
+  { label: '₱500 and above', min: 500, max: Infinity }
+];
+
 const Products = () => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedPriceRange, setSelectedPriceRange] = useState(priceRanges[0]);
+
   const {
     data: products,
     isLoading,
@@ -70,6 +77,7 @@ const Products = () => {
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
+
   const addToCartMutation = useMutation({
     mutationFn: async ({
       productId,
@@ -106,6 +114,7 @@ const Products = () => {
       });
     }
   });
+
   const {
     data: cartItems = []
   } = useQuery({
@@ -124,6 +133,7 @@ const Products = () => {
     },
     enabled: !!user?.id
   });
+
   const {
     data: wishlistItems = []
   } = useQuery({
@@ -139,62 +149,120 @@ const Products = () => {
     },
     enabled: !!user
   });
+
   const categories = products ? [...new Set(products.map(product => product.category))] : [];
+
   const filteredProducts = products?.filter(product => {
-    const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) || product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesPrice = product.product_price >= selectedPriceRange.min && 
+                        product.product_price <= selectedPriceRange.max;
+    return matchesSearch && matchesCategory && matchesPrice;
   });
-  const groupedProducts = filteredProducts?.reduce((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
-    }
-    acc[product.category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>) || {};
-  return <div className="min-h-screen">
+
+  return (
+    <div className="min-h-screen">
       <Navbar />
-      <div className="pt-20 container mx-auto px-4">
+      <div className="container mx-auto px-4 pt-20">
         <h1 className="text-4xl font-bold text-center mb-8">Our Products</h1>
         
-        <div className="mb-8 space-y-4">
-          <div className="flex justify-between items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground mx-[240px]" />
-              <Input placeholder="Search products..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 bg-green-50 rounded-2xl py-0 mx-[240px] my-0 px-[41px]" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold mb-3">Category</h2>
+              <div className="space-y-2">
+                <Button 
+                  variant={selectedCategory === null ? "secondary" : "outline"} 
+                  onClick={() => setSelectedCategory(null)}
+                  className="w-full justify-start"
+                >
+                  All Categories
+                </Button>
+                {categories.map(category => (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? "secondary" : "outline"}
+                    onClick={() => setSelectedCategory(category)}
+                    className="w-full justify-start"
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <CartPopover />
+
+            <div>
+              <h2 className="text-lg font-semibold mb-3">Price Range</h2>
+              <div className="space-y-2">
+                {priceRanges.map((range) => (
+                  <Button
+                    key={range.label}
+                    variant={selectedPriceRange === range ? "secondary" : "outline"}
+                    onClick={() => setSelectedPriceRange(range)}
+                    className="w-full justify-start"
+                  >
+                    {range.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold mb-3">Customer Reviews</h2>
+              <div className="space-y-2">
+                {[5, 4, 3, 2, 1].map((rating) => (
+                  <div key={rating} className="flex items-center space-x-1 text-muted-foreground">
+                    {Array(rating).fill(0).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-current" />
+                    ))}
+                    <span>& up</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button variant={selectedCategory === null ? "secondary" : "outline"} onClick={() => setSelectedCategory(null)}>
-              All
-            </Button>
-            {categories.map(category => <Button key={category} variant={selectedCategory === category ? "secondary" : "outline"} onClick={() => setSelectedCategory(category)}>
-                {category}
-              </Button>)}
+
+          <div className="md:col-span-3">
+            <div className="flex justify-between items-center mb-6">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search products..." 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                  className="pl-10" 
+                />
+              </div>
+              <CartPopover />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {filteredProducts?.map((product) => (
+                <Card 
+                  key={product.id} 
+                  className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => setSelectedProduct(product)}
+                >
+                  <div className="aspect-w-1 aspect-h-1">
+                    <img 
+                      src={product.image || "/placeholder.svg"} 
+                      alt={product.product_name} 
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
+                  <CardHeader className="space-y-1">
+                    <Badge variant="secondary" className="bg-[#F2FCE2] text-foreground w-fit">
+                      {product.category}
+                    </Badge>
+                    <CardTitle className="text-lg">{product.product_name}</CardTitle>
+                    <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
-
-        {Object.entries(groupedProducts).map(([category, categoryProducts]) => <div key={category} className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">{category}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categoryProducts.map(product => <Card key={product.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-w-16 aspect-h-9 cursor-pointer" onClick={() => setSelectedProduct(product)}>
-                    <img src={product.image || "/placeholder.svg"} alt={product.product_name} className="w-full h-48 object-cover" />
-                  </div>
-                  <CardHeader>
-                    <CardTitle>{product.product_name}</CardTitle>
-                    <CardDescription>
-                      <Badge variant="secondary">{product.category}</Badge>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xl font-bold">₱{product.product_price.toFixed(2)}</p>
-                  </CardContent>
-                </Card>)}
-            </div>
-          </div>)}
 
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
           <DialogContent className="max-w-3xl">
@@ -237,6 +305,8 @@ const Products = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Products;
