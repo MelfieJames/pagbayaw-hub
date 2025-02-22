@@ -29,6 +29,19 @@ interface ReviewSectionProps {
 export const ReviewSection = ({ reviews }: ReviewSectionProps) => {
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
 
+  // Group reviews by product to calculate averages
+  const productStats = reviews.reduce((acc, review) => {
+    if (!acc[review.product_id]) {
+      acc[review.product_id] = {
+        count: 0,
+        totalRating: 0
+      };
+    }
+    acc[review.product_id].count++;
+    acc[review.product_id].totalRating += review.rating;
+    return acc;
+  }, {} as Record<number, { count: number; totalRating: number }>);
+
   return (
     <div className="mt-12 mb-8">
       <h2 className="text-2xl font-semibold mb-6">Recent Reviews</h2>
@@ -48,9 +61,14 @@ export const ReviewSection = ({ reviews }: ReviewSectionProps) => {
                   <CardTitle className="text-base truncate">
                     {review.products.product_name}
                   </CardTitle>
-                  <Badge variant="secondary" className="mt-1 mb-2">
-                    {review.products.category}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="mt-1 mb-2">
+                      {review.products.category}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {productStats[review.product_id].count} reviews
+                    </span>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="flex space-x-1 mb-2">

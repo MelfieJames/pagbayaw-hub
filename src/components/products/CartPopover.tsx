@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -131,6 +130,14 @@ export function CartPopover() {
     .filter(item => selectedItems.includes(item.product_id))
     .reduce((sum, item) => sum + (item.quantity * (item.products?.product_price || 0)), 0);
 
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      toast("Please select items to checkout");
+      return;
+    }
+    navigate('/checkout', { state: { selectedItems } });
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -218,10 +225,10 @@ export function CartPopover() {
               </div>
               <Button 
                 className="w-full" 
-                onClick={() => navigate('/checkout')}
+                onClick={handleCheckout}
                 disabled={selectedItems.length === 0}
               >
-                Proceed to Checkout
+                Proceed to Checkout ({selectedItems.length} items)
               </Button>
             </div>
           ) : (

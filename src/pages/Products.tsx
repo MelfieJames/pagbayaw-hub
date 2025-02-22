@@ -233,12 +233,14 @@ const Products = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       toast({
         title: "Thank you!",
-        description: "Your review has been submitted successfully.",
+        description: `Thank you for reviewing ${selectedProduct?.product_name}.`,
       });
       setRating(0);
       setReview("");
+      setSelectedProduct(null);
     },
     onError: (error) => {
       console.error('Error submitting review:', error);
@@ -289,12 +291,23 @@ const Products = () => {
     setSelectedProduct(null);
   };
 
+  const productRatings = (allReviews || []).reduce((acc, review) => {
+    if (!acc[review.product_id]) {
+      acc[review.product_id] = {
+        total: 0,
+        count: 0
+      };
+    }
+    acc[review.product_id].total += review.rating;
+    acc[review.product_id].count += 1;
+    return acc;
+  }, {} as Record<number, { total: number; count: number }>);
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="container mx-auto px-4 pt-20"> {/* Adjusted padding top */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Filters Sidebar */}
+      <div className="container mx-auto px-4 pt-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold mb-3">Category</h2>
@@ -350,7 +363,6 @@ const Products = () => {
             </div>
           </div>
 
-          {/* Products Grid */}
           <div className="md:col-span-3">
             <div className="flex justify-between items-center mb-6">
               <div className="relative flex-1 mr-4">
@@ -384,18 +396,26 @@ const Products = () => {
                       {product.category}
                     </Badge>
                     <CardTitle className="text-lg">{product.product_name}</CardTitle>
-                    <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
+                    <CardDescription>
+                      <div className="flex items-center gap-2">
+                        <span>₱{product.product_price.toFixed(2)}</span>
+                        {productRatings[product.id] && (
+                          <span className="text-xs text-muted-foreground">
+                            {(productRatings[product.id].total / productRatings[product.id].count).toFixed(1)} ★ 
+                            ({productRatings[product.id].count})
+                          </span>
+                        )}
+                      </div>
+                    </CardDescription>
                   </CardHeader>
                 </Card>
               ))}
             </div>
 
-            {/* Review Section */}
             <ReviewSection reviews={allReviews} />
           </div>
         </div>
 
-        {/* Product Details Dialog */}
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
           <DialogContent className="max-w-3xl">
             {selectedProduct && (
@@ -470,7 +490,6 @@ const Products = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Reviews Modal */}
         {selectedProduct && (
           <ReviewsModal
             isOpen={showReviewsModal}
