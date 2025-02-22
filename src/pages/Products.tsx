@@ -15,6 +15,7 @@ import { CartPopover } from "@/components/products/CartPopover";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ReviewsModal } from "@/components/products/ReviewsModal";
+import { ReviewSection } from "@/components/products/ReviewSection";
 
 interface Product {
   id: number;
@@ -249,11 +250,51 @@ const Products = () => {
     }
   });
 
+  const { data: allReviews = [] } = useQuery({
+    queryKey: ['all-reviews'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles(email),
+          products(
+            product_name,
+            category,
+            image
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(12);
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const handleAddToCart = (productId: number) => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to add items to your cart",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    addToCartMutation.mutate({
+      productId: productId,
+      quantity: 1
+    });
+    setSelectedProduct(null);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="container mx-auto px-4 pt-8">
+      <div className="container mx-auto px-4 pt-20"> {/* Adjusted padding top */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Filters Sidebar */}
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold mb-3">Category</h2>
@@ -309,6 +350,7 @@ const Products = () => {
             </div>
           </div>
 
+          {/* Products Grid */}
           <div className="md:col-span-3">
             <div className="flex justify-between items-center mb-6">
               <div className="relative flex-1 mr-4">
@@ -327,39 +369,33 @@ const Products = () => {
               {filteredProducts?.map((product) => (
                 <Card 
                   key={product.id} 
-                  className="relative overflow-hidden hover:shadow-lg transition-shadow"
+                  className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => setSelectedProduct(product)}
                 >
-                  <div className="absolute top-2 left-2 z-10">
-                    <Checkbox
-                      checked={selectedItems.includes(product.id)}
-                      onCheckedChange={() => toggleItemSelection(product.id)}
+                  <div className="aspect-w-1 aspect-h-1">
+                    <img 
+                      src={product.image || "/placeholder.svg"} 
+                      alt={product.product_name} 
+                      className="w-full h-48 object-cover"
                     />
                   </div>
-                  <div 
-                    className="cursor-pointer"
-                    onClick={() => setSelectedProduct(product)}
-                  >
-                    <div className="aspect-w-1 aspect-h-1">
-                      <img 
-                        src={product.image || "/placeholder.svg"} 
-                        alt={product.product_name} 
-                        className="w-full h-48 object-cover"
-                      />
-                    </div>
-                    <CardHeader className="space-y-1">
-                      <Badge variant="secondary" className="bg-[#F2FCE2] text-foreground w-fit">
-                        {product.category}
-                      </Badge>
-                      <CardTitle className="text-lg">{product.product_name}</CardTitle>
-                      <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
-                    </CardHeader>
-                  </div>
+                  <CardHeader className="space-y-1">
+                    <Badge variant="secondary" className="bg-[#F2FCE2] text-foreground w-fit">
+                      {product.category}
+                    </Badge>
+                    <CardTitle className="text-lg">{product.product_name}</CardTitle>
+                    <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
+                  </CardHeader>
                 </Card>
               ))}
             </div>
+
+            {/* Review Section */}
+            <ReviewSection reviews={allReviews} />
           </div>
         </div>
 
+        {/* Product Details Dialog */}
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
           <DialogContent className="max-w-3xl">
             {selectedProduct && (
@@ -369,7 +405,11 @@ const Products = () => {
                 </DialogHeader>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="aspect-w-16 aspect-h-9">
-                    <img src={selectedProduct.image || "/placeholder.svg"} alt={selectedProduct.product_name} className="w-full h-full object-cover rounded-lg" />
+                    <img 
+                      src={selectedProduct.image || "/placeholder.svg"} 
+                      alt={selectedProduct.product_name} 
+                      className="w-full h-full object-cover rounded-lg"
+                    />
                   </div>
                   <div className="space-y-4">
                     <Badge variant="secondary">{selectedProduct.category}</Badge>
@@ -389,7 +429,7 @@ const Products = () => {
                     </div>
                     
                     <Textarea
-                      placeholder="Write your review..."
+                      placeholder="Write your review (optional)..."
                       value={review}
                       onChange={(e) => setReview(e.target.value)}
                       className="h-24"
@@ -405,7 +445,7 @@ const Products = () => {
                       onClick={() => setShowReviewsModal(true)}
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
-                      View Ratings
+                      View Product Reviews
                     </Button>
                   </div>
                 </div>
@@ -419,22 +459,7 @@ const Products = () => {
                   </Button>
                   <Button
                     className="w-full sm:w-auto"
-                    onClick={() => {
-                      if (!user) {
-                        toast({
-                          title: "Please log in",
-                          description: "You need to be logged in to add items to your cart",
-                          variant: "destructive"
-                        });
-                        navigate("/login");
-                        return;
-                      }
-                      addToCartMutation.mutate({
-                        productId: selectedProduct.id,
-                        quantity: 1
-                      });
-                      setSelectedProduct(null);
-                    }}
+                    onClick={() => handleAddToCart(selectedProduct.id)}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart
@@ -445,6 +470,7 @@ const Products = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Reviews Modal */}
         {selectedProduct && (
           <ReviewsModal
             isOpen={showReviewsModal}
