@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ReviewsModal } from "@/components/products/ReviewsModal";
 import { ReviewSection } from "@/components/products/ReviewSection";
+import { ProductDetailsModal } from "@/components/products/ProductDetailsModal";
+import { cn } from "@/lib/utils";
 
 interface Product {
   id: number;
@@ -41,7 +43,7 @@ const priceRanges = [
   { label: '₱500 and above', min: 500, max: Infinity }
 ];
 
-const Products = () => {
+export default function Products() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -303,11 +305,26 @@ const Products = () => {
     return acc;
   }, {} as Record<number, { total: number; count: number }>);
 
+  const { data: inventoryData } = useQuery({
+    queryKey: ['inventory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const getInventoryForProduct = (productId: number) => {
+    return inventoryData?.find(item => item.product_id === productId);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <div className="container mx-auto px-4 pt-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold mb-3">Category</h2>
@@ -378,129 +395,63 @@ const Products = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredProducts?.map((product) => (
-                <Card 
-                  key={product.id} 
-                  className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
-                >
-                  <div className="aspect-w-1 aspect-h-1">
-                    <img 
-                      src={product.image || "/placeholder.svg"} 
-                      alt={product.product_name} 
-                      className="w-full h-48 object-cover"
-                    />
-                  </div>
-                  <CardHeader className="space-y-1">
-                    <Badge variant="secondary" className="bg-[#F2FCE2] text-foreground w-fit">
-                      {product.category}
-                    </Badge>
-                    <CardTitle className="text-lg">{product.product_name}</CardTitle>
-                    <CardDescription>
-                      <div className="flex items-center gap-2">
-                        <span>₱{product.product_price.toFixed(2)}</span>
-                        {productRatings[product.id] && (
-                          <span className="text-xs text-muted-foreground">
-                            {(productRatings[product.id].total / productRatings[product.id].count).toFixed(1)} ★ 
-                            ({productRatings[product.id].count})
-                          </span>
-                        )}
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
+              {filteredProducts?.map((product) => {
+                const inventory = getInventoryForProduct(product.id);
+                const isOutOfStock = inventory?.quantity === 0;
 
-            <ReviewSection reviews={allReviews} />
+                return (
+                  <Card 
+                    key={product.id}
+                    data-product-id={product.id}
+                    className={cn(
+                      "relative overflow-hidden transition-shadow",
+                      !isOutOfStock && "hover:shadow-lg cursor-pointer"
+                    )}
+                    onClick={() => !isOutOfStock && setSelectedProduct(product)}
+                  >
+                    <div className="aspect-square">
+                      <img 
+                        src={product.image || "/placeholder.svg"} 
+                        alt={product.product_name} 
+                        className={cn(
+                          "w-full h-full object-cover",
+                          isOutOfStock && "blur-[2px] brightness-90"
+                        )}
+                      />
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="bg-black/60 text-white px-4 py-2 rounded-md font-medium">
+                            Out of Stock
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader className="space-y-1">
+                      <Badge variant="secondary" className="w-fit">
+                        {product.category}
+                      </Badge>
+                      <CardTitle className="text-lg">{product.product_name}</CardTitle>
+                      <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-          <DialogContent className="max-w-3xl">
-            {selectedProduct && (
-              <>
-                <DialogHeader>
-                  <DialogTitle>{selectedProduct.product_name}</DialogTitle>
-                </DialogHeader>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="aspect-w-16 aspect-h-9">
-                    <img 
-                      src={selectedProduct.image || "/placeholder.svg"} 
-                      alt={selectedProduct.product_name} 
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <Badge variant="secondary">{selectedProduct.category}</Badge>
-                    <p className="text-gray-600">{selectedProduct.description}</p>
-                    <p className="text-2xl font-bold">₱{selectedProduct.product_price.toFixed(2)}</p>
-                    
-                    <div className="flex space-x-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-6 w-6 cursor-pointer ${
-                            rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                          }`}
-                          onClick={() => setRating(star)}
-                        />
-                      ))}
-                    </div>
-                    
-                    <Textarea
-                      placeholder="Write your review (optional)..."
-                      value={review}
-                      onChange={(e) => setReview(e.target.value)}
-                      className="h-24"
-                    />
-                    
-                    <Button onClick={handleRatingSubmit} disabled={rating === 0}>
-                      Submit Review
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setShowReviewsModal(true)}
-                    >
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      View Product Reviews
-                    </Button>
-                  </div>
-                </div>
-                <DialogFooter className="flex-col sm:flex-row gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleBuyNow(selectedProduct.id)}
-                    className="w-full sm:w-auto"
-                  >
-                    Buy Now
-                  </Button>
-                  <Button
-                    className="w-full sm:w-auto"
-                    onClick={() => handleAddToCart(selectedProduct.id)}
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Add to Cart
-                  </Button>
-                </DialogFooter>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {selectedProduct && (
-          <ReviewsModal
-            isOpen={showReviewsModal}
-            onClose={() => setShowReviewsModal(false)}
-            productName={selectedProduct.product_name}
-            reviews={productReviews}
-          />
-        )}
+        <ProductDetailsModal
+          product={selectedProduct}
+          products={products || []}
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={(productId, quantity) => {
+            handleAddToCart(productId);
+            setSelectedProduct(null);
+          }}
+          onBuyNow={handleBuyNow}
+          inventory={selectedProduct ? getInventoryForProduct(selectedProduct.id) : undefined}
+        />
       </div>
     </div>
   );
-};
-
-export default Products;
+}
