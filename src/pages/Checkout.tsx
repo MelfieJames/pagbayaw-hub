@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +5,7 @@ import { supabase } from "@/services/supabase/client";
 import { CartItem } from "@/types/product";
 import { useQuery } from "@tanstack/react-query";
 import { MinusCircle, PlusCircle, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
 type SupabaseCartResponse = {
@@ -23,6 +22,8 @@ type SupabaseCartResponse = {
 export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const selectedItems = location.state?.selectedItems || [];
 
   const { data: cartItems = [], refetch: refetchCart } = useQuery<CartItem[], Error>({
     queryKey: ['cart-details'],
@@ -41,6 +42,7 @@ export default function Checkout() {
           )
         `)
         .eq('user_id', user.id)
+        .in('product_id', selectedItems)
         .returns<SupabaseCartResponse[]>();
 
       if (error) {
@@ -51,15 +53,10 @@ export default function Checkout() {
       return responseData.map(item => ({
         quantity: item.quantity,
         product_id: item.product_id,
-        products: {
-          product_name: item.products.product_name,
-          product_price: item.products.product_price,
-          image: item.products.image,
-          category: item.products.category
-        }
+        products: item.products
       }));
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && selectedItems.length > 0,
     initialData: []
   });
 

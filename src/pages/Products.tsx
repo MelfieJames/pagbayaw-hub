@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CartPopover } from "@/components/products/CartPopover";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ReviewsModal } from "@/components/products/ReviewsModal";
 
 interface Product {
   id: number;
@@ -52,6 +53,7 @@ const Products = () => {
   const [review, setReview] = useState("");
   const [showReviews, setShowReviews] = useState(false);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
 
   const {
     data: products,
@@ -167,23 +169,13 @@ const Products = () => {
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
-  const handleRatingSubmit = async () => {
+  const handleRatingSubmit = () => {
     if (!user || !selectedProduct) return;
-    
-    try {
-      toast({
-        title: "Thank you!",
-        description: "Your rating has been submitted successfully.",
-      });
-      setRating(0);
-      setReview("");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit rating",
-        variant: "destructive"
-      });
-    }
+    addReviewMutation.mutate({
+      productId: selectedProduct.id,
+      rating,
+      comment: review || undefined
+    });
   };
 
   const toggleItemSelection = (productId: number) => {
@@ -209,8 +201,56 @@ const Products = () => {
     });
   };
 
+  const { data: productReviews = [] } = useQuery({
+    queryKey: ['reviews', selectedProduct?.id],
+    queryFn: async () => {
+      if (!selectedProduct?.id) return [];
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*, profiles(email)')
+        .eq('product_id', selectedProduct.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedProduct?.id
+  });
+
+  const addReviewMutation = useMutation({
+    mutationFn: async ({ productId, rating, comment }: { productId: number, rating: number, comment?: string }) => {
+      if (!user?.id) throw new Error('Must be logged in to review');
+      const { error } = await supabase
+        .from('reviews')
+        .upsert({
+          user_id: user.id,
+          product_id: productId,
+          rating,
+          comment: comment || null
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      toast({
+        title: "Thank you!",
+        description: "Your review has been submitted successfully.",
+      });
+      setRating(0);
+      setReview("");
+    },
+    onError: (error) => {
+      console.error('Error submitting review:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit review",
+        variant: "destructive"
+      });
+    }
+  });
+
   return (
-    <div className="min-h-screen bg-[#FDE1D3]">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <div className="container mx-auto px-4 pt-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -322,7 +362,8 @@ const Products = () => {
 
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
           <DialogContent className="max-w-3xl">
-            {selectedProduct && <>
+            {selectedProduct && (
+              <>
                 <DialogHeader>
                   <DialogTitle>{selectedProduct.product_name}</DialogTitle>
                 </DialogHeader>
@@ -361,7 +402,7 @@ const Products = () => {
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => setShowReviews(true)}
+                      onClick={() => setShowReviewsModal(true)}
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       View Ratings
@@ -399,9 +440,19 @@ const Products = () => {
                     Add to Cart
                   </Button>
                 </DialogFooter>
-              </>}
+              </>
+            )}
           </DialogContent>
         </Dialog>
+
+        {selectedProduct && (
+          <ReviewsModal
+            isOpen={showReviewsModal}
+            onClose={() => setShowReviewsModal(false)}
+            productName={selectedProduct.product_name}
+            reviews={productReviews}
+          />
+        )}
       </div>
     </div>
   );
