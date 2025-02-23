@@ -158,6 +158,9 @@ export function CartPopover() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">Shopping Cart</h4>
+            <span className="text-sm text-muted-foreground">
+              {selectedItems.length} selected
+            </span>
           </div>
           <div className="space-y-4 max-h-[60vh] overflow-auto">
             {Object.entries(groupedCartItems).map(([category, items]) => (

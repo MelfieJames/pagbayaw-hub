@@ -164,8 +164,10 @@ export default function Products() {
   const categories = products ? [...new Set(products.map(product => product.category))] : [];
 
   const filteredProducts = products?.filter(product => {
-    const matchesSearch = product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchTerm = searchQuery.toLowerCase();
+    const matchesSearch = 
+      product.product_name.toLowerCase().includes(searchTerm) || 
+      product.category.toLowerCase().includes(searchTerm);
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
     const matchesPrice = product.product_price >= selectedPriceRange.min && 
                         product.product_price <= selectedPriceRange.max;
@@ -326,56 +328,58 @@ export default function Products() {
       <div className="container mx-auto px-4 pt-20">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Category</h2>
-              <div className="space-y-2">
-                <Button 
-                  variant={selectedCategory === null ? "secondary" : "outline"} 
-                  onClick={() => setSelectedCategory(null)}
-                  className="w-full justify-start"
-                >
-                  All Categories
-                </Button>
-                {categories.map(category => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "secondary" : "outline"}
-                    onClick={() => setSelectedCategory(category)}
+            <div className="sticky top-24">
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Category</h2>
+                <div className="space-y-2">
+                  <Button 
+                    variant={selectedCategory === null ? "secondary" : "outline"} 
+                    onClick={() => setSelectedCategory(null)}
                     className="w-full justify-start"
                   >
-                    {category}
+                    All Categories
                   </Button>
-                ))}
+                  {categories.map(category => (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? "secondary" : "outline"}
+                      onClick={() => setSelectedCategory(category)}
+                      className="w-full justify-start"
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Price Range</h2>
-              <div className="space-y-2">
-                {priceRanges.map((range) => (
-                  <Button
-                    key={range.label}
-                    variant={selectedPriceRange === range ? "secondary" : "outline"}
-                    onClick={() => setSelectedPriceRange(range)}
-                    className="w-full justify-start"
-                  >
-                    {range.label}
-                  </Button>
-                ))}
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Price Range</h2>
+                <div className="space-y-2">
+                  {priceRanges.map((range) => (
+                    <Button
+                      key={range.label}
+                      variant={selectedPriceRange === range ? "secondary" : "outline"}
+                      onClick={() => setSelectedPriceRange(range)}
+                      className="w-full justify-start"
+                    >
+                      {range.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Customer Reviews</h2>
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1].map((rating) => (
-                  <div key={rating} className="flex items-center space-x-1 text-muted-foreground">
-                    {Array(rating).fill(0).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current" />
-                    ))}
-                    <span>& up</span>
-                  </div>
-                ))}
+              <div>
+                <h2 className="text-lg font-semibold mb-3">Customer Reviews</h2>
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <div key={rating} className="flex items-center space-x-1 text-muted-foreground">
+                      {Array(rating).fill(0).map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-current" />
+                      ))}
+                      <span>& up</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -385,7 +389,7 @@ export default function Products() {
               <div className="relative flex-1 mr-4">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search products..." 
+                  placeholder="Search by product name or category..." 
                   value={searchQuery} 
                   onChange={e => setSearchQuery(e.target.value)} 
                   className="pl-10" 
@@ -394,48 +398,49 @@ export default function Products() {
               <CartPopover />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredProducts?.map((product) => {
-                const inventory = getInventoryForProduct(product.id);
-                const isOutOfStock = inventory?.quantity === 0;
+            <div className="overflow-y-auto max-h-[calc(100vh-180px)] pr-4 -mr-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {filteredProducts?.map((product) => {
+                  const inventory = getInventoryForProduct(product.id);
+                  const rating = productRatings[product.id];
+                  const averageRating = rating ? rating.total / rating.count : 0;
 
-                return (
-                  <Card 
-                    key={product.id}
-                    data-product-id={product.id}
-                    className={cn(
-                      "relative overflow-hidden transition-shadow",
-                      !isOutOfStock && "hover:shadow-lg cursor-pointer"
-                    )}
-                    onClick={() => !isOutOfStock && setSelectedProduct(product)}
-                  >
-                    <div className="aspect-square">
-                      <img 
-                        src={product.image || "/placeholder.svg"} 
-                        alt={product.product_name} 
-                        className={cn(
-                          "w-full h-full object-cover",
-                          isOutOfStock && "blur-[2px] brightness-90"
-                        )}
-                      />
-                      {isOutOfStock && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="bg-black/60 text-white px-4 py-2 rounded-md font-medium">
-                            Out of Stock
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <CardHeader className="space-y-1">
-                      <Badge variant="secondary" className="w-fit">
-                        {product.category}
-                      </Badge>
-                      <CardTitle className="text-lg">{product.product_name}</CardTitle>
-                      <CardDescription>₱{product.product_price.toFixed(2)}</CardDescription>
-                    </CardHeader>
-                  </Card>
-                );
-              })}
+                  return (
+                    <Card 
+                      key={product.id}
+                      data-product-id={product.id}
+                      className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => setSelectedProduct(product)}
+                    >
+                      <div className="aspect-square">
+                        <img 
+                          src={product.image || "/placeholder.svg"} 
+                          alt={product.product_name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <CardHeader className="space-y-1">
+                        <Badge variant="secondary" className="w-fit">
+                          {product.category}
+                        </Badge>
+                        <CardTitle className="text-lg">{product.product_name}</CardTitle>
+                        <CardDescription>
+                          <div className="flex items-center justify-between">
+                            <span>₱{product.product_price.toFixed(2)}</span>
+                            {rating && (
+                              <span className="text-xs flex items-center gap-1">
+                                {averageRating.toFixed(1)}
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                ({rating.count})
+                              </span>
+                            )}
+                          </div>
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -444,12 +449,10 @@ export default function Products() {
           product={selectedProduct}
           products={products || []}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={(productId, quantity) => {
-            handleAddToCart(productId);
-            setSelectedProduct(null);
-          }}
+          onAddToCart={handleAddToCart}
           onBuyNow={handleBuyNow}
           inventory={selectedProduct ? getInventoryForProduct(selectedProduct.id) : undefined}
+          productRatings={productRatings}
         />
       </div>
     </div>
