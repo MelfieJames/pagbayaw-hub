@@ -1,12 +1,14 @@
+
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { CartItem } from "@/types/product";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MinusCircle, PlusCircle, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -23,12 +25,13 @@ export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const selectedItems = location.state?.selectedItems || [];
 
-  const { data: cartItems = [], refetch: refetchCart } = useQuery<CartItem[], Error>({
-    queryKey: ['cart-details'],
+  const { data: cartItems = [], refetch: refetchCart } = useQuery({
+    queryKey: ['checkout-items', selectedItems],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id || selectedItems.length === 0) return [];
       const { data: responseData, error } = await supabase
         .from('cart')
         .select(`
@@ -42,8 +45,7 @@ export default function Checkout() {
           )
         `)
         .eq('user_id', user.id)
-        .in('product_id', selectedItems)
-        .returns<SupabaseCartResponse[]>();
+        .in('product_id', selectedItems);
 
       if (error) {
         console.error('Cart fetch error:', error);
@@ -54,10 +56,12 @@ export default function Checkout() {
         quantity: item.quantity,
         product_id: item.product_id,
         products: item.products
-      }));
+      })) as CartItem[];
     },
     enabled: !!user?.id && selectedItems.length > 0,
-    initialData: []
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
@@ -73,6 +77,7 @@ export default function Checkout() {
       if (error) throw error;
 
       refetchCart();
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       toast.success("Cart updated");
     } catch (error) {
       console.error('Error updating quantity:', error);
@@ -93,6 +98,7 @@ export default function Checkout() {
       if (error) throw error;
 
       refetchCart();
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       toast.success("Item removed from cart");
     } catch (error) {
       console.error('Error removing from cart:', error);
@@ -122,7 +128,7 @@ export default function Checkout() {
         
         {cartItems.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-lg text-muted-foreground mb-4">Your cart is empty</p>
+            <p className="text-lg text-muted-foreground mb-4">No items selected for checkout</p>
             <Button onClick={() => navigate('/products')}>
               Continue Shopping
             </Button>
@@ -130,49 +136,51 @@ export default function Checkout() {
         ) : (
           <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-4">
-              {cartItems.map((item) => (
-                <div 
-                  key={item.product_id}
-                  className="flex items-center gap-4 p-4 border rounded-lg"
-                >
-                  <img
-                    src={item.products?.image || "/placeholder.svg"}
-                    alt={item.products?.product_name}
-                    className="w-24 h-24 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-medium">{item.products?.product_name}</h3>
-                    <p className="text-muted-foreground">
-                      ₱{item.products?.product_price.toFixed(2)}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                      >
-                        <MinusCircle className="h-4 w-4" />
-                      </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="ml-auto"
-                        onClick={() => removeFromCart(item.product_id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              <ScrollArea className="h-[70vh] pr-4">
+                {cartItems.map((item) => (
+                  <div 
+                    key={item.product_id}
+                    className="flex items-center gap-4 p-4 border rounded-lg mb-4"
+                  >
+                    <img
+                      src={item.products?.image || "/placeholder.svg"}
+                      alt={item.products?.product_name}
+                      className="w-24 h-24 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-medium">{item.products?.product_name}</h3>
+                      <p className="text-muted-foreground">
+                        ₱{item.products?.product_price.toFixed(2)}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                        >
+                          <MinusCircle className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="ml-auto"
+                          onClick={() => removeFromCart(item.product_id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </ScrollArea>
             </div>
             
             <div className="md:col-span-1">

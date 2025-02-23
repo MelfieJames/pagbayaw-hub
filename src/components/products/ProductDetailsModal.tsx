@@ -45,7 +45,6 @@ export function ProductDetailsModal({
   const navigate = useNavigate();
   const stockQuantity = inventory?.quantity ?? 0;
 
-  // Reset quantity when product changes
   useEffect(() => {
     setQuantity(1);
   }, [product?.id]);
@@ -79,34 +78,16 @@ export function ProductDetailsModal({
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-xl">{product.product_name}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2">
-            {rating && (
-              <button
-                onClick={() => setShowReviews(true)}
-                className="flex items-center gap-1 text-sm hover:text-primary"
-              >
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-4 w-4 ${
-                        averageRating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span>({rating.count} reviews)</span>
-              </button>
-            )}
-          </DialogDescription>
         </DialogHeader>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <ProductImageCarousel
-              mainImage={product.image}
-              productName={product.product_name}
-            />
+            <ScrollArea className="h-[300px]">
+              <ProductImageCarousel
+                mainImage={product.image}
+                productName={product.product_name}
+              />
+            </ScrollArea>
             <Badge variant="secondary" className="w-fit">
               {product.category}
             </Badge>
@@ -146,6 +127,26 @@ export function ProductDetailsModal({
                 </span>
               </div>
             </div>
+
+            {rating && (
+              <Button
+                variant="outline"
+                onClick={() => setShowReviews(true)}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-4 w-4 ${
+                        averageRating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span>See {rating.count} Reviews</span>
+              </Button>
+            )}
           </div>
         </div>
         
@@ -168,18 +169,20 @@ export function ProductDetailsModal({
           </Button>
         </DialogFooter>
 
-        <SimilarProducts
-          products={products}
-          currentProductId={product.id}
-          category={product.category}
-          onProductClick={(newProduct) => {
-            onClose();
-            setTimeout(() => {
-              const element = document.querySelector(`[data-product-id="${newProduct.id}"]`);
-              element?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-            }, 300);
-          }}
-        />
+        <ScrollArea className="max-h-[300px]">
+          <SimilarProducts
+            products={products}
+            currentProductId={product.id}
+            category={product.category}
+            onProductClick={(newProduct) => {
+              onClose();
+              setTimeout(() => {
+                const element = document.querySelector(`[data-product-id="${newProduct.id}"]`);
+                element?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+              }, 300);
+            }}
+          />
+        </ScrollArea>
 
         <ReviewsModal
           isOpen={showReviews}
