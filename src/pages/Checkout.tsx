@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,7 +27,7 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const selectedItems = location.state?.selectedItems || [];
 
-  const { data: cartItems = [], refetch: refetchCart } = useQuery({
+  const { data: cartItems = [] } = useQuery({
     queryKey: ['checkout-items', selectedItems],
     queryFn: async () => {
       if (!user?.id || selectedItems.length === 0) return [];
@@ -65,9 +64,10 @@ export default function Checkout() {
       })) as CartItem[];
     },
     enabled: !!user?.id && selectedItems.length > 0,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true
+    staleTime: Infinity,
+    cacheTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
   });
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
@@ -117,7 +117,6 @@ export default function Checkout() {
   }, 0);
 
   const handleCheckout = () => {
-    // TODO: Implement payment processing
     toast.info("Checkout functionality coming soon!");
   };
 
