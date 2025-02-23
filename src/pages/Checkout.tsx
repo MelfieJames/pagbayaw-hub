@@ -45,7 +45,8 @@ export default function Checkout() {
           )
         `)
         .eq('user_id', user.id)
-        .in('product_id', selectedItems);
+        .in('product_id', selectedItems)
+        .returns<SupabaseCartResponse[]>();
 
       if (error) {
         console.error('Cart fetch error:', error);
@@ -55,7 +56,12 @@ export default function Checkout() {
       return responseData.map(item => ({
         quantity: item.quantity,
         product_id: item.product_id,
-        products: item.products
+        products: {
+          product_name: item.products.product_name,
+          product_price: item.products.product_price,
+          image: item.products.image,
+          category: item.products.category
+        }
       })) as CartItem[];
     },
     enabled: !!user?.id && selectedItems.length > 0,
