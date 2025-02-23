@@ -118,6 +118,12 @@ export default function Checkout() {
   }, 0);
 
   const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      toast.error("No items in cart");
+      return;
+    }
+
+    // Here we'll add the checkout logic later
     toast.info("Checkout functionality coming soon!");
   };
 
