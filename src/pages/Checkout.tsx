@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +28,7 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const selectedItems = location.state?.selectedItems || [];
 
-  const { data: cartItems = [] } = useQuery({
+  const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items', selectedItems],
     queryFn: async () => {
       if (!user?.id || selectedItems.length === 0) return [];
@@ -65,9 +66,9 @@ export default function Checkout() {
     },
     enabled: !!user?.id && selectedItems.length > 0,
     staleTime: Infinity,
-    cacheTime: Infinity,
+    gcTime: Infinity,
     refetchOnMount: false,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
@@ -82,7 +83,7 @@ export default function Checkout() {
 
       if (error) throw error;
 
-      refetchCart();
+      refetch();
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       toast.success("Cart updated");
     } catch (error) {
@@ -103,7 +104,7 @@ export default function Checkout() {
 
       if (error) throw error;
 
-      refetchCart();
+      refetch();
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       toast.success("Item removed from cart");
     } catch (error) {
