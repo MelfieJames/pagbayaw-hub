@@ -174,6 +174,14 @@ export default function Products() {
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
+  const handleProductClick = (product: Product) => {
+    const inventory = getInventoryForProduct(product.id);
+    if (inventory?.quantity === 0) {
+      return; // Don't open modal for out-of-stock items
+    }
+    setSelectedProduct(product);
+  };
+
   const handleRatingSubmit = () => {
     if (!user || !selectedProduct) return;
     addReviewMutation.mutate({
@@ -398,49 +406,61 @@ export default function Products() {
               <CartPopover />
             </div>
 
-            <div className="overflow-y-auto max-h-[calc(100vh-180px)] pr-4 -mr-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {filteredProducts?.map((product) => {
-                  const inventory = getInventoryForProduct(product.id);
-                  const rating = productRatings[product.id];
-                  const averageRating = rating ? rating.total / rating.count : 0;
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {filteredProducts?.map((product) => {
+                const inventory = getInventoryForProduct(product.id);
+                const isOutOfStock = inventory?.quantity === 0;
+                const rating = productRatings[product.id];
+                const averageRating = rating ? rating.total / rating.count : 0;
 
-                  return (
-                    <Card 
-                      key={product.id}
-                      data-product-id={product.id}
-                      className="relative overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => setSelectedProduct(product)}
-                    >
-                      <div className="aspect-square">
-                        <img 
-                          src={product.image || "/placeholder.svg"} 
-                          alt={product.product_name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <CardHeader className="space-y-1">
-                        <Badge variant="secondary" className="w-fit">
-                          {product.category}
-                        </Badge>
-                        <CardTitle className="text-lg">{product.product_name}</CardTitle>
-                        <CardDescription>
-                          <div className="flex items-center justify-between">
-                            <span>₱{product.product_price.toFixed(2)}</span>
-                            {rating && (
-                              <span className="text-xs flex items-center gap-1">
-                                {averageRating.toFixed(1)}
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                ({rating.count})
-                              </span>
-                            )}
-                          </div>
-                        </CardDescription>
-                      </CardHeader>
-                    </Card>
-                  );
-                })}
-              </div>
+                return (
+                  <Card 
+                    key={product.id}
+                    data-product-id={product.id}
+                    className={`relative overflow-hidden transition-all ${
+                      isOutOfStock 
+                        ? 'opacity-60 cursor-not-allowed' 
+                        : 'hover:shadow-lg cursor-pointer'
+                    }`}
+                    onClick={() => handleProductClick(product)}
+                  >
+                    <div className="aspect-square relative">
+                      <img 
+                        src={product.image || "/placeholder.svg"} 
+                        alt={product.product_name} 
+                        className={`w-full h-full object-cover ${
+                          isOutOfStock ? 'blur-[2px]' : ''
+                        }`}
+                      />
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Badge variant="destructive" className="text-lg">
+                            Out of Stock
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader className="space-y-1">
+                      <Badge variant="secondary" className="w-fit">
+                        {product.category}
+                      </Badge>
+                      <CardTitle className="text-lg">{product.product_name}</CardTitle>
+                      <CardDescription>
+                        <div className="flex items-center justify-between">
+                          <span>₱{product.product_price.toFixed(2)}</span>
+                          {rating && (
+                            <span className="text-xs flex items-center gap-1">
+                              {averageRating.toFixed(1)}
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              ({rating.count})
+                            </span>
+                          )}
+                        </div>
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </div>

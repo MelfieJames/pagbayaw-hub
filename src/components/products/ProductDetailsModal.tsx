@@ -5,18 +5,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/types/product";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { SimilarProducts } from "./SimilarProducts";
 import { useState, useEffect } from "react";
-import { ShoppingCart, Plus, Minus, Star, MessageSquare } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ReviewsModal } from "./ReviewsModal";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -55,6 +57,7 @@ export function ProductDetailsModal({
       return;
     }
     onAddToCart(productId, quantity);
+    onClose();
   };
 
   const handleBuyNow = (productId: number) => {
@@ -76,41 +79,46 @@ export function ProductDetailsModal({
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-xl">{product.product_name}</DialogTitle>
+          <DialogDescription className="flex items-center gap-2">
+            {rating && (
+              <button
+                onClick={() => setShowReviews(true)}
+                className="flex items-center gap-1 text-sm hover:text-primary"
+              >
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-4 w-4 ${
+                        averageRating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span>({rating.count} reviews)</span>
+              </button>
+            )}
+          </DialogDescription>
         </DialogHeader>
+
         <div className="grid md:grid-cols-2 gap-6">
-          <ProductImageCarousel
-            mainImage={product.image}
-            productName={product.product_name}
-          />
+          <div className="space-y-4">
+            <ProductImageCarousel
+              mainImage={product.image}
+              productName={product.product_name}
+            />
+            <Badge variant="secondary" className="w-fit">
+              {product.category}
+            </Badge>
+            <p className="text-2xl font-bold">₱{product.product_price.toFixed(2)}</p>
+          </div>
+
           <div className="space-y-6">
-            <div>
-              <Badge variant="secondary" className="mb-2">
-                {product.category}
-              </Badge>
-              <p className="text-2xl font-bold">₱{product.product_price.toFixed(2)}</p>
-              {rating && (
-                <button
-                  onClick={() => setShowReviews(true)}
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mt-2"
-                >
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`h-4 w-4 ${
-                          averageRating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span>({rating.count} reviews)</span>
-                </button>
-              )}
-            </div>
-            
             <div className="space-y-2">
               <p className="text-sm font-medium">Description</p>
-              <p className="text-sm text-muted-foreground">{product.description}</p>
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                <p className="text-sm text-muted-foreground">{product.description}</p>
+              </ScrollArea>
             </div>
 
             <div className="space-y-2">
@@ -120,7 +128,7 @@ export function ProductDetailsModal({
                   variant="outline"
                   size="icon"
                   onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                  disabled={quantity <= 1}
+                  disabled={quantity <= 1 || stockQuantity === 0}
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
@@ -129,7 +137,7 @@ export function ProductDetailsModal({
                   variant="outline"
                   size="icon"
                   onClick={() => setQuantity(prev => Math.min(stockQuantity, prev + 1))}
-                  disabled={quantity >= stockQuantity}
+                  disabled={quantity >= stockQuantity || stockQuantity === 0}
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -146,12 +154,14 @@ export function ProductDetailsModal({
             variant="outline"
             className="w-full sm:w-auto"
             onClick={() => handleBuyNow(product.id)}
+            disabled={stockQuantity === 0}
           >
             Buy Now
           </Button>
           <Button
             className="w-full sm:w-auto"
             onClick={() => handleAddToCart(product.id)}
+            disabled={stockQuantity === 0}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
             Add to Cart
