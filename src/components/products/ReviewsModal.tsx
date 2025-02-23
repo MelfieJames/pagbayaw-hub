@@ -2,6 +2,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Star } from "lucide-react";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/services/supabase/client";
 
 interface Review {
   id: number;
@@ -18,10 +20,26 @@ interface ReviewsModalProps {
   isOpen: boolean;
   onClose: () => void;
   productName: string;
-  reviews: Review[];
+  productId: number;
 }
 
-export const ReviewsModal = ({ isOpen, onClose, productName, reviews }: ReviewsModalProps) => {
+export const ReviewsModal = ({ isOpen, onClose, productName, productId }: ReviewsModalProps) => {
+  const { data: reviews = [], isLoading } = useQuery({
+    queryKey: ['reviews', productId],
+    queryFn: async () => {
+      if (!productId) return [];
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*, profiles(email)')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Review[];
+    },
+    enabled: isOpen && !!productId
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
@@ -29,7 +47,9 @@ export const ReviewsModal = ({ isOpen, onClose, productName, reviews }: ReviewsM
           <DialogTitle>Reviews for {productName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-          {reviews.length === 0 ? (
+          {isLoading ? (
+            <p className="text-center text-muted-foreground">Loading reviews...</p>
+          ) : reviews.length === 0 ? (
             <p className="text-center text-muted-foreground">No reviews yet</p>
           ) : (
             reviews.map((review) => (
