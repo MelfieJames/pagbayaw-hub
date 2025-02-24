@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +26,7 @@ export default function Checkout() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const selectedItems = location.state?.selectedItems || [];
+  const selectedQuantities = location.state?.quantities || {};
 
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items', selectedItems],
@@ -53,8 +53,8 @@ export default function Checkout() {
         return [];
       }
       
-      return responseData.map(item => ({
-        quantity: item.quantity,
+      const items = responseData.map(item => ({
+        quantity: selectedQuantities[item.product_id] || item.quantity,
         product_id: item.product_id,
         products: {
           product_name: item.products.product_name,
@@ -62,13 +62,12 @@ export default function Checkout() {
           image: item.products.image,
           category: item.products.category
         }
-      })) as CartItem[];
+      }));
+
+      return items as CartItem[];
     },
     enabled: !!user?.id && selectedItems.length > 0,
     staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
   });
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
@@ -117,14 +116,73 @@ export default function Checkout() {
     return sum + (item.quantity * (item.products?.product_price || 0));
   }, 0);
 
-  const handleCheckout = () => {
-    if (cartItems.length === 0) {
-      toast.error("No items in cart");
+  const handleCheckout = async () => {
+    if (!user || cartItems.length === 0) {
+      toast("No items to checkout");
       return;
     }
 
-    // Here we'll add the checkout logic later
-    toast.info("Checkout functionality coming soon!");
+    try {
+      const total = cartItems.reduce((sum, item) => 
+        sum + (item.quantity * (item.products?.product_price || 0)), 0
+      );
+
+      const { data: purchase, error: purchaseError } = await supabase
+        .from('purchases')
+        .insert({
+          user_id: user.id,
+          total_amount: total,
+          status: 'completed'
+        })
+        .select()
+        .single();
+
+      if (purchaseError) throw purchaseError;
+
+      // Create purchase items
+      const purchaseItems = cartItems.map(item => ({
+        purchase_id: purchase.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price_at_time: item.products?.product_price || 0
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('purchase_items')
+        .insert(purchaseItems);
+
+      if (itemsError) throw itemsError;
+
+      // Create notification
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          purchase_id: purchase.id,
+          type: 'purchase',
+          message: `Your order has been processed successfully.`
+        });
+
+      if (notificationError) throw notificationError;
+
+      // Clear cart items
+      if (selectedItems.length > 0) {
+        const { error: cartError } = await supabase
+          .from('cart')
+          .delete()
+          .eq('user_id', user.id)
+          .in('product_id', selectedItems);
+
+        if (cartError) throw cartError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
+      toast("Order processed successfully!");
+      navigate('/products');
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast("Failed to process order. Please try again.");
+    }
   };
 
   if (!user) {

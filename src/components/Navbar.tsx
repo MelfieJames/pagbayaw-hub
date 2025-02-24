@@ -8,43 +8,57 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { CartPopover } from "./products/CartPopover";
 import { NotificationsPopover } from "./notifications/NotificationsPopover";
 import { useMediaQuery } from "@/hooks/use-mobile";
+import { Award, Package, MessageSquare } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
+  const getInitials = (email: string) => {
+    return email ? email[0].toUpperCase() : "U";
+  };
+
   return (
     <nav className="fixed top-0 w-full bg-white border-b z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-xl font-bold">
-            Logo
+          <Link to="/" className="text-xl font-bold flex items-center gap-2">
+            <span className="text-primary">R</span>
+            <span>UNVAS</span>
           </Link>
 
-          <div className="hidden md:flex space-x-4">
-            <Link to="/achievements" className="hover:text-primary">
-              Achievements
+          <div className="hidden md:flex space-x-6">
+            <Link to="/achievements" className="flex items-center gap-2 hover:text-primary transition-colors">
+              <Award className="h-4 w-4" />
+              <span>Achievements</span>
             </Link>
-            <Link to="/products" className="hover:text-primary">
-              Products
+            <Link to="/products" className="flex items-center gap-2 hover:text-primary transition-colors">
+              <Package className="h-4 w-4" />
+              <span>Products</span>
             </Link>
-            <Link to="/contact" className="hover:text-primary">
-              Contact
+            <Link to="/contact" className="flex items-center gap-2 hover:text-primary transition-colors">
+              <MessageSquare className="h-4 w-4" />
+              <span>Contact</span>
             </Link>
           </div>
 
           <div className="flex items-center space-x-2">
             {user ? (
               <>
-                {!isMobile && <CartPopover />}
                 <NotificationsPopover />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost">Account</Button>
+                    <Button variant="ghost" className="p-0 h-8 w-8">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {getInitials(user.email || "")}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => navigate("/admin")}>
