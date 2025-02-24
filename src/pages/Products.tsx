@@ -18,6 +18,7 @@ import { ReviewsModal } from "@/components/products/ReviewsModal";
 import { ReviewSection } from "@/components/products/ReviewSection";
 import { ProductDetailsModal } from "@/components/products/ProductDetailsModal";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Product {
   id: number;
@@ -220,11 +221,7 @@ export default function Products() {
 
   const handleBuyNow = async (productId: number) => {
     if (!user) {
-      toast({
-        title: "Please log in",
-        description: "You need to be logged in to purchase items",
-        variant: "destructive"
-      });
+      toast.error("Please log in to purchase items");
       navigate("/login");
       return;
     }

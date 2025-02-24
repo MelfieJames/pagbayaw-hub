@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/services/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -10,7 +11,7 @@ export interface CustomUser extends User {
 interface AuthContextType {
   user: CustomUser | null;
   login: (user: CustomUser) => void;
-  logout: () => void;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
-  const logout = async () => {
+  const signOut = async () => {
     try {
       await supabase.auth.signOut();
       setUser(null);
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, signOut }}>
       {children}
     </AuthContext.Provider>
   );
