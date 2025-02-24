@@ -13,7 +13,7 @@ const data = [
 ];
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,7 +23,7 @@ const AdminDashboard = () => {
   }, [user, navigate]);
 
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate("/login");
   };
 
