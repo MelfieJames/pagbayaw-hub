@@ -221,7 +221,10 @@ export default function Products() {
 
   const handleBuyNow = async (productId: number) => {
     if (!user) {
-      toast("Please log in to purchase items");
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to purchase items"
+      });
       navigate("/login");
       return;
     }
@@ -273,7 +276,11 @@ export default function Products() {
       });
     } catch (error) {
       console.error('Error processing purchase:', error);
-      toast("Failed to process purchase. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to process purchase. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
