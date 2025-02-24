@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,10 +60,7 @@ export default function Products() {
 
   const handleBuyNow = async (productId: number) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to purchase items"
-      });
+      toast("Please log in to purchase items");
       navigate("/login");
       return;
     }
@@ -109,26 +105,16 @@ export default function Products() {
 
       navigate("/checkout", { state: { selectedItems: [productId] } });
       
-      toast({
-        title: "Order Processed",
-        description: "Your order has been successfully processed.",
-      });
+      toast("Order processed successfully");
     } catch (error) {
       console.error('Error processing purchase:', error);
-      toast({
-        title: "Error",
-        description: "Failed to process purchase. Please try again.",
-        variant: "destructive"
-      });
+      toast("Failed to process purchase. Please try again.");
     }
   };
 
   const handleAddToCart = async (productId: number) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to add items to cart"
-      });
+      toast("Please log in to add items to cart");
       navigate("/login");
       return;
     }
@@ -145,17 +131,10 @@ export default function Products() {
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
-      toast({
-        title: "Success",
-        description: "Item added to cart"
-      });
+      toast("Item added to cart");
     } catch (error) {
       console.error('Error adding to cart:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add item to cart",
-        variant: "destructive"
-      });
+      toast("Failed to add item to cart");
     }
   };
 
