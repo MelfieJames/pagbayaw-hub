@@ -4,20 +4,24 @@ import { ProductCard } from "./ProductCard";
 
 interface ProductListProps {
   products: Product[];
-  searchQuery: string;
-  selectedCategory: string | null;
-  inventoryData: any[];
-  productRatings: Record<number, { total: number; count: number }>;
-  onProductClick: (product: Product) => void;
+  searchQuery?: string;
+  selectedCategory?: string | null;
+  inventoryData?: any[];
+  productRatings?: Record<number, { total: number; count: number }>;
+  onProductClick?: (product: Product) => void;
+  onEdit?: (product: Product) => void;
+  onDelete?: (id: number) => void;
 }
 
 export function ProductList({ 
   products,
-  searchQuery,
-  selectedCategory,
-  inventoryData,
-  productRatings,
-  onProductClick
+  searchQuery = "",
+  selectedCategory = null,
+  inventoryData = [],
+  productRatings = {},
+  onProductClick,
+  onEdit,
+  onDelete
 }: ProductListProps) {
   const getInventoryForProduct = (productId: number) => {
     return inventoryData?.find(item => item.product_id === productId);
@@ -38,7 +42,7 @@ export function ProductList({
           product={product}
           inventory={getInventoryForProduct(product.id)}
           rating={productRatings[product.id]}
-          onProductClick={() => onProductClick(product)}
+          onProductClick={() => onProductClick?.(product)}
         />
       ))}
     </div>
