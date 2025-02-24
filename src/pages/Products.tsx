@@ -218,7 +218,7 @@ export default function Products() {
     );
   };
 
-  const handleBuyNow = (productId: number) => {
+  const handleBuyNow = async (productId: number) => {
     if (!user) {
       toast({
         title: "Please log in",
@@ -228,13 +228,56 @@ export default function Products() {
       navigate("/login");
       return;
     }
-    addToCartMutation.mutate({ productId, quantity: 1 }, {
-      onSuccess: () => {
-        navigate("/checkout", {
-          state: { selectedItems: [productId] }
+
+    try {
+      const product = products?.find(p => p.id === productId);
+      if (!product) return;
+
+      // Create purchase record
+      const { data: purchase, error: purchaseError } = await supabase
+        .from('purchases')
+        .insert({
+          user_id: user.id,
+          total_amount: product.product_price,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (purchaseError) throw purchaseError;
+
+      // Create purchase item
+      const { error: itemError } = await supabase
+        .from('purchase_items')
+        .insert({
+          purchase_id: purchase.id,
+          product_id: productId,
+          quantity: 1,
+          price_at_time: product.product_price
         });
-      }
-    });
+
+      if (itemError) throw itemError;
+
+      // Create notification
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          purchase_id: purchase.id,
+          type: 'purchase',
+          message: `Your order for ${product.product_name} has been placed and is pending confirmation.`
+        });
+
+      if (notificationError) throw notificationError;
+
+      // Navigate to checkout
+      navigate("/checkout", {
+        state: { selectedItems: [productId] }
+      });
+    } catch (error) {
+      console.error('Error processing purchase:', error);
+      toast.error("Failed to process purchase. Please try again.");
+    }
   };
 
   const { data: productReviews = [] } = useQuery({

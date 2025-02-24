@@ -135,6 +135,44 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_read: boolean | null
+          message: string
+          purchase_id: number | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          message: string
+          purchase_id?: number | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          message?: string
+          purchase_id?: number | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string
@@ -201,12 +239,82 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_items: {
+        Row: {
+          created_at: string | null
+          id: number
+          price_at_time: number
+          product_id: number | null
+          purchase_id: number | null
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          price_at_time: number
+          product_id?: number | null
+          purchase_id?: number | null
+          quantity: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          price_at_time?: number
+          product_id?: number | null
+          purchase_id?: number | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchases: {
+        Row: {
+          created_at: string | null
+          id: number
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          status?: string | null
+          total_amount: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string | null
           created_at: string | null
           id: number
           product_id: number | null
+          purchase_item_id: number | null
           rating: number
           user_id: string | null
         }
@@ -215,6 +323,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           product_id?: number | null
+          purchase_item_id?: number | null
           rating: number
           user_id?: string | null
         }
@@ -223,6 +332,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           product_id?: number | null
+          purchase_item_id?: number | null
           rating?: number
           user_id?: string | null
         }
@@ -232,6 +342,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_purchase_item_id_fkey"
+            columns: ["purchase_item_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_items"
             referencedColumns: ["id"]
           },
         ]
