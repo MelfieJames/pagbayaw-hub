@@ -163,6 +163,19 @@ export default function Products() {
 
   const categories = products ? [...new Set(products.map(product => product.category))] : [];
 
+  const { data: inventoryData } = useQuery({
+    queryKey: ['inventory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 0,
+    refetchOnMount: true
+  });
+
   const filteredProducts = products?.filter(product => {
     const searchTerm = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -172,6 +185,12 @@ export default function Products() {
     const matchesPrice = product.product_price >= selectedPriceRange.min && 
                         product.product_price <= selectedPriceRange.max;
     return matchesSearch && matchesCategory && matchesPrice;
+  }).sort((a, b) => {
+    const aChecked = selectedItems.includes(a.id);
+    const bChecked = selectedItems.includes(b.id);
+    if (aChecked && !bChecked) return -1;
+    if (!aChecked && bChecked) return 1;
+    return 0;
   });
 
   const handleProductClick = (product: Product) => {
@@ -210,7 +229,11 @@ export default function Products() {
       return;
     }
     addToCartMutation.mutate({ productId, quantity: 1 }, {
-      onSuccess: () => navigate("/checkout")
+      onSuccess: () => {
+        navigate("/checkout", {
+          state: { selectedItems: [productId] }
+        });
+      }
     });
   };
 
@@ -314,17 +337,6 @@ export default function Products() {
     acc[review.product_id].count += 1;
     return acc;
   }, {} as Record<number, { total: number; count: number }>);
-
-  const { data: inventoryData } = useQuery({
-    queryKey: ['inventory'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('*');
-      if (error) throw error;
-      return data;
-    }
-  });
 
   const getInventoryForProduct = (productId: number) => {
     return inventoryData?.find(item => item.product_id === productId);
@@ -448,13 +460,18 @@ export default function Products() {
                       <CardDescription>
                         <div className="flex items-center justify-between">
                           <span>₱{product.product_price.toFixed(2)}</span>
-                          {rating && (
-                            <span className="text-xs flex items-center gap-1">
-                              {averageRating.toFixed(1)}
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              ({rating.count})
+                          <div className="flex flex-col items-end gap-1">
+                            {rating && (
+                              <span className="text-xs flex items-center gap-1">
+                                {averageRating.toFixed(1)}
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                ({rating.count})
+                              </span>
+                            )}
+                            <span className="text-xs">
+                              {inventory?.quantity || 0} available
                             </span>
-                          )}
+                          </div>
                         </div>
                       </CardDescription>
                     </CardHeader>

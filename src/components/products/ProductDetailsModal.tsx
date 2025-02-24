@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -89,6 +88,7 @@ export function ProductDetailsModal({
       return;
     }
     onBuyNow(productId);
+    onClose();
   };
 
   if (!product) return null;
