@@ -4,7 +4,6 @@ import { Product } from "@/types/product";
 import { ProductList } from "@/components/products/ProductList";
 import { FilterSidebar } from "@/components/products/FilterSidebar";
 import { ProductDetailsModal } from "@/components/products/ProductDetailsModal";
-import { CartPopover } from "@/components/products/CartPopover";
 import { SearchBar } from "@/components/products/SearchBar";
 import Navbar from "@/components/Navbar";
 import { useProductQueries } from "@/hooks/products/useProductQueries";
@@ -39,13 +38,10 @@ export default function Products() {
           />
 
           <div className="md:col-span-3">
-            <div className="flex justify-between items-center mb-6">
-              <SearchBar 
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
-              <CartPopover />
-            </div>
+            <SearchBar 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
 
             <ProductList
               products={products}
@@ -63,7 +59,7 @@ export default function Products() {
           products={products}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={handleAddToCart}
-          onBuyNow={(productId) => handleBuyNow(productId, products)}
+          onBuyNow={(productId) => handleBuyNow(productId)}
           inventory={selectedProduct ? inventoryData?.find(item => item.product_id === selectedProduct.id) : undefined}
           productRatings={productRatings}
         />

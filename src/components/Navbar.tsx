@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsPopover } from "./notifications/NotificationsPopover";
+import { CartPopover } from "./products/CartPopover";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { Award, Package, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -27,8 +28,8 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="text-xl font-bold flex items-center gap-2">
-            <span className="text-primary">R</span>
-            <span>UNVAS</span>
+            <span className="text-primary">U</span>
+            <span>NVAS®</span>
           </Link>
 
           <div className="hidden md:flex space-x-6">
@@ -49,6 +50,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-2">
             {user ? (
               <>
+                <CartPopover />
                 <NotificationsPopover />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
