@@ -30,44 +30,62 @@ export const AchievementImageCarousel = ({ images, title }: AchievementImageCaro
   };
 
   return (
-    <div className="relative">
-      <div className="flex justify-center items-center h-[400px]">
-        <img
-          src={images[currentImageIndex]}
-          alt={`${title} - Image ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover rounded-lg"
-        />
-      </div>
-      {images.length > 1 && (
-        <div className="absolute inset-0 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="ml-2 bg-black/20 hover:bg-black/40"
-            onClick={previousImage}
-          >
-            <ChevronLeft className="h-6 w-6 text-white" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-2 bg-black/20 hover:bg-black/40"
-            onClick={nextImage}
-          >
-            <ChevronRight className="h-6 w-6 text-white" />
-          </Button>
-        </div>
-      )}
-      <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
-        {images.map((_, index) => (
+    <div className="relative w-full h-[600px] overflow-hidden rounded-lg">
+      <div className="absolute inset-0 flex transition-transform duration-500 ease-in-out"
+           style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}>
+        {images.map((image, index) => (
           <div
             key={index}
-            className={`h-2 w-2 rounded-full transition-all ${
-              index === currentImageIndex ? "bg-white" : "bg-white/50"
-            }`}
-          />
+            className="min-w-full h-full"
+            style={{ transform: `translateX(${index * 100}%)` }}
+          >
+            <img
+              src={image}
+              alt={`${title} - Image ${index + 1}`}
+              className="w-full h-full object-contain bg-black/5"
+            />
+          </div>
         ))}
       </div>
+      
+      {images.length > 1 && (
+        <>
+          <div className="absolute inset-y-0 left-0 flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-2 bg-black/20 hover:bg-black/40"
+              onClick={previousImage}
+            >
+              <ChevronLeft className="h-6 w-6 text-white" />
+            </Button>
+          </div>
+          <div className="absolute inset-y-0 right-0 flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-2 bg-black/20 hover:bg-black/40"
+              onClick={nextImage}
+            >
+              <ChevronRight className="h-6 w-6 text-white" />
+            </Button>
+          </div>
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentImageIndex 
+                    ? "bg-white scale-110" 
+                    : "bg-white/50 hover:bg-white/75"
+                }`}
+                aria-label={`Go to image ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
