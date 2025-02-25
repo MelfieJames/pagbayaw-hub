@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +9,7 @@ import { MinusCircle, PlusCircle, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect } from "react";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -27,6 +29,13 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const selectedItems = location.state?.selectedItems || [];
   const selectedQuantities = location.state?.quantities || {};
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items', selectedItems],
@@ -118,15 +127,11 @@ export default function Checkout() {
 
   const handleCheckout = async () => {
     if (!user || cartItems.length === 0) {
-      toast("No items to checkout");
+      toast.error("No items to checkout");
       return;
     }
 
     try {
-      const total = cartItems.reduce((sum, item) => 
-        sum + (item.quantity * (item.products?.product_price || 0)), 0
-      );
-
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchases')
         .insert({
@@ -168,27 +173,24 @@ export default function Checkout() {
       }
 
       // Clear cart items
-      if (selectedItems.length > 0) {
-        const { error: cartError } = await supabase
-          .from('cart')
-          .delete()
-          .eq('user_id', user.id)
-          .in('product_id', selectedItems);
+      const { error: cartError } = await supabase
+        .from('cart')
+        .delete()
+        .eq('user_id', user.id)
+        .in('product_id', cartItems.map(item => item.product_id));
 
-        if (cartError) throw cartError;
-      }
+      if (cartError) throw cartError;
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
-      toast("Order processed successfully! Please check your notifications to rate your purchases.");
+      toast.success("Order processed successfully! Please check your notifications to rate your purchases.");
       navigate('/products');
     } catch (error) {
       console.error('Checkout error:', error);
-      toast("Failed to process order. Please try again.");
+      toast.error("Failed to process order. Please try again.");
     }
   };
 
   if (!user) {
-    navigate('/login');
     return null;
   }
 

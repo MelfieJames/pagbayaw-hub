@@ -16,12 +16,30 @@ export function useProductActions() {
       navigate("/login");
       return;
     }
-    navigate("/checkout", { 
-      state: { 
-        selectedItems: [productId],
-        quantities: { [productId]: 1 }
-      } 
-    });
+
+    // First, add to cart
+    try {
+      const { error } = await supabase
+        .from('cart')
+        .upsert({
+          user_id: user.id,
+          product_id: productId,
+          quantity: 1
+        });
+
+      if (error) throw error;
+
+      // Then navigate to checkout with the selected item
+      navigate("/checkout", { 
+        state: { 
+          selectedItems: [productId],
+          quantities: { [productId]: 1 }
+        } 
+      });
+    } catch (error) {
+      console.error('Error processing buy now:', error);
+      toast("Failed to process buy now request");
+    }
   };
 
   const handleAddToCart = async (productId: number, quantity: number = 1) => {
@@ -32,12 +50,24 @@ export function useProductActions() {
     }
 
     try {
+      // Check if item already exists in cart
+      const { data: existingItem, error: checkError } = await supabase
+        .from('cart')
+        .select('quantity')
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
       const { error } = await supabase
         .from('cart')
         .upsert({
           user_id: user.id,
           product_id: productId,
-          quantity
+          quantity: existingItem ? existingItem.quantity + quantity : quantity
         });
 
       if (error) throw error;
