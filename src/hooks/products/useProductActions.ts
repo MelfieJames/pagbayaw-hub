@@ -17,8 +17,22 @@ export function useProductActions() {
       return;
     }
 
-    // First, add to cart
     try {
+      // Get inventory quantity first
+      const { data: inventoryData, error: inventoryError } = await supabase
+        .from('inventory')
+        .select('quantity')
+        .eq('product_id', productId)
+        .single();
+
+      if (inventoryError) throw inventoryError;
+
+      if (!inventoryData || inventoryData.quantity < 1) {
+        toast("Item is out of stock");
+        return;
+      }
+
+      // Add to cart with quantity of 1
       const { error } = await supabase
         .from('cart')
         .upsert({
@@ -29,7 +43,7 @@ export function useProductActions() {
 
       if (error) throw error;
 
-      // Then navigate to checkout with the selected item
+      // Navigate to checkout with the selected item
       navigate("/checkout", { 
         state: { 
           selectedItems: [productId],
@@ -50,7 +64,21 @@ export function useProductActions() {
     }
 
     try {
-      // Check if item already exists in cart
+      // Get inventory quantity first
+      const { data: inventoryData, error: inventoryError } = await supabase
+        .from('inventory')
+        .select('quantity')
+        .eq('product_id', productId)
+        .single();
+
+      if (inventoryError) throw inventoryError;
+
+      if (!inventoryData || inventoryData.quantity < 1) {
+        toast("Item is out of stock");
+        return;
+      }
+
+      // Check existing cart quantity
       const { data: existingItem, error: checkError } = await supabase
         .from('cart')
         .select('quantity')
@@ -62,12 +90,20 @@ export function useProductActions() {
         throw checkError;
       }
 
+      const newQuantity = existingItem ? existingItem.quantity + quantity : quantity;
+
+      // Ensure we don't exceed inventory
+      if (newQuantity > inventoryData.quantity) {
+        toast("Cannot exceed available stock");
+        return;
+      }
+
       const { error } = await supabase
         .from('cart')
         .upsert({
           user_id: user.id,
           product_id: productId,
-          quantity: existingItem ? existingItem.quantity + quantity : quantity
+          quantity: newQuantity
         });
 
       if (error) throw error;

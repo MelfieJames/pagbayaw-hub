@@ -40,8 +40,10 @@ export default function Checkout() {
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items', selectedItems],
     queryFn: async () => {
-      if (!user?.id || selectedItems.length === 0) return [];
-      const { data: responseData, error } = await supabase
+      if (!user?.id) return [];
+      
+      // If no selected items, get all cart items
+      let query = supabase
         .from('cart')
         .select(`
           quantity,
@@ -53,8 +55,14 @@ export default function Checkout() {
             category
           )
         `)
-        .eq('user_id', user.id)
-        .in('product_id', selectedItems)
+        .eq('user_id', user.id);
+
+      // If we have selected items, filter by them
+      if (selectedItems.length > 0) {
+        query = query.in('product_id', selectedItems);
+      }
+
+      const { data: responseData, error } = await query
         .returns<SupabaseCartResponse[]>();
 
       if (error) {
@@ -75,12 +83,33 @@ export default function Checkout() {
 
       return items as CartItem[];
     },
-    enabled: !!user?.id && selectedItems.length > 0,
+    enabled: !!user?.id,
     staleTime: Infinity,
+  });
+
+  // Add inventory query
+  const { data: inventoryData = [] } = useQuery({
+    queryKey: ['inventory-data'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*');
+      if (error) throw error;
+      return data;
+    }
   });
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
     if (!user?.id || newQuantity < 1) return;
+
+    // Check inventory limits
+    const inventoryItem = inventoryData.find(item => item.product_id === productId);
+    const maxQuantity = inventoryItem?.quantity || 0;
+
+    if (newQuantity > maxQuantity) {
+      toast.error("Cannot exceed available stock");
+      return;
+    }
 
     try {
       const { error } = await supabase

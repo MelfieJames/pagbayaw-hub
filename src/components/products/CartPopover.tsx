@@ -69,8 +69,29 @@ export function CartPopover() {
     enabled: !!user?.id
   });
 
+  const { data: inventoryData = [] } = useQuery({
+    queryKey: ['inventory-data'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const updateQuantity = async (productId: number, newQuantity: number) => {
-    if (!user?.id || newQuantity < 1) return;
+    if (!user?.id) return;
+
+    const inventoryItem = inventoryData.find(item => item.product_id === productId);
+    const maxQuantity = inventoryItem?.quantity || 0;
+
+    if (newQuantity > maxQuantity) {
+      toast("Cannot exceed available stock");
+      return;
+    }
+
+    if (newQuantity < 1) return;
 
     try {
       const { error } = await supabase
@@ -135,7 +156,20 @@ export function CartPopover() {
       toast("Please select items to checkout");
       return;
     }
-    navigate('/checkout', { state: { selectedItems } });
+
+    const quantities = cartItems
+      .filter(item => selectedItems.includes(item.product_id))
+      .reduce((acc, item) => ({
+        ...acc,
+        [item.product_id]: item.quantity
+      }), {});
+
+    navigate('/checkout', { 
+      state: { 
+        selectedItems,
+        quantities
+      } 
+    });
   };
 
   return (
