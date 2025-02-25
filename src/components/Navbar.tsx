@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +26,7 @@ export default function Navbar() {
     <nav className="fixed top-0 w-full bg-white border-b z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-xl font-bold flex items-center gap-2">
+          <Link to="/" className="text-xl font-bold flex items-center gap-1">
             <span className="text-primary">U</span>
             <span>NVAS®</span>
           </Link>

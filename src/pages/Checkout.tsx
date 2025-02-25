@@ -153,17 +153,19 @@ export default function Checkout() {
 
       if (itemsError) throw itemsError;
 
-      // Create notification
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: user.id,
-          purchase_id: purchase.id,
-          type: 'purchase',
-          message: `Your order has been processed successfully.`
-        });
+      // Create notifications for each product to be rated
+      for (const item of cartItems) {
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            purchase_id: purchase.id,
+            type: 'review_request',
+            message: `Please rate and review your purchase: ${item.products?.product_name}`
+          });
 
-      if (notificationError) throw notificationError;
+        if (notificationError) throw notificationError;
+      }
 
       // Clear cart items
       if (selectedItems.length > 0) {
@@ -177,7 +179,7 @@ export default function Checkout() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
-      toast("Order processed successfully!");
+      toast("Order processed successfully! Please check your notifications to rate your purchases.");
       navigate('/products');
     } catch (error) {
       console.error('Checkout error:', error);
