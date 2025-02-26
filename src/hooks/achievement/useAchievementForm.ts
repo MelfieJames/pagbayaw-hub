@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/services/supabase/client";
 import { createAchievement, updateAchievement, AchievementData } from "@/utils/achievementOperations";
 import { CustomUser } from "@/contexts/AuthContext";
 import { useAchievementImages } from "./useAchievementImages";
@@ -56,19 +55,11 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     try {
       let achievementId: number;
 
-      const completeFormData: AchievementData = {
-        achievement_name: formData.achievement_name,
-        description: formData.description,
-        date: formData.date,
-        venue: formData.venue,
-        image: formData.image
-      };
-
       if (mode === 'add') {
-        const result = await createAchievement(completeFormData, user);
+        const result = await createAchievement(formData, user);
         achievementId = result.id;
       } else if (initialData?.id) {
-        await updateAchievement(initialData.id, completeFormData);
+        await updateAchievement(initialData.id, formData);
         achievementId = initialData.id;
       } else {
         throw new Error('Invalid operation');
