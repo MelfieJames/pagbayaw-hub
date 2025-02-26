@@ -1,14 +1,17 @@
-import { Award, FileText, Calendar, Image, Plus } from "lucide-react";
-import { AchievementFormInput } from "../AchievementFormInput";
-import { ImageUploadSection } from "../ImageUploadSection";
+
+import { Award, FileText, Calendar, Image, Plus, MapPin } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImageUploadSection } from "../ImageUploadSection";
 
 interface AchievementFormFieldsProps {
   formData: {
     achievement_name: string;
     description: string;
     date: string;
+    venue: string;
     image: string;
   };
   imagePreview: string | null;
@@ -31,80 +34,106 @@ export const AchievementFormFields = ({
   onAdditionalFileChange,
 }: AchievementFormFieldsProps) => {
   return (
-    <div className="grid grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <AchievementFormInput
-          label="Achievement Name"
+    <div className="space-y-6">
+      <div>
+        <Label className="flex items-center gap-2">
+          <Award className="h-4 w-4" />
+          Achievement Name
+        </Label>
+        <Input
           name="achievement_name"
           value={formData.achievement_name}
           onChange={handleInputChange}
+          className="mt-2"
           required
-          icon={<Award className="h-5 w-5 text-gray-500" />}
         />
-        <AchievementFormInput
-          label="Description"
+      </div>
+
+      <div>
+        <Label className="flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
+          Date
+        </Label>
+        <Input
+          type="date"
+          name="date"
+          value={formData.date}
+          onChange={handleInputChange}
+          className="mt-2"
+          required
+        />
+      </div>
+
+      <div>
+        <Label className="flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          Venue
+        </Label>
+        <Input
+          name="venue"
+          value={formData.venue}
+          onChange={handleInputChange}
+          className="mt-2"
+          required
+        />
+      </div>
+
+      <div>
+        <Label className="flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          About this Achievement
+        </Label>
+        <Textarea
           name="description"
           value={formData.description}
           onChange={handleInputChange}
-          isTextarea
-          icon={<FileText className="h-5 w-5 text-gray-500" />}
+          className="mt-2 min-h-[200px]"
+          required
         />
       </div>
-      
-      <div className="space-y-4">
-        <AchievementFormInput
-          label="Date"
-          name="date"
-          type="date"
-          value={formData.date}
-          onChange={handleInputChange}
-          required
-          icon={<Calendar className="h-5 w-5 text-gray-500" />}
+
+      <div>
+        <Label className="flex items-center gap-2 mb-2">
+          <Image className="h-4 w-4" />
+          Title Picture
+        </Label>
+        <ImageUploadSection
+          imagePreview={imagePreview}
+          onFileChange={(e) => handleMultipleFileChange(e)}
         />
+      </div>
 
-        <div className="relative">
-          <div className="absolute left-0 top-0">
-            <Image className="h-5 w-5 text-gray-500" />
-          </div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Images</span>
-            {onAddMoreImages && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onAddMoreImages}
-                className="flex items-center gap-1"
-              >
-                <Plus className="h-4 w-4" /> Add More Images
-              </Button>
-            )}
-          </div>
-          
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-6">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <Label className="flex items-center gap-2">
+            <Image className="h-4 w-4" />
+            Additional Pictures
+          </Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onAddMoreImages}
+            className="flex items-center gap-1"
+          >
+            <Plus className="h-4 w-4" /> Add More Pictures
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {additionalPreviews.map((preview, index) => (
+            <div key={index} className="pt-4">
               <ImageUploadSection
-                imagePreview={imagePreview}
-                onFileChange={handleMultipleFileChange}
-                multiple={true}
-                imagePreviews={imagePreviews}
+                imagePreview={preview}
+                onFileChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && onAdditionalFileChange) {
+                    onAdditionalFileChange(index, file);
+                  }
+                }}
               />
-
-              {additionalPreviews.map((preview, index) => (
-                <div key={index} className="pt-4 border-t">
-                  <ImageUploadSection
-                    imagePreview={preview}
-                    onFileChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file && onAdditionalFileChange) {
-                        onAdditionalFileChange(index, file);
-                      }
-                    }}
-                  />
-                </div>
-              ))}
             </div>
-          </ScrollArea>
+          ))}
         </div>
       </div>
     </div>
