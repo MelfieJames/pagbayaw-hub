@@ -85,6 +85,30 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
 
   const handleDelete = async (id: number) => {
     try {
+      // First delete associated images
+      const { data: imageData } = await supabase
+        .from('achievement_images')
+        .select('image_url')
+        .eq('achievement_id', id);
+
+      if (imageData) {
+        for (const item of imageData) {
+          const path = item.image_url.split('/').pop();
+          if (path) {
+            await supabase.storage
+              .from('achievements')
+              .remove([path]);
+          }
+        }
+      }
+
+      // Delete achievement images records
+      await supabase
+        .from('achievement_images')
+        .delete()
+        .eq('achievement_id', id);
+
+      // Delete the achievement
       const { error } = await supabase
         .from('achievements')
         .delete()
@@ -96,7 +120,8 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
         title: "Success",
         description: "Achievement deleted successfully",
       });
-      refetch();
+      
+      refetch(); // Refresh the list after deletion
     } catch (error: any) {
       console.error('Error:', error);
       toast({

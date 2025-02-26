@@ -64,23 +64,35 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
         image: formData.image
       };
 
+      // Validate required fields
+      if (!achievementData.achievement_name || !achievementData.date || !achievementData.venue) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (mode === 'add') {
         const result = await createAchievement(achievementData, user);
         achievementId = result.id;
+        toast({
+          title: "Success",
+          description: "Achievement added successfully",
+        });
       } else if (initialData?.id) {
         await updateAchievement(initialData.id, achievementData);
         achievementId = initialData.id;
+        toast({
+          title: "Success",
+          description: "Achievement updated successfully",
+        });
       } else {
         throw new Error('Invalid operation');
       }
 
       await uploadImages(achievementId);
-
-      toast({
-        title: "Success",
-        description: `Achievement ${mode === 'add' ? 'added' : 'updated'} successfully`,
-      });
-
       onSuccess();
     } catch (error: any) {
       console.error('Error:', error);

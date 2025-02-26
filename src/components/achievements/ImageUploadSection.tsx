@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,7 +30,7 @@ export const ImageUploadSection = ({
         />
       </div>
 
-      {multiple && imagePreviews && imagePreviews.length > 0 ? (
+      {multiple ? (
         <ScrollArea className="h-[200px] w-full rounded-md border p-4">
           <div className="grid grid-cols-2 gap-4">
             {imagePreviews.map((preview, index) => (

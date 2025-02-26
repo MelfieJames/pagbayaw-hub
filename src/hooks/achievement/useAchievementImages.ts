@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/services/supabase/client";
 
@@ -15,18 +16,16 @@ export const useAchievementImages = () => {
     setImagePreviews(previews);
   };
 
-  const handleAdditionalFileChange = (index: number, file: File) => {
-    const newFiles = [...additionalFiles];
-    newFiles[index] = file;
-    setAdditionalFiles(newFiles);
+  const handleAdditionalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setAdditionalFiles(prev => [...prev, ...files]);
 
-    const newPreviews = [...additionalPreviews];
-    newPreviews[index] = URL.createObjectURL(file);
-    setAdditionalPreviews(newPreviews);
+    const previews = files.map(file => URL.createObjectURL(file));
+    setAdditionalPreviews(prev => [...prev, ...previews]);
   };
 
   const uploadImages = async (achievementId: number) => {
-    const allFiles = [...selectedFiles, ...additionalFiles.filter(Boolean)];
+    const allFiles = [...selectedFiles, ...additionalFiles];
     
     const uploadPromises = allFiles.map(async (file) => {
       const fileExt = file.name.split('.').pop();
