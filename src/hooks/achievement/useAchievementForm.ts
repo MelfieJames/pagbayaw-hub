@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/services/supabase/client";
@@ -9,6 +10,7 @@ interface AchievementFormData {
   achievement_name: string;
   description: string;
   date: string;
+  venue: string;  // Added venue field
   image: string;
 }
 
@@ -21,10 +23,11 @@ interface UseAchievementFormProps {
 
 export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAchievementFormProps) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AchievementFormData>({
     achievement_name: initialData?.achievement_name || "",
     description: initialData?.description || "",
     date: initialData?.date || "",
+    venue: initialData?.venue || "",  // Added venue initialization
     image: ""
   });
 
