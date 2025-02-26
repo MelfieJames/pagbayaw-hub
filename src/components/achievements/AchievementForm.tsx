@@ -89,7 +89,7 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
 
       onSuccess();
       onClose?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting achievement:', error);
       toast({
         title: "Error",
@@ -109,7 +109,7 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
         handleMultipleFileChange={handleFileChange}
         onAddMoreImages={handleAddMoreImages}
         additionalPreviews={additionalPreviews.slice(0, additionalImageCount)}
-        onAdditionalFileChange={handleAdditionalFileChange}
+        handleAdditionalFileChange={handleAdditionalFileChange}
       />
 
       <DialogFooter className="flex justify-between items-center mt-6">

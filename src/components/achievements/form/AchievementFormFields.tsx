@@ -20,7 +20,7 @@ interface AchievementFormFieldsProps {
   handleMultipleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAddMoreImages?: () => void;
   additionalPreviews?: string[];
-  onAdditionalFileChange?: (index: number, file: File) => void;
+  handleAdditionalFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const AchievementFormFields = ({
@@ -31,7 +31,7 @@ export const AchievementFormFields = ({
   handleMultipleFileChange,
   onAddMoreImages,
   additionalPreviews = [],
-  onAdditionalFileChange,
+  handleAdditionalFileChange,
 }: AchievementFormFieldsProps) => {
   return (
     <div className="space-y-6">
@@ -99,7 +99,7 @@ export const AchievementFormFields = ({
         </Label>
         <ImageUploadSection
           imagePreview={imagePreview}
-          onFileChange={(e) => handleMultipleFileChange(e)}
+          onFileChange={handleMultipleFileChange}
         />
       </div>
 
@@ -125,12 +125,7 @@ export const AchievementFormFields = ({
             <div key={index} className="pt-4">
               <ImageUploadSection
                 imagePreview={preview}
-                onFileChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file && onAdditionalFileChange) {
-                    onAdditionalFileChange(index, file);
-                  }
-                }}
+                onFileChange={handleAdditionalFileChange}
               />
             </div>
           ))}
