@@ -2,12 +2,12 @@
 import { supabase } from "@/services/supabase/client";
 import { User } from "@supabase/supabase-js";
 
-interface AchievementData {
+export interface AchievementData {
   achievement_name: string;
   description: string;
   date: string;
-  image: string;
   venue: string;
+  image: string;
 }
 
 export const createAchievement = async (data: AchievementData, user: User | null) => {

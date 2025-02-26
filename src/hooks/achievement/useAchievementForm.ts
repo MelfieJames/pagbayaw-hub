@@ -2,20 +2,12 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/services/supabase/client";
-import { createAchievement, updateAchievement } from "@/utils/achievementOperations";
+import { createAchievement, updateAchievement, AchievementData } from "@/utils/achievementOperations";
 import { CustomUser } from "@/contexts/AuthContext";
 import { useAchievementImages } from "./useAchievementImages";
 
-interface AchievementFormData {
-  achievement_name: string;
-  description: string;
-  date: string;
-  venue: string;
-  image: string;
-}
-
 interface UseAchievementFormProps {
-  initialData?: AchievementFormData & { id?: number };
+  initialData?: AchievementData & { id?: number };
   mode: 'add' | 'edit';
   onSuccess: () => void;
   user: CustomUser | null;
@@ -23,7 +15,7 @@ interface UseAchievementFormProps {
 
 export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAchievementFormProps) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<AchievementFormData>({
+  const [formData, setFormData] = useState<AchievementData>({
     achievement_name: initialData?.achievement_name || "",
     description: initialData?.description || "",
     date: initialData?.date || "",
@@ -63,19 +55,12 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
 
     try {
       let achievementId: number;
-      const achievementData: AchievementFormData = {
-        achievement_name: formData.achievement_name,
-        description: formData.description,
-        date: formData.date,
-        venue: formData.venue,
-        image: formData.image
-      };
 
       if (mode === 'add') {
-        const result = await createAchievement(achievementData, user);
+        const result = await createAchievement(formData, user);
         achievementId = result.id;
       } else if (initialData?.id) {
-        await updateAchievement(initialData.id, achievementData);
+        await updateAchievement(initialData.id, formData);
         achievementId = initialData.id;
       } else {
         throw new Error('Invalid operation');
