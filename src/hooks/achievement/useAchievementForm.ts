@@ -9,11 +9,11 @@ interface UseAchievementFormProps {
   initialData?: AchievementData & { id?: number };
   mode: 'add' | 'edit';
   onSuccess: () => void;
+  onError: (error: Error) => void;
   user: CustomUser | null;
 }
 
-export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAchievementFormProps) => {
-  const { toast } = useToast();
+export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user }: UseAchievementFormProps) => {
   const [formData, setFormData] = useState<AchievementData>({
     achievement_name: initialData?.achievement_name || "",
     description: initialData?.description || "",
@@ -44,63 +44,36 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     e.preventDefault();
 
     if (!user?.isAdmin) {
-      toast({
-        title: "Error",
-        description: "Only admin users can manage achievements",
-        variant: "destructive"
-      });
+      onError(new Error("Only admin users can manage achievements"));
       return;
     }
 
     try {
-      let achievementId: number;
-
-      // Ensure all required fields are present
-      const achievementData: AchievementData = {
-        achievement_name: formData.achievement_name,
-        description: formData.description,
-        date: formData.date,
-        venue: formData.venue,
-        image: formData.image
-      };
-
       // Validate required fields
-      if (!achievementData.achievement_name || !achievementData.date || !achievementData.venue) {
-        toast({
-          title: "Error",
-          description: "Please fill in all required fields",
-          variant: "destructive"
-        });
-        return;
+      if (!formData.achievement_name || !formData.date || !formData.venue) {
+        throw new Error("Please fill in all required fields");
       }
 
+      let achievementId: number;
+
       if (mode === 'add') {
-        const result = await createAchievement(achievementData, user);
+        const result = await createAchievement(formData, user);
         achievementId = result.id;
-        toast({
-          title: "Success",
-          description: "Achievement added successfully",
-        });
       } else if (initialData?.id) {
-        await updateAchievement(initialData.id, achievementData);
+        await updateAchievement(initialData.id, formData);
         achievementId = initialData.id;
-        toast({
-          title: "Success",
-          description: "Achievement updated successfully",
-        });
       } else {
         throw new Error('Invalid operation');
       }
 
-      await uploadImages(achievementId);
+      // Upload images
+      if (selectedFiles.length > 0 || additionalFiles.length > 0) {
+        await uploadImages(achievementId);
+      }
+
       onSuccess();
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: error.message || `Failed to ${mode} achievement`,
-        variant: "destructive"
-      });
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error('An unexpected error occurred'));
     }
   };
 
