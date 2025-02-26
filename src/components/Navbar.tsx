@@ -93,14 +93,9 @@ export default function Navbar() {
             ) : (
               <div className="flex gap-2">
                 {!isMobile && (
-                  <>
-                    <Button variant="ghost" onClick={() => navigate("/login")}>
-                      Login
-                    </Button>
-                    <Button onClick={() => navigate("/register")}>
-                      Register
-                    </Button>
-                  </>
+                  <Button variant="ghost" onClick={() => navigate("/login")}>
+                    Login
+                  </Button>
                 )}
               </div>
             )}
@@ -119,9 +114,6 @@ export default function Navbar() {
                       <div className="flex flex-col gap-2 mt-4">
                         <Button onClick={() => navigate("/login")}>
                           Login
-                        </Button>
-                        <Button onClick={() => navigate("/register")}>
-                          Register
                         </Button>
                       </div>
                     )}

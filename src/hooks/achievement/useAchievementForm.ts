@@ -10,7 +10,7 @@ interface AchievementFormData {
   achievement_name: string;
   description: string;
   date: string;
-  venue: string;  // Added venue field
+  venue: string;
   image: string;
 }
 
@@ -27,7 +27,7 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     achievement_name: initialData?.achievement_name || "",
     description: initialData?.description || "",
     date: initialData?.date || "",
-    venue: initialData?.venue || "",  // Added venue initialization
+    venue: initialData?.venue || "",
     image: ""
   });
 
