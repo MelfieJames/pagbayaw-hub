@@ -28,7 +28,7 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
     description: initialData?.description || "",
     date: initialData?.date || "",
     venue: initialData?.venue || "",
-    image: ""
+    image: initialData?.image || ""
   });
 
   const {
@@ -63,12 +63,19 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, user }: UseAc
 
     try {
       let achievementId: number;
+      const achievementData: AchievementFormData = {
+        achievement_name: formData.achievement_name,
+        description: formData.description,
+        date: formData.date,
+        venue: formData.venue,
+        image: formData.image
+      };
 
       if (mode === 'add') {
-        const result = await createAchievement(formData, user);
+        const result = await createAchievement(achievementData, user);
         achievementId = result.id;
       } else if (initialData?.id) {
-        await updateAchievement(initialData.id, formData);
+        await updateAchievement(initialData.id, achievementData);
         achievementId = initialData.id;
       } else {
         throw new Error('Invalid operation');
