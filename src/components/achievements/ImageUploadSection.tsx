@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
 interface ImageUploadSectionProps {
-  imagePreview: string | null;
+  imagePreview?: string | null;  // Made optional with ? operator
   imagePreviews?: string[];
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   multiple?: boolean;

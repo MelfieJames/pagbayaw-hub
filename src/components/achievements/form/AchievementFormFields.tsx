@@ -127,6 +127,7 @@ export const AchievementFormFields = ({
 
         {additionalPreviews.length > 0 && (
           <ImageUploadSection
+            imagePreview={null}  // Add the missing property
             imagePreviews={additionalPreviews}
             onFileChange={handleAdditionalFileChange}
             multiple={true}
