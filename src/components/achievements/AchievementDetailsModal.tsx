@@ -19,6 +19,8 @@ interface Achievement {
   created_at: string;
   updated_at: string | null;
   user_id: string | null;
+  image: string | null; // Added the missing image property
+  venue?: string;
 }
 
 interface AchievementDetailsModalProps {
