@@ -66,7 +66,22 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
     fileInput.accept = 'image/*';
     fileInput.multiple = true;
     fileInput.onchange = (e) => {
-      handleAdditionalFileChange(e as React.ChangeEvent<HTMLInputElement>);
+      // Handle the native event properly
+      if (e.target && e.target instanceof HTMLInputElement && e.target.files) {
+        // Create a synthetic React change event
+        const syntheticEvent = {
+          target: e.target,
+          currentTarget: e.currentTarget,
+          preventDefault: () => {},
+          stopPropagation: () => {},
+          isPropagationStopped: () => false,
+          isDefaultPrevented: () => false,
+          persist: () => {},
+          nativeEvent: e
+        } as React.ChangeEvent<HTMLInputElement>;
+        
+        handleAdditionalFileChange(syntheticEvent);
+      }
     };
     fileInput.click();
   };
