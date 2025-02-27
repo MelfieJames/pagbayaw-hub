@@ -10,7 +10,8 @@ import { useState } from "react";
 import { AchievementDetailsContent } from "@/components/achievements/details/AchievementDetailsContent";
 import AchievementImageCarousel from "@/components/achievements/details/AchievementImageCarousel";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Achievement {
   id: number;
@@ -103,7 +104,6 @@ const Achievements = () => {
             <Card
               key={achievement.id}
               className="overflow-hidden cursor-pointer hover:shadow-lg transition-all"
-              onClick={() => handleAchievementClick(achievement)}
             >
               <div className="aspect-w-16 aspect-h-9">
                 <img
@@ -112,14 +112,21 @@ const Achievements = () => {
                   className="w-full h-48 object-cover"
                 />
               </div>
-              <CardHeader>
-                <CardTitle>{achievement.achievement_name}</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl">{achievement.achievement_name}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 line-clamp-2">{achievement.description}</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  {format(new Date(achievement.date), 'PP')}
+              <CardContent className="pt-0 pb-5">
+                <p className="text-sm text-gray-600 mb-4">
+                  {format(new Date(achievement.date), 'MMMM dd, yyyy')}
                 </p>
+                <Button 
+                  onClick={() => handleAchievementClick(achievement)}
+                  className="w-full" 
+                  variant="outline"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
+                </Button>
               </CardContent>
             </Card>
           ))}

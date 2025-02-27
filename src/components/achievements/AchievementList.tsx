@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { AchievementTableRow } from "./AchievementTableRow";
 import { AchievementDetailsModal } from "./AchievementDetailsModal";
+import ErrorModal from "@/components/ErrorModal";
 
 interface Achievement {
   id: number;
@@ -36,6 +37,7 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: achievements, refetch, isError, error, isLoading } = useQuery({
     queryKey: ['achievements'],
@@ -126,6 +128,7 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
       refetch(); // Refresh the list after deletion
     } catch (error: any) {
       console.error('Error:', error);
+      setErrorMessage(error.message || "Failed to delete achievement");
       toast({
         title: "Error",
         description: error.message || "Failed to delete achievement",
@@ -164,7 +167,6 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
             <TableRow>
               <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -186,6 +188,13 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
       <AchievementDetailsModal
         achievement={selectedAchievement}
         onClose={() => setSelectedAchievement(null)}
+      />
+
+      <ErrorModal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        title="Error"
+        message={errorMessage || "An unexpected error occurred"}
       />
     </div>
   );
