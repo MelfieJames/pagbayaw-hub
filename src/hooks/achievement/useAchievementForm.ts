@@ -28,6 +28,8 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
     additionalPreviews,
     handleFileChange,
     handleAdditionalFileChange,
+    removeImage,
+    removeAdditionalImage,
     uploadImages
   } = useAchievementImages();
 
@@ -41,6 +43,7 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting form", { formData, user });
 
     if (!user?.isAdmin) {
       onError(new Error("Only admin users can manage achievements"));
@@ -54,11 +57,15 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
       }
 
       let achievementId: number;
+      console.log("Mode:", mode);
 
       if (mode === 'add') {
+        console.log("Creating achievement with data:", formData);
         const result = await createAchievement(formData, user);
+        console.log("Create result:", result);
         achievementId = result.id;
       } else if (initialData?.id) {
+        console.log("Updating achievement with ID:", initialData.id, "and data:", formData);
         await updateAchievement(initialData.id, formData);
         achievementId = initialData.id;
       } else {
@@ -66,12 +73,25 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
       }
 
       // Upload images
+      console.log("Files to upload:", { 
+        selectedFiles: selectedFiles.length, 
+        additionalFiles: additionalFiles.length 
+      });
+      
       if (selectedFiles.length > 0 || additionalFiles.length > 0) {
-        await uploadImages(achievementId);
+        try {
+          console.log("Uploading images for achievement ID:", achievementId);
+          await uploadImages(achievementId);
+        } catch (uploadError) {
+          console.error("Error uploading images:", uploadError);
+          throw new Error(`Achievement added but failed to upload images: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+        }
       }
 
+      console.log("Success! Calling onSuccess callback");
       onSuccess();
     } catch (error) {
+      console.error("Error in form submission:", error);
       onError(error instanceof Error ? error : new Error('An unexpected error occurred'));
     }
   };
@@ -83,6 +103,8 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
     handleInputChange,
     handleFileChange,
     handleSubmit,
-    handleAdditionalFileChange
+    handleAdditionalFileChange,
+    removeImage,
+    removeAdditionalImage
   };
 };

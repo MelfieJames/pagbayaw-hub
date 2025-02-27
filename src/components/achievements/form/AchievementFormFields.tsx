@@ -21,6 +21,8 @@ interface AchievementFormFieldsProps {
   onAddMoreImages?: () => void;
   additionalPreviews?: string[];
   handleAdditionalFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveImage?: (index: number) => void;
+  onRemoveAdditionalImage?: (index: number) => void;
 }
 
 export const AchievementFormFields = ({
@@ -32,6 +34,8 @@ export const AchievementFormFields = ({
   onAddMoreImages,
   additionalPreviews = [],
   handleAdditionalFileChange,
+  onRemoveImage,
+  onRemoveAdditionalImage,
 }: AchievementFormFieldsProps) => {
   return (
     <div className="space-y-6">
@@ -100,6 +104,7 @@ export const AchievementFormFields = ({
         <ImageUploadSection
           imagePreview={imagePreview}
           onFileChange={handleMultipleFileChange}
+          onRemoveImage={onRemoveImage}
         />
       </div>
 
@@ -120,16 +125,15 @@ export const AchievementFormFields = ({
           </Button>
         </div>
 
-        <div className="space-y-4">
-          {additionalPreviews.map((preview, index) => (
-            <div key={index} className="pt-4">
-              <ImageUploadSection
-                imagePreview={preview}
-                onFileChange={handleAdditionalFileChange}
-              />
-            </div>
-          ))}
-        </div>
+        {additionalPreviews.length > 0 && (
+          <ImageUploadSection
+            imagePreviews={additionalPreviews}
+            onFileChange={handleAdditionalFileChange}
+            multiple={true}
+            onRemoveImage={onRemoveAdditionalImage}
+            showFileInput={false}
+          />
+        )}
       </div>
     </div>
   );

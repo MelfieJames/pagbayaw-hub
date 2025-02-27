@@ -24,8 +24,32 @@ export const useAchievementImages = () => {
     setAdditionalPreviews(prev => [...prev, ...previews]);
   };
 
+  const removeImage = (index: number) => {
+    const newFiles = [...selectedFiles];
+    newFiles.splice(index, 1);
+    setSelectedFiles(newFiles);
+
+    const newPreviews = [...imagePreviews];
+    URL.revokeObjectURL(newPreviews[index]);
+    newPreviews.splice(index, 1);
+    setImagePreviews(newPreviews);
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    const newFiles = [...additionalFiles];
+    newFiles.splice(index, 1);
+    setAdditionalFiles(newFiles);
+
+    const newPreviews = [...additionalPreviews];
+    URL.revokeObjectURL(newPreviews[index]);
+    newPreviews.splice(index, 1);
+    setAdditionalPreviews(newPreviews);
+  };
+
   const uploadImages = async (achievementId: number) => {
     const allFiles = [...selectedFiles, ...additionalFiles];
+    
+    if (allFiles.length === 0) return [];
     
     const uploadPromises = allFiles.map(async (file) => {
       const fileExt = file.name.split('.').pop();
@@ -63,6 +87,8 @@ export const useAchievementImages = () => {
     additionalPreviews,
     handleFileChange,
     handleAdditionalFileChange,
+    removeImage,
+    removeAdditionalImage,
     uploadImages,
   };
 };
