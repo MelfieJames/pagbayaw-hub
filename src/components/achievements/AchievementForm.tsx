@@ -99,7 +99,20 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await submitForm(e);
+    try {
+      console.log("Starting submission process...");
+      await submitForm(e);
+    } catch (error) {
+      console.error("Unhandled error in form submission:", error);
+      setIsSubmitting(false);
+      setErrorMessage(error instanceof Error ? error.message : "Unknown error occurred");
+      setErrorModalOpen(true);
+      toast({
+        title: "Error",
+        description: "Failed to process your request. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDelete = async () => {
