@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Star, Award, ShoppingBag } from "lucide-react";
@@ -81,6 +82,7 @@ const AchievementManagement = () => {
                 <AchievementForm 
                   mode="add"
                   onSuccess={handleAddSuccess}
+                  onClose={() => setIsAddDialogOpen(false)}
                 />
               </DialogContent>
             </Dialog>
@@ -107,6 +109,7 @@ const AchievementManagement = () => {
             mode="edit"
             initialData={currentAchievement}
             onSuccess={handleEditSuccess}
+            onClose={() => setIsEditDialogOpen(false)}
           />
         </DialogContent>
       </Dialog>

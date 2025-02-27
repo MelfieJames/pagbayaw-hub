@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { 
@@ -24,6 +25,7 @@ interface Achievement {
   created_at: string;
   updated_at: string | null;
   user_id: string | null;
+  venue: string;
 }
 
 interface AchievementListProps {
