@@ -28,7 +28,6 @@ interface Achievement {
 const Achievements = () => {
   const { toast } = useToast();
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
-  const [achievementImages, setAchievementImages] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: achievements, isLoading, error } = useQuery({
@@ -49,17 +48,8 @@ const Achievements = () => {
     (achievement.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
-  const handleAchievementClick = async (achievement: Achievement) => {
+  const handleAchievementClick = (achievement: Achievement) => {
     setSelectedAchievement(achievement);
-    
-    const { data: imageData, error } = await supabase
-      .from('achievement_images')
-      .select('image_url')
-      .eq('achievement_id', achievement.id);
-
-    if (!error && imageData) {
-      setAchievementImages(imageData.map(img => img.image_url || '').filter(Boolean));
-    }
   };
 
   if (isLoading) {
@@ -140,12 +130,12 @@ const Achievements = () => {
             {selectedAchievement && (
               <div className="grid md:grid-cols-2 gap-6">
                 <AchievementImageCarousel 
-                  images={achievementImages.length > 0 ? achievementImages : [selectedAchievement.image || "/placeholder.svg"]}
+                  images={[selectedAchievement.image || "/placeholder.svg"]}
                   title={selectedAchievement.achievement_name}
                 />
                 <AchievementDetailsContent 
                   achievement={selectedAchievement}
-                  images={achievementImages}
+                  images={[]}
                 />
               </div>
             )}

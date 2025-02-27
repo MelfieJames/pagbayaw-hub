@@ -5,8 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useEffect, useState } from "react";
-import { supabase } from "@/services/supabase/client";
+import { useState } from "react";
 import { AchievementDetailsContent } from "./details/AchievementDetailsContent";
 import AchievementImageCarousel from "./details/AchievementImageCarousel";
 import ErrorModal from "@/components/ErrorModal";
@@ -19,7 +18,7 @@ interface Achievement {
   created_at: string;
   updated_at: string | null;
   user_id: string | null;
-  image: string | null; // Added the missing image property
+  image: string | null;
   venue?: string;
 }
 
@@ -29,38 +28,7 @@ interface AchievementDetailsModalProps {
 }
 
 export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDetailsModalProps) => {
-  const [images, setImages] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      if (achievement?.id) {
-        setIsLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from('achievement_images')
-            .select('image_url')
-            .eq('achievement_id', achievement.id);
-
-          if (error) {
-            throw error;
-          }
-
-          if (data) {
-            setImages(data.map(img => img.image_url));
-          }
-        } catch (err: any) {
-          console.error("Error fetching achievement images:", err);
-          setError(err.message || "Failed to load achievement images");
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchImages();
-  }, [achievement]);
 
   if (!achievement) return null;
 
@@ -71,20 +39,16 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
           <DialogHeader>
             <DialogTitle>Achievement Details</DialogTitle>
           </DialogHeader>
-          {isLoading ? (
-            <div className="text-center py-8">Loading achievement details...</div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              <AchievementImageCarousel 
-                images={images.length > 0 ? images : [achievement.image || "/placeholder.svg"]}
-                title={achievement.achievement_name}
-              />
-              <AchievementDetailsContent 
-                achievement={achievement}
-                images={images}
-              />
-            </div>
-          )}
+          <div className="grid md:grid-cols-2 gap-6">
+            <AchievementImageCarousel 
+              images={[achievement.image || "/placeholder.svg"]}
+              title={achievement.achievement_name}
+            />
+            <AchievementDetailsContent 
+              achievement={achievement}
+              images={[]}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
