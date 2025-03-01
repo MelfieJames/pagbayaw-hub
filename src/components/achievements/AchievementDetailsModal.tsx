@@ -39,12 +39,13 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
             <DialogTitle>Achievement Details</DialogTitle>
           </DialogHeader>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="flex justify-center items-center">
+            <div className="flex flex-col justify-start">
               <img 
                 src={achievement.image || "/placeholder.svg"} 
                 alt={achievement.achievement_name}
-                className="max-w-full max-h-[400px] object-contain rounded-md"
+                className="max-w-full max-h-[400px] object-contain rounded-md mb-4"
               />
+              <h2 className="text-xl font-bold text-center">{achievement.achievement_name}</h2>
             </div>
             <AchievementDetailsContent 
               achievement={achievement}
