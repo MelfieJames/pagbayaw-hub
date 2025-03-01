@@ -15,10 +15,10 @@ interface Achievement {
 
 interface AchievementDetailsContentProps {
   achievement: Achievement;
-  images: string[];
+  images?: string[]; // Make images optional
 }
 
-export const AchievementDetailsContent = ({ achievement, images }: AchievementDetailsContentProps) => {
+export const AchievementDetailsContent = ({ achievement, images = [] }: AchievementDetailsContentProps) => {
   return (
     <ScrollArea className="max-h-[80vh] w-full overflow-y-auto pr-4">
       <div className="space-y-6">
