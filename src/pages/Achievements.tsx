@@ -5,13 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
-import { AchievementDetailsContent } from "@/components/achievements/details/AchievementDetailsContent";
-import AchievementImageCarousel from "@/components/achievements/details/AchievementImageCarousel";
 import { Input } from "@/components/ui/input";
 import { Search, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface Achievement {
   id: number;
@@ -27,7 +25,6 @@ interface Achievement {
 
 const Achievements = () => {
   const { toast } = useToast();
-  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: achievements, isLoading, error } = useQuery({
@@ -47,10 +44,6 @@ const Achievements = () => {
     achievement.achievement_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (achievement.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
-
-  const handleAchievementClick = (achievement: Achievement) => {
-    setSelectedAchievement(achievement);
-  };
 
   if (isLoading) {
     return (
@@ -109,38 +102,19 @@ const Achievements = () => {
                 <p className="text-sm text-gray-600 mb-4">
                   {format(new Date(achievement.date), 'MMMM dd, yyyy')}
                 </p>
-                <Button 
-                  onClick={() => handleAchievementClick(achievement)}
-                  className="w-full" 
-                  variant="outline"
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </Button>
+                <Link to={`/achievements/${achievement.id}`}>
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}
         </div>
-
-        <Dialog 
-          open={!!selectedAchievement} 
-          onOpenChange={() => setSelectedAchievement(null)}
-        >
-          <DialogContent className="max-w-5xl">
-            {selectedAchievement && (
-              <div className="grid md:grid-cols-2 gap-6">
-                <AchievementImageCarousel 
-                  images={[selectedAchievement.image || "/placeholder.svg"]}
-                  title={selectedAchievement.achievement_name}
-                />
-                <AchievementDetailsContent 
-                  achievement={selectedAchievement}
-                  images={[]}
-                />
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { User } from "@supabase/supabase-js";
 export interface AchievementData {
   achievement_name: string;
   description: string;
+  about_text?: string;
   date: string;
   venue: string;
   image: string;
@@ -34,4 +35,15 @@ export const updateAchievement = async (id: number, data: AchievementData) => {
 
   if (error) throw error;
   return { success: true };
+};
+
+export const getAchievementImages = async (achievementId: number) => {
+  const { data, error } = await supabase
+    .from('achievement_images')
+    .select('*')
+    .eq('achievement_id', achievementId)
+    .order('display_order', { ascending: true });
+
+  if (error) throw error;
+  return data;
 };

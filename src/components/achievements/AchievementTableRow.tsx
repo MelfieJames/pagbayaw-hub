@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Achievement {
   id: number;
@@ -44,16 +45,14 @@ export const AchievementTableRow = ({
       <TableCell>{new Date(achievement.date).toLocaleDateString()}</TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick(achievement, e);
-            }}
-          >
-            <Eye className="w-4 h-4 text-blue-500" />
-          </Button>
+          <Link to={`/achievements/${achievement.id}`} onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="outline"
+              size="icon"
+            >
+              <Eye className="w-4 h-4 text-blue-500" />
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="icon"
