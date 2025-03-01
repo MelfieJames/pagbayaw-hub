@@ -16,7 +16,7 @@ interface AchievementFormFieldsProps {
     achievement_name: string;
     description: string;
     about_text?: string;
-    date: Date;
+    date: Date | string;
     venue: string;
   };
   imageFile: File | null;
@@ -36,7 +36,12 @@ export const AchievementFormFields = ({
   onFileChange,
   onDateChange,
 }: AchievementFormFieldsProps) => {
-  const [date, setDate] = useState<Date | undefined>(values.date);
+  // Convert string date to Date object if needed
+  const initialDate = values.date instanceof Date 
+    ? values.date 
+    : values.date ? new Date(values.date) : undefined;
+  
+  const [date, setDate] = useState<Date | undefined>(initialDate);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);

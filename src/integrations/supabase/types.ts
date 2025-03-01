@@ -37,6 +37,7 @@ export type Database = {
       }
       achievements: {
         Row: {
+          about_text: string | null
           achievement_name: string
           created_at: string | null
           date: string
@@ -49,6 +50,7 @@ export type Database = {
           video: string | null
         }
         Insert: {
+          about_text?: string | null
           achievement_name: string
           created_at?: string | null
           date: string
@@ -61,6 +63,7 @@ export type Database = {
           video?: string | null
         }
         Update: {
+          about_text?: string | null
           achievement_name?: string
           created_at?: string | null
           date?: string

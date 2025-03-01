@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { AchievementImagesGallery } from "@/components/achievements/details/AchievementImagesGallery";
 import { AchievementFeedback } from "@/components/achievements/details/AchievementFeedback";
+import { getAchievementImages } from "@/utils/achievementOperations";
 
 interface Achievement {
   id: number;
@@ -56,14 +57,8 @@ const AchievementDetail = () => {
   const { data: achievementImages, isLoading: isLoadingImages } = useQuery({
     queryKey: ['achievement-images', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('achievement_images')
-        .select('*')
-        .eq('achievement_id', id)
-        .order('display_order', { ascending: true });
-
-      if (error) throw error;
-      return data as AchievementImage[];
+      if (!id) return [];
+      return await getAchievementImages(parseInt(id));
     },
     enabled: !!id
   });

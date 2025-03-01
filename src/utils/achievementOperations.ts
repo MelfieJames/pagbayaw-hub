@@ -47,3 +47,28 @@ export const getAchievementImages = async (achievementId: number) => {
   if (error) throw error;
   return data;
 };
+
+export const addAchievementImage = async (achievementId: number, imageUrl: string, displayOrder: number = 0) => {
+  const { data, error } = await supabase
+    .from('achievement_images')
+    .insert({
+      achievement_id: achievementId,
+      image_url: imageUrl,
+      display_order: displayOrder
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const deleteAchievementImage = async (imageId: number) => {
+  const { error } = await supabase
+    .from('achievement_images')
+    .delete()
+    .eq('id', imageId);
+
+  if (error) throw error;
+  return { success: true };
+};

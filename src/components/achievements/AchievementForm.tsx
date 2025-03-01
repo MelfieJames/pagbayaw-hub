@@ -17,6 +17,7 @@ interface AchievementFormProps {
     id?: number;
     achievement_name: string;
     description: string;
+    about_text?: string;
     date: string;
     venue: string;
     image: string;
@@ -122,11 +123,18 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
       <ScrollArea className="max-h-[80vh] overflow-y-auto p-6">
         <div className="space-y-4">
           <AchievementFormFields
-            formData={formData}
+            values={formData}
+            imageFile={null}
             imagePreview={imagePreview}
-            handleInputChange={handleInputChange}
-            handleFileChange={handleFileChange}
-            onRemoveImage={removeImage}
+            errors={{}}
+            onChange={handleInputChange}
+            onFileChange={handleFileChange}
+            onDateChange={(date) => handleInputChange({
+              target: { 
+                name: 'date', 
+                value: date ? date.toISOString().split('T')[0] : ''
+              }
+            } as any)}
           />
 
           <DialogFooter className="flex justify-between items-center mt-6">
