@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -33,8 +33,10 @@ export const AchievementFeedback = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const [comment, setComment] = useState("");
+  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: feedbacks, refetch } = useQuery({
+  const { data: feedbacks } = useQuery({
     queryKey: ['achievement-feedback', achievementId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,6 +64,8 @@ export const AchievementFeedback = ({
       });
       return;
     }
+    
+    setIsSubmitting(true);
 
     try {
       const { error } = await supabase
@@ -81,13 +85,16 @@ export const AchievementFeedback = ({
       });
       
       setComment("");
-      refetch();
+      // Explicitly invalidate the query to force a refetch
+      await queryClient.invalidateQueries({ queryKey: ['achievement-feedback', achievementId] });
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to submit feedback",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -107,8 +114,8 @@ export const AchievementFeedback = ({
             className="mb-3"
             rows={4}
           />
-          <Button onClick={submitFeedback}>
-            Submit Feedback
+          <Button onClick={submitFeedback} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Feedback"}
           </Button>
         </div>
       )}

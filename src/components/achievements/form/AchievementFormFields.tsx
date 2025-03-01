@@ -21,9 +21,13 @@ interface AchievementFormFieldsProps {
   };
   imageFile: File | null;
   imagePreview: string | null;
+  galleryFiles: File[];
+  galleryPreviews: string[];
   errors: Record<string, string>;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onGalleryFilesChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveGalleryImage: (index: number) => void;
   onDateChange: (date: Date | undefined) => void;
 }
 
@@ -31,9 +35,13 @@ export const AchievementFormFields = ({
   values,
   imageFile,
   imagePreview,
+  galleryFiles,
+  galleryPreviews,
   errors,
   onChange,
   onFileChange,
+  onGalleryFilesChange,
+  onRemoveGalleryImage,
   onDateChange,
 }: AchievementFormFieldsProps) => {
   // Convert string date to Date object if needed
@@ -135,10 +143,23 @@ export const AchievementFormFields = ({
           )}
         </div>
 
-        <ImageUploadSection
-          imagePreview={imagePreview}
-          onFileChange={onFileChange}
-        />
+        <div className="space-y-2">
+          <Label>Feature Image</Label>
+          <ImageUploadSection
+            imagePreview={imagePreview}
+            onFileChange={onFileChange}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Event Gallery Images</Label>
+          <ImageUploadSection
+            imagePreviews={galleryPreviews}
+            onFileChange={onGalleryFilesChange}
+            multiple={true}
+            onRemoveImage={onRemoveGalleryImage}
+          />
+        </div>
       </div>
     </div>
   );

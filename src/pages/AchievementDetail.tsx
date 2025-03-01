@@ -112,47 +112,29 @@ const AchievementDetail = () => {
               className="w-full h-auto max-h-[500px] object-contain rounded-md"
             />
             <h1 className="text-3xl font-bold">{achievement.achievement_name}</h1>
-            {achievement.description && (
+            {achievement.about_text && (
               <div className="bg-purple-50 rounded-md p-4 text-purple-800">
-                <div className="font-semibold text-purple-700 mb-2">Completed</div>
-                <p>{achievement.description}</p>
+                <div className="font-semibold text-purple-700 mb-2">About this event</div>
+                <p>{achievement.about_text}</p>
               </div>
             )}
           </div>
           
           <div className="flex flex-col space-y-4">
-            <div className="bg-white rounded-lg divide-y">
-              <div className="flex justify-between py-3">
-                <span className="text-gray-600">Organizer</span>
-                <span className="font-medium">TARA Kabataan Organization</span>
-              </div>
-              
-              <div className="flex justify-between py-3">
-                <span className="text-gray-600">Event Type</span>
-                <span className="font-medium">Community Service</span>
-              </div>
-              
-              <div className="flex justify-between py-3">
-                <span className="text-gray-600">Category</span>
-                <span className="font-medium">Feeding Program</span>
-              </div>
-              
-              <div className="flex justify-between py-3">
-                <span className="text-gray-600">Registration</span>
-                <span className="font-medium">Closed</span>
-              </div>
-              
-              <div className="flex items-center py-3">
-                <Calendar className="h-5 w-5 text-gray-500 mr-2" />
-                <div>
-                  <h3 className="font-semibold text-sm text-gray-600">Date</h3>
-                  <p className="font-medium">{format(new Date(achievement.date), "MMMM dd, yyyy")}</p>
+            <div className="bg-white rounded-lg">
+              <div className="flex items-center p-4 border-b">
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 text-gray-500 mr-3" />
+                  <div>
+                    <h3 className="font-semibold text-sm text-gray-600">Date</h3>
+                    <p className="font-medium">{format(new Date(achievement.date), "MMMM dd, yyyy")}</p>
+                  </div>
                 </div>
               </div>
               
               {achievement.venue && (
-                <div className="flex items-center py-3">
-                  <MapPin className="h-5 w-5 text-gray-500 mr-2" />
+                <div className="flex items-center p-4">
+                  <MapPin className="h-5 w-5 text-gray-500 mr-3" />
                   <div>
                     <h3 className="font-semibold text-sm text-gray-600">Venue</h3>
                     <p className="font-medium">{achievement.venue}</p>
@@ -166,13 +148,6 @@ const AchievementDetail = () => {
             </div>
           </div>
         </div>
-        
-        {achievement.about_text && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-bold text-purple-700 mb-4">About this event</h2>
-            <p className="whitespace-pre-line">{achievement.about_text}</p>
-          </div>
-        )}
         
         {allImages.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">

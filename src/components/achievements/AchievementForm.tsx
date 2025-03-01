@@ -10,6 +10,7 @@ import { supabase } from "@/services/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ErrorModal from "@/components/ErrorModal";
+import { addAchievementImage } from "@/utils/achievementOperations";
 
 interface AchievementFormProps {
   onSuccess: () => void;
@@ -33,6 +34,10 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   
+  // For gallery images
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  
   const {
     formData,
     imagePreview,
@@ -43,7 +48,41 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
   } = useAchievementForm({ 
     initialData, 
     mode, 
-    onSuccess: async () => {
+    onSuccess: async (achievementId) => {
+      // Upload gallery images
+      if (galleryFiles.length > 0 && achievementId) {
+        try {
+          for (let i = 0; i < galleryFiles.length; i++) {
+            const file = galleryFiles[i];
+            // Generate a safe filename
+            const fileExt = file.name.split('.').pop();
+            const filePath = `${crypto.randomUUID()}.${fileExt}`;
+            
+            // Upload to Supabase storage
+            const { data, error: uploadError } = await supabase.storage
+              .from('achievements')
+              .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get the public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('achievements')
+              .getPublicUrl(filePath);
+
+            // Add image to achievement_images table
+            await addAchievementImage(achievementId, publicUrl, i);
+          }
+        } catch (error) {
+          console.error("Error uploading gallery images:", error);
+          toast({
+            title: "Warning",
+            description: "Achievement saved, but some gallery images failed to upload",
+            variant: "destructive"
+          });
+        }
+      }
+      
       toast({
         title: "Success",
         description: `Achievement ${mode === 'add' ? 'added' : 'updated'} successfully`,
@@ -64,6 +103,25 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
       });
     }
   });
+
+  const handleGalleryFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const newFiles = Array.from(e.target.files);
+    setGalleryFiles(prev => [...prev, ...newFiles]);
+    
+    // Create previews
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setGalleryPreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeGalleryImage = (index: number) => {
+    // Clean up the object URL to avoid memory leaks
+    URL.revokeObjectURL(galleryPreviews[index]);
+    
+    setGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,9 +184,13 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
             values={formData}
             imageFile={null}
             imagePreview={imagePreview}
+            galleryFiles={galleryFiles}
+            galleryPreviews={galleryPreviews}
             errors={{}}
             onChange={handleInputChange}
             onFileChange={handleFileChange}
+            onGalleryFilesChange={handleGalleryFilesChange}
+            onRemoveGalleryImage={removeGalleryImage}
             onDateChange={(date) => handleInputChange({
               target: { 
                 name: 'date', 

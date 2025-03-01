@@ -7,7 +7,7 @@ import { supabase } from "@/services/supabase/client";
 interface UseAchievementFormProps {
   initialData?: AchievementData & { id?: number };
   mode: 'add' | 'edit';
-  onSuccess: () => void;
+  onSuccess: (achievementId?: number) => void;
   onError: (error: Error) => void;
   user: CustomUser | null;
 }
@@ -18,7 +18,8 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
     description: initialData?.description || "",
     date: initialData?.date || "",
     venue: initialData?.venue || "",
-    image: initialData?.image || ""
+    image: initialData?.image || "",
+    about_text: initialData?.about_text || ""
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -154,7 +155,7 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
       }
 
       console.log("Success! Calling onSuccess callback");
-      onSuccess();
+      onSuccess(achievementId);
     } catch (error) {
       console.error("Error in form submission:", error);
       onError(error instanceof Error ? error : new Error('An unexpected error occurred'));
