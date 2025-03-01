@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { createAchievement, updateAchievement, AchievementData } from "@/utils/achievementOperations";
 import { CustomUser } from "@/contexts/AuthContext";
-import { useAchievementImages } from "./useAchievementImages";
+import { supabase } from "@/services/supabase/client";
 
 interface UseAchievementFormProps {
   initialData?: AchievementData & { id?: number };
@@ -21,17 +21,8 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
     image: initialData?.image || ""
   });
 
-  const {
-    selectedFiles,
-    imagePreviews,
-    additionalFiles,
-    additionalPreviews,
-    handleFileChange,
-    handleAdditionalFileChange,
-    removeImage,
-    removeAdditionalImage,
-    uploadImages
-  } = useAchievementImages();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -39,6 +30,76 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    setSelectedFile(file);
+
+    // Clean up old preview
+    if (imagePreview && !initialData?.image) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    
+    const preview = URL.createObjectURL(file);
+    setImagePreview(preview);
+  };
+
+  const removeImage = () => {
+    setSelectedFile(null);
+    
+    if (imagePreview && !initialData?.image) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    
+    setImagePreview(null);
+    
+    if (initialData?.image) {
+      setFormData(prev => ({
+        ...prev,
+        image: ""
+      }));
+    }
+  };
+
+  const uploadImage = async (achievementId: number): Promise<string | null> => {
+    if (!selectedFile) return null;
+    
+    console.log(`Starting upload of image for achievement ID ${achievementId}`);
+    
+    try {
+      // Generate a safe filename
+      const fileExt = selectedFile.name.split('.').pop();
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      
+      console.log(`Uploading file: ${filePath}`);
+
+      // Upload to Supabase storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('achievements')
+        .upload(filePath, selectedFile);
+
+      if (uploadError) {
+        console.error(`Error uploading file:`, uploadError);
+        throw uploadError;
+      }
+
+      console.log(`File uploaded successfully, getting public URL`);
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('achievements')
+        .getPublicUrl(filePath);
+
+      console.log(`Public URL for file:`, publicUrl);
+
+      return publicUrl;
+    } catch (error) {
+      console.error(`Error processing file:`, error);
+      throw error;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,34 +118,38 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
       }
 
       let achievementId: number;
+      let imageUrl = formData.image;
       console.log("Mode:", mode);
 
-      if (mode === 'add') {
-        console.log("Creating achievement with data:", formData);
-        const result = await createAchievement(formData, user);
-        console.log("Create result:", result);
-        achievementId = result.id;
-      } else if (initialData?.id) {
-        console.log("Updating achievement with ID:", initialData.id, "and data:", formData);
-        await updateAchievement(initialData.id, formData);
-        achievementId = initialData.id;
+      // Upload image if selected
+      if (selectedFile) {
+        if (mode === 'edit' && initialData?.id) {
+          // For edit mode, upload image first
+          imageUrl = await uploadImage(initialData.id) || imageUrl;
+          
+          // Update achievement with new image
+          const updatedData = { ...formData, image: imageUrl };
+          await updateAchievement(initialData.id, updatedData);
+          achievementId = initialData.id;
+        } else {
+          // For add mode, create achievement first, then upload image
+          const result = await createAchievement(formData, user);
+          achievementId = result.id;
+          
+          // Upload image and update achievement with image URL
+          imageUrl = await uploadImage(achievementId) || imageUrl;
+          if (imageUrl) {
+            await updateAchievement(achievementId, { ...formData, image: imageUrl });
+          }
+        }
       } else {
-        throw new Error('Invalid operation');
-      }
-
-      // Upload images
-      console.log("Files to upload:", { 
-        selectedFiles: selectedFiles.length, 
-        additionalFiles: additionalFiles.length 
-      });
-      
-      if (selectedFiles.length > 0 || additionalFiles.length > 0) {
-        try {
-          console.log("Uploading images for achievement ID:", achievementId);
-          await uploadImages(achievementId);
-        } catch (uploadError) {
-          console.error("Error uploading images:", uploadError);
-          throw new Error(`Achievement added but failed to upload images: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+        // No new image selected, just update or create achievement with existing data
+        if (mode === 'edit' && initialData?.id) {
+          await updateAchievement(initialData.id, formData);
+          achievementId = initialData.id;
+        } else {
+          const result = await createAchievement(formData, user);
+          achievementId = result.id;
         }
       }
 
@@ -98,13 +163,10 @@ export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user
 
   return {
     formData,
-    imagePreviews,
-    additionalPreviews,
+    imagePreview,
     handleInputChange,
     handleFileChange,
     handleSubmit,
-    handleAdditionalFileChange,
-    removeImage,
-    removeAdditionalImage
+    removeImage
   };
 };

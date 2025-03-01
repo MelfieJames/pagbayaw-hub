@@ -28,21 +28,17 @@ interface AchievementFormProps {
 export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: AchievementFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [additionalImageCount, setAdditionalImageCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   
   const {
     formData,
-    imagePreviews,
-    additionalPreviews,
+    imagePreview,
     handleInputChange,
     handleSubmit: submitForm,
     handleFileChange,
-    handleAdditionalFileChange,
     removeImage,
-    removeAdditionalImage
   } = useAchievementForm({ 
     initialData, 
     mode, 
@@ -68,34 +64,6 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
     }
   });
 
-  const handleAddMoreImages = () => {
-    setAdditionalImageCount(prev => prev + 1);
-    // Trigger file input click for the new image slot
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.multiple = true;
-    fileInput.onchange = (e) => {
-      // Handle the native event properly
-      if (e.target && e.target instanceof HTMLInputElement && e.target.files) {
-        // Create a synthetic React change event
-        const syntheticEvent = {
-          target: e.target,
-          currentTarget: e.currentTarget,
-          preventDefault: () => {},
-          stopPropagation: () => {},
-          isPropagationStopped: () => false,
-          isDefaultPrevented: () => false,
-          persist: () => {},
-          nativeEvent: e
-        } as React.ChangeEvent<HTMLInputElement>;
-        
-        handleAdditionalFileChange(syntheticEvent);
-      }
-    };
-    fileInput.click();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -120,29 +88,6 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
     setIsSubmitting(true);
 
     try {
-      // Delete associated images first
-      const { data: imageData } = await supabase
-        .from('achievement_images')
-        .select('image_url')
-        .eq('achievement_id', initialData.id);
-
-      if (imageData) {
-        for (const item of imageData) {
-          const path = item.image_url.split('/').pop();
-          if (path) {
-            await supabase.storage
-              .from('achievements')
-              .remove([path]);
-          }
-        }
-      }
-
-      // Delete achievement images records
-      await supabase
-        .from('achievement_images')
-        .delete()
-        .eq('achievement_id', initialData.id);
-
       // Delete the achievement
       const { error } = await supabase
         .from('achievements')
@@ -178,15 +123,10 @@ export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: Achie
         <div className="space-y-4">
           <AchievementFormFields
             formData={formData}
-            imagePreview={imagePreviews[0]}
-            imagePreviews={imagePreviews}
+            imagePreview={imagePreview}
             handleInputChange={handleInputChange}
-            handleMultipleFileChange={handleFileChange}
-            onAddMoreImages={handleAddMoreImages}
-            additionalPreviews={additionalPreviews.slice(0, additionalImageCount)}
-            handleAdditionalFileChange={handleAdditionalFileChange}
+            handleFileChange={handleFileChange}
             onRemoveImage={removeImage}
-            onRemoveAdditionalImage={removeAdditionalImage}
           />
 
           <DialogFooter className="flex justify-between items-center mt-6">

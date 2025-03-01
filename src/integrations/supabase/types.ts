@@ -45,6 +45,7 @@ export type Database = {
           image: string | null
           updated_at: string | null
           user_id: string | null
+          venue: string | null
           video: string | null
         }
         Insert: {
@@ -56,6 +57,7 @@ export type Database = {
           image?: string | null
           updated_at?: string | null
           user_id?: string | null
+          venue?: string | null
           video?: string | null
         }
         Update: {
@@ -67,6 +69,7 @@ export type Database = {
           image?: string | null
           updated_at?: string | null
           user_id?: string | null
+          venue?: string | null
           video?: string | null
         }
         Relationships: []

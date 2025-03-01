@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { AchievementDetailsContent } from "./details/AchievementDetailsContent";
-import AchievementImageCarousel from "./details/AchievementImageCarousel";
 import ErrorModal from "@/components/ErrorModal";
 
 interface Achievement {
@@ -19,7 +18,7 @@ interface Achievement {
   updated_at: string | null;
   user_id: string | null;
   image: string | null;
-  venue?: string;
+  venue: string;
 }
 
 interface AchievementDetailsModalProps {
@@ -40,13 +39,15 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
             <DialogTitle>Achievement Details</DialogTitle>
           </DialogHeader>
           <div className="grid md:grid-cols-2 gap-6">
-            <AchievementImageCarousel 
-              images={[achievement.image || "/placeholder.svg"]}
-              title={achievement.achievement_name}
-            />
+            <div className="flex justify-center items-center">
+              <img 
+                src={achievement.image || "/placeholder.svg"} 
+                alt={achievement.achievement_name}
+                className="max-w-full max-h-[400px] object-contain rounded-md"
+              />
+            </div>
             <AchievementDetailsContent 
               achievement={achievement}
-              images={[]}
             />
           </div>
         </DialogContent>
