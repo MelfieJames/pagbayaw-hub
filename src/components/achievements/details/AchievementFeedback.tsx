@@ -43,6 +43,7 @@ export const AchievementFeedback = ({
   } = useQuery({
     queryKey: ['achievement-feedback', achievementId],
     queryFn: async () => {
+      console.log('Fetching achievement feedback for:', achievementId);
       const { data, error } = await supabase
         .from('achievement_feedback')
         .select(`
@@ -54,9 +55,16 @@ export const AchievementFeedback = ({
         .eq('achievement_id', achievementId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching feedback:', error);
+        throw error;
+      }
+      
+      console.log('Feedback data:', data);
       return data as Feedback[];
-    }
+    },
+    retry: 2,
+    refetchOnWindowFocus: false
   });
 
   const submitMutation = useMutation({
@@ -65,6 +73,7 @@ export const AchievementFeedback = ({
         throw new Error("Please enter a comment");
       }
       
+      console.log('Submitting feedback for achievement:', achievementId);
       const { error } = await supabase
         .from('achievement_feedback')
         .insert({
@@ -74,7 +83,11 @@ export const AchievementFeedback = ({
           rating: 5 // Default rating
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error submitting feedback:', error);
+        throw error;
+      }
+      
       return true;
     },
     onSuccess: () => {
@@ -159,12 +172,16 @@ export const AchievementFeedback = ({
               <div className="flex items-start gap-3">
                 <Avatar>
                   <AvatarFallback>
-                    {feedback.profiles.email.substring(0, 2).toUpperCase()}
+                    {feedback.profiles?.email 
+                      ? feedback.profiles.email.substring(0, 2).toUpperCase() 
+                      : 'GU'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{feedback.profiles.email}</span>
+                    <span className="font-semibold">
+                      {feedback.profiles?.email || 'Guest User'}
+                    </span>
                     <span className="text-gray-500 text-sm">
                       {format(new Date(feedback.created_at), "MMM d, yyyy")}
                     </span>
