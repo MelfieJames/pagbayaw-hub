@@ -15,6 +15,7 @@ interface Achievement {
   id: number;
   achievement_name: string;
   description: string | null;
+  about_text: string | null;
   date: string;
   created_at: string;
   updated_at: string | null;
