@@ -17,9 +17,7 @@ interface Feedback {
   comment: string;
   rating: number;
   created_at: string;
-  profiles: {
-    email: string;
-  };
+  user_email?: string; // Simplified approach without relying on profiles join
 }
 
 interface AchievementFeedbackProps {
@@ -44,24 +42,38 @@ export const AchievementFeedback = ({
     queryKey: ['achievement-feedback', achievementId],
     queryFn: async () => {
       console.log('Fetching achievement feedback for:', achievementId);
-      const { data, error } = await supabase
+      
+      // First get all feedback for this achievement
+      const { data: feedbackData, error: feedbackError } = await supabase
         .from('achievement_feedback')
-        .select(`
-          *,
-          profiles:user_id (
-            email
-          )
-        `)
+        .select('*')
         .eq('achievement_id', achievementId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching feedback:', error);
-        throw error;
+      if (feedbackError) {
+        console.error('Error fetching feedback:', feedbackError);
+        throw feedbackError;
       }
       
-      console.log('Feedback data:', data);
-      return data as Feedback[];
+      // Then fetch user emails separately if there are feedbacks with user_ids
+      const feedbacksWithUserData = await Promise.all((feedbackData || []).map(async (feedback) => {
+        if (feedback.user_id) {
+          // For each feedback with a user_id, get the corresponding email from profiles
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', feedback.user_id)
+            .single();
+            
+          if (!profileError && profileData) {
+            return { ...feedback, user_email: profileData.email };
+          }
+        }
+        return feedback;
+      }));
+      
+      console.log('Feedback data with user info:', feedbacksWithUserData);
+      return feedbacksWithUserData as Feedback[];
     },
     retry: 2,
     refetchOnWindowFocus: false
@@ -172,15 +184,15 @@ export const AchievementFeedback = ({
               <div className="flex items-start gap-3">
                 <Avatar>
                   <AvatarFallback>
-                    {feedback.profiles?.email 
-                      ? feedback.profiles.email.substring(0, 2).toUpperCase() 
+                    {feedback.user_email 
+                      ? feedback.user_email.substring(0, 2).toUpperCase() 
                       : 'GU'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">
-                      {feedback.profiles?.email || 'Guest User'}
+                      {feedback.user_email || 'Guest User'}
                     </span>
                     <span className="text-gray-500 text-sm">
                       {format(new Date(feedback.created_at), "MMM d, yyyy")}
