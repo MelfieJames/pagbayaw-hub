@@ -1,6 +1,6 @@
 
 import Navbar from "@/components/Navbar";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { format } from "date-fns";
@@ -37,6 +37,7 @@ const AchievementDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const { data: achievement, isLoading: isLoadingAchievement, error: achievementError } = useQuery({
@@ -63,7 +64,7 @@ const AchievementDetail = () => {
     enabled: !!id
   });
 
-  if (isLoadingAchievement || isLoadingImages) {
+  if (isLoadingAchievement) {
     return (
       <div className="min-h-screen">
         <Navbar />
@@ -80,7 +81,7 @@ const AchievementDetail = () => {
     );
   }
 
-  if (achievementError || imagesError || !achievement) {
+  if (achievementError || !achievement) {
     return (
       <div className="min-h-screen">
         <Navbar />
@@ -89,12 +90,11 @@ const AchievementDetail = () => {
             <h1 className="text-2xl font-bold text-red-600">Error Loading Achievement</h1>
             <p className="mt-4 text-gray-700">
               {achievementError ? (achievementError as Error).message : 
-               imagesError ? (imagesError as Error).message : 
                "The achievement you're looking for doesn't exist."}
             </p>
             <Button 
               variant="default" 
-              onClick={() => window.history.back()}
+              onClick={() => navigate(-1)}
               className="mt-6"
             >
               Go Back
@@ -105,9 +105,11 @@ const AchievementDetail = () => {
     );
   }
 
+  // Process images data
+  const galleryImages = achievementImages?.map(img => img.image_url) || [];
   const allImages = [
     achievement.image || "/placeholder.svg",
-    ...(achievementImages?.map(img => img.image_url) || [])
+    ...galleryImages
   ].filter(Boolean);
 
   return (
@@ -115,17 +117,17 @@ const AchievementDetail = () => {
       <Navbar />
       <div className="container mx-auto pt-24 px-4 pb-16">
         <div className="relative mb-8">
-          <Button 
-            variant="outline" 
-            onClick={() => window.history.back()}
-            className="absolute top-0 left-0 z-10"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate(-1)}
+                className="absolute top-4 left-4 z-10 bg-white/80 hover:bg-white"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              
               <img 
                 src={achievement.image || "/placeholder.svg"} 
                 alt={achievement.achievement_name}
@@ -164,18 +166,36 @@ const AchievementDetail = () => {
           </div>
         )}
         
-        {allImages.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-bold text-purple-700 mb-4">
-              Event Gallery
-            </h2>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-bold text-purple-700 mb-4">
+            Event Gallery
+          </h2>
+          
+          {isLoadingImages ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Loading gallery images...</p>
+              <div className="mt-3 grid grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="aspect-square bg-gray-200 rounded-md animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+          ) : imagesError ? (
+            <div className="text-center py-8 text-red-500">
+              <p>Error loading gallery images. Please try again later.</p>
+            </div>
+          ) : allImages.length > 0 ? (
             <AchievementImagesGallery 
               images={allImages}
               onImageClick={setSelectedImage}
               selectedImage={selectedImage}
             />
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>No gallery images available for this event.</p>
+            </div>
+          )}
+        </div>
         
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-purple-700 mb-4">Event Feedback</h2>

@@ -12,16 +12,19 @@ export type Database = {
       achievement_images: {
         Row: {
           achievement_id: number | null
+          display_order: number | null
           id: number
           image_url: string | null
         }
         Insert: {
           achievement_id?: number | null
+          display_order?: number | null
           id?: number
           image_url?: string | null
         }
         Update: {
           achievement_id?: number | null
+          display_order?: number | null
           id?: number
           image_url?: string | null
         }
