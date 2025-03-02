@@ -115,7 +115,7 @@ const AchievementDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="container mx-auto pt-24 px-4 pb-16">
+      <div className="container mx-auto pt-24 px-4 lg:px-8 pb-16">
         <div className="relative mb-8">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative">
@@ -158,7 +158,7 @@ const AchievementDetail = () => {
         {achievement.about_text && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold text-purple-700 mb-4">
-              About this event
+              About this Achievement
             </h2>
             <div className="prose max-w-none">
               <p className="text-gray-700 whitespace-pre-line">{achievement.about_text}</p>
@@ -168,7 +168,7 @@ const AchievementDetail = () => {
         
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-2xl font-bold text-purple-700 mb-4">
-            Event Gallery
+            Achievement Gallery
           </h2>
           
           {isLoadingImages ? (
@@ -192,13 +192,13 @@ const AchievementDetail = () => {
             />
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>No gallery images available for this event.</p>
+              <p>No gallery images available for this achievement.</p>
             </div>
           )}
         </div>
         
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-purple-700 mb-4">Event Feedback</h2>
+          <h2 className="text-2xl font-bold text-purple-700 mb-4">Achievement Feedback</h2>
           <AchievementFeedback 
             achievementId={achievement.id}
             isAuthenticated={!!user}

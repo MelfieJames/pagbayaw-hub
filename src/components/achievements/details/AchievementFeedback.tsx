@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 
 interface Feedback {
   id: number;
@@ -123,7 +122,7 @@ export const AchievementFeedback = ({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
+      <div className="flex justify-center items-center py-8 w-full">
         <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
         <span className="ml-2 text-gray-600">Loading feedback...</span>
       </div>
@@ -132,7 +131,7 @@ export const AchievementFeedback = ({
 
   if (error) {
     return (
-      <div className="bg-red-50 p-4 rounded-md text-center">
+      <div className="bg-red-50 p-4 rounded-md text-center w-full">
         <p className="text-red-600 font-medium">Error loading feedback</p>
         <p className="text-sm text-red-500 mt-1">{(error as Error).message}</p>
         <Button 
@@ -147,25 +146,42 @@ export const AchievementFeedback = ({
   }
 
   if (!isAuthenticated && (!feedbacks || feedbacks.length === 0)) {
-    return <p className="text-gray-500">There are no reviews for this event yet.</p>;
+    return <p className="text-gray-500 w-full">There are no reviews for this achievement yet.</p>;
   }
 
+  const getDisplayName = (email: string): string => {
+    // Get username part before @
+    const username = email.split('@')[0];
+    
+    // Split by common separators and capitalize each part
+    const nameParts = username.split(/[._-]/);
+    const formattedName = nameParts
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+      
+    return `${formattedName} · ${email}`;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {isAuthenticated && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="font-semibold mb-2">Leave Your Feedback</h3>
+        <div className="bg-gray-50 p-6 rounded-lg shadow-sm w-full">
+          <h3 className="font-semibold mb-3 text-lg flex items-center">
+            <MessageCircle className="mr-2 h-5 w-5 text-purple-600" />
+            Share Your Thoughts
+          </h3>
           <Textarea
-            placeholder="Share your thoughts about this event..."
+            placeholder="Share your thoughts about this achievement..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            className="mb-3"
+            className="mb-4"
             rows={4}
             disabled={submitMutation.isPending}
           />
           <Button 
             onClick={() => submitMutation.mutate()} 
             disabled={submitMutation.isPending}
+            className="px-6"
           >
             {submitMutation.isPending ? (
               <>
@@ -177,34 +193,38 @@ export const AchievementFeedback = ({
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-6 w-full">
+        <h3 className="font-semibold text-lg text-purple-700">What Others Are Saying</h3>
+        
         {feedbacks && feedbacks.length > 0 ? (
           feedbacks.map((feedback) => (
-            <div key={feedback.id} className="border-b pb-4">
-              <div className="flex items-start gap-3">
-                <Avatar>
-                  <AvatarFallback>
+            <div key={feedback.id} className="border rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-12 w-12 border-2 border-purple-100">
+                  <AvatarFallback className="bg-purple-50 text-purple-700">
                     {feedback.user_email 
                       ? feedback.user_email.substring(0, 2).toUpperCase() 
-                      : 'GU'}
+                      : 'FB'}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">
-                      {feedback.user_email || 'Guest User'}
+                <div className="flex-1">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-800">
+                      {feedback.user_email 
+                        ? getDisplayName(feedback.user_email)
+                        : 'Feedback User · feedback@example.com'}
                     </span>
                     <span className="text-gray-500 text-sm">
-                      {format(new Date(feedback.created_at), "MMM d, yyyy")}
+                      {format(new Date(feedback.created_at), "MMMM d, yyyy 'at' h:mm a")}
                     </span>
                   </div>
-                  <p className="mt-1">{feedback.comment}</p>
+                  <p className="mt-3 text-gray-700">{feedback.comment}</p>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <p className="text-gray-500">There are no reviews for this event yet.</p>
+          <p className="text-gray-500 py-4">There are no reviews for this achievement yet.</p>
         )}
       </div>
     </div>
