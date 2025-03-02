@@ -8,6 +8,8 @@ import {
 import { useState } from "react";
 import { AchievementDetailsContent } from "./details/AchievementDetailsContent";
 import ErrorModal from "@/components/ErrorModal";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface Achievement {
   id: number;
@@ -50,6 +52,13 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
             <AchievementDetailsContent 
               achievement={achievement}
             />
+          </div>
+          <div className="mt-4 flex justify-center">
+            <Link to={`/achievements/${achievement.id}`}>
+              <Button variant="outline">
+                View Full Details
+              </Button>
+            </Link>
           </div>
         </DialogContent>
       </Dialog>

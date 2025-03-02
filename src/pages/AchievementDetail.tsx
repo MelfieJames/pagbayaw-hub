@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { format } from "date-fns";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +39,7 @@ const AchievementDetail = () => {
   const { user } = useAuth();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const { data: achievement, isLoading: isLoadingAchievement } = useQuery({
+  const { data: achievement, isLoading: isLoadingAchievement, error: achievementError } = useQuery({
     queryKey: ['achievement', id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -54,7 +54,7 @@ const AchievementDetail = () => {
     enabled: !!id
   });
 
-  const { data: achievementImages, isLoading: isLoadingImages } = useQuery({
+  const { data: achievementImages, isLoading: isLoadingImages, error: imagesError } = useQuery({
     queryKey: ['achievement-images', id],
     queryFn: async () => {
       if (!id) return [];
@@ -67,21 +67,39 @@ const AchievementDetail = () => {
     return (
       <div className="min-h-screen">
         <Navbar />
-        <div className="pt-20 container mx-auto">
-          <h1 className="text-4xl font-bold text-center">Achievement Details</h1>
-          <div className="text-center mt-8">Loading achievement details...</div>
+        <div className="pt-20 container mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-60 bg-gray-200 rounded-md w-full"></div>
+              <div className="h-10 bg-gray-200 rounded-md w-3/4"></div>
+              <div className="h-40 bg-gray-200 rounded-md w-full"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!achievement) {
+  if (achievementError || imagesError || !achievement) {
     return (
       <div className="min-h-screen">
         <Navbar />
-        <div className="pt-20 container mx-auto">
-          <h1 className="text-4xl font-bold text-center">Achievement Not Found</h1>
-          <div className="text-center mt-8">The achievement you're looking for doesn't exist.</div>
+        <div className="pt-20 container mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h1 className="text-2xl font-bold text-red-600">Error Loading Achievement</h1>
+            <p className="mt-4 text-gray-700">
+              {achievementError ? (achievementError as Error).message : 
+               imagesError ? (imagesError as Error).message : 
+               "The achievement you're looking for doesn't exist."}
+            </p>
+            <Button 
+              variant="default" 
+              onClick={() => window.history.back()}
+              className="mt-6"
+            >
+              Go Back
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -96,63 +114,60 @@ const AchievementDetail = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="container mx-auto pt-24 px-4 pb-16">
-        <Button 
-          variant="outline" 
-          onClick={() => window.history.back()}
-          className="mb-6"
-        >
-          Back
-        </Button>
-        
-        <div className="grid md:grid-cols-2 gap-8 bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="space-y-4">
-            <img 
-              src={achievement.image || "/placeholder.svg"} 
-              alt={achievement.achievement_name}
-              className="w-full h-auto max-h-[500px] object-contain rounded-md"
-            />
-            <h1 className="text-3xl font-bold">{achievement.achievement_name}</h1>
-            {achievement.about_text && (
-              <div className="bg-purple-50 rounded-md p-4 text-purple-800">
-                <div className="font-semibold text-purple-700 mb-2">About this event</div>
-                <p>{achievement.about_text}</p>
-              </div>
-            )}
-          </div>
+        <div className="relative mb-8">
+          <Button 
+            variant="outline" 
+            onClick={() => window.history.back()}
+            className="absolute top-0 left-0 z-10"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
           
-          <div className="flex flex-col space-y-4">
-            <div className="bg-white rounded-lg">
-              <div className="flex items-center p-4 border-b">
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-gray-500 mr-3" />
-                  <div>
-                    <h3 className="font-semibold text-sm text-gray-600">Date</h3>
-                    <p className="font-medium">{format(new Date(achievement.date), "MMMM dd, yyyy")}</p>
-                  </div>
-                </div>
-              </div>
-              
-              {achievement.venue && (
-                <div className="flex items-center p-4">
-                  <MapPin className="h-5 w-5 text-gray-500 mr-3" />
-                  <div>
-                    <h3 className="font-semibold text-sm text-gray-600">Venue</h3>
-                    <p className="font-medium">{achievement.venue}</p>
-                  </div>
-                </div>
-              )}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="relative">
+              <img 
+                src={achievement.image || "/placeholder.svg"} 
+                alt={achievement.achievement_name}
+                className="w-full h-auto max-h-[500px] object-contain"
+              />
             </div>
             
-            <div className="mt-4 bg-green-100 text-green-800 py-3 px-4 rounded-md text-center">
-              Event Completed
+            <div className="p-6">
+              <h1 className="text-3xl font-bold">{achievement.achievement_name}</h1>
+              
+              <div className="flex flex-wrap gap-6 mt-4">
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 text-purple-600 mr-2" />
+                  <span className="font-medium">{format(new Date(achievement.date), "MMMM dd, yyyy")}</span>
+                </div>
+                
+                {achievement.venue && (
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 text-purple-600 mr-2" />
+                    <span className="font-medium">{achievement.venue}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
         
+        {achievement.about_text && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 className="text-2xl font-bold text-purple-700 mb-4">
+              About this event
+            </h2>
+            <div className="prose max-w-none">
+              <p className="text-gray-700 whitespace-pre-line">{achievement.about_text}</p>
+            </div>
+          </div>
+        )}
+        
         {allImages.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold text-purple-700 mb-4">
-              Event Gallery {achievement.achievement_name}
+              Event Gallery
             </h2>
             <AchievementImagesGallery 
               images={allImages}

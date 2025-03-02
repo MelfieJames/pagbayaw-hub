@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 
 interface Feedback {
   id: number;
@@ -34,9 +35,12 @@ export const AchievementFeedback = ({
   const { toast } = useToast();
   const [comment, setComment] = useState("");
   const queryClient = useQueryClient();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { data: feedbacks } = useQuery({
+  
+  const { 
+    data: feedbacks, 
+    isLoading, 
+    error 
+  } = useQuery({
     queryKey: ['achievement-feedback', achievementId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -55,19 +59,12 @@ export const AchievementFeedback = ({
     }
   });
 
-  const submitFeedback = async () => {
-    if (!comment.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a comment",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-
-    try {
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      if (!comment.trim()) {
+        throw new Error("Please enter a comment");
+      }
+      
       const { error } = await supabase
         .from('achievement_feedback')
         .insert({
@@ -78,7 +75,9 @@ export const AchievementFeedback = ({
         });
 
       if (error) throw error;
-
+      return true;
+    },
+    onSuccess: () => {
       toast({
         title: "Success",
         description: "Feedback submitted successfully",
@@ -86,17 +85,41 @@ export const AchievementFeedback = ({
       
       setComment("");
       // Explicitly invalidate the query to force a refetch
-      await queryClient.invalidateQueries({ queryKey: ['achievement-feedback', achievementId] });
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['achievement-feedback', achievementId] });
+    },
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to submit feedback",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+        <span className="ml-2 text-gray-600">Loading feedback...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 p-4 rounded-md text-center">
+        <p className="text-red-600 font-medium">Error loading feedback</p>
+        <p className="text-sm text-red-500 mt-1">{(error as Error).message}</p>
+        <Button 
+          variant="outline" 
+          className="mt-3"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['achievement-feedback', achievementId] })}
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   if (!isAuthenticated && (!feedbacks || feedbacks.length === 0)) {
     return <p className="text-gray-500">There are no reviews for this event yet.</p>;
@@ -113,9 +136,18 @@ export const AchievementFeedback = ({
             onChange={(e) => setComment(e.target.value)}
             className="mb-3"
             rows={4}
+            disabled={submitMutation.isPending}
           />
-          <Button onClick={submitFeedback} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit Feedback"}
+          <Button 
+            onClick={() => submitMutation.mutate()} 
+            disabled={submitMutation.isPending}
+          >
+            {submitMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : "Submit Feedback"}
           </Button>
         </div>
       )}

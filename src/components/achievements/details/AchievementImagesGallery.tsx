@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AchievementImagesGalleryProps {
@@ -36,6 +36,15 @@ export const AchievementImagesGallery = ({
     if (onImageClick) onImageClick(images[newIndex]);
   };
 
+  if (images.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-10 bg-gray-50 rounded-md">
+        <Image className="h-16 w-16 text-gray-300" />
+        <p className="mt-3 text-gray-500">No images available for this event</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -49,6 +58,9 @@ export const AchievementImagesGallery = ({
               src={image} 
               alt={`Gallery image ${index + 1}`}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.svg";
+              }}
             />
           </div>
         ))}
@@ -73,6 +85,9 @@ export const AchievementImagesGallery = ({
               src={images[currentImageIndex]} 
               alt={`Gallery image ${currentImageIndex + 1}`}
               className="max-h-[80vh] max-w-full"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.svg";
+              }}
             />
             
             <Button 
