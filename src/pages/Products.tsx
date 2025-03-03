@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
@@ -16,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import ErrorModal from "@/components/ErrorModal";
 
 export default function Products() {
   const { user } = useAuth();
@@ -30,8 +32,11 @@ export default function Products() {
   const [reviewProduct, setReviewProduct] = useState<any>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState({ title: "", message: "" });
 
-  const { products, inventoryData, productReviews } = useProductQueries();
+  const { products, inventoryData, productReviews, userReviews } = useProductQueries();
   const { handleBuyNow, handleAddToCart } = useProductActions();
 
   // Check if we need to open the review dialog from navigation state
@@ -60,24 +65,20 @@ export default function Products() {
     }
 
     try {
+      setIsSubmitting(true);
       console.log("Submitting review for product:", reviewProduct);
       
-      // Check if user has already reviewed this product from this purchase
-      const { data: existingReview, error: checkError } = await supabase
-        .from('reviews')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('product_id', reviewProduct.id)
-        .eq('purchase_item_id', reviewProduct.purchaseId)
-        .maybeSingle();
+      // Check if user has already reviewed this product
+      const hasReviewed = userReviews.some(
+        review => review.product_id === reviewProduct.id
+      );
 
-      if (checkError) {
-        console.error("Error checking existing review:", checkError);
-        throw checkError;
-      }
-
-      if (existingReview) {
-        toast("You have already reviewed this product");
+      if (hasReviewed) {
+        setErrorMessage({
+          title: "Already Reviewed",
+          message: "You have already reviewed this product. You can only review a product once."
+        });
+        setErrorModalOpen(true);
         setReviewDialogOpen(false);
         setReviewProduct(null);
         setRating(0);
@@ -97,13 +98,23 @@ export default function Products() {
 
       if (error) {
         console.error("Error submitting review:", error);
-        throw error;
+        if (error.code === '23505') {
+          setErrorMessage({
+            title: "Already Reviewed",
+            message: "You have already reviewed this product. You can only review a product once."
+          });
+          setErrorModalOpen(true);
+        } else {
+          toast("Failed to submit review: " + error.message);
+        }
+        return;
       }
 
       toast("Review submitted successfully!");
       queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-reviews', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       
       // Close the dialog and reset state
@@ -114,6 +125,8 @@ export default function Products() {
     } catch (error) {
       console.error('Error submitting review:', error);
       toast("Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -195,12 +208,24 @@ export default function Products() {
                 onChange={(e) => setComment(e.target.value)}
                 className="min-h-[100px]"
               />
-              <Button onClick={handleSubmitReview} disabled={rating === 0} className="w-full">
-                Submit Review
+              <Button 
+                onClick={handleSubmitReview} 
+                disabled={rating === 0 || isSubmitting} 
+                className="w-full"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Review"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Error Modal */}
+        <ErrorModal
+          isOpen={errorModalOpen}
+          onClose={() => setErrorModalOpen(false)}
+          title={errorMessage.title}
+          message={errorMessage.message}
+        />
       </div>
     </div>
   );

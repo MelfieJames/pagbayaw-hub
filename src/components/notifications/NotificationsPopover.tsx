@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import ErrorModal from "@/components/ErrorModal";
 
 export function NotificationsPopover() {
   const { user } = useAuth();
@@ -29,6 +31,9 @@ export function NotificationsPopover() {
   } | null>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState({ title: "", message: "" });
   const queryClient = useQueryClient();
 
   const { data: notifications = [] } = useQuery({
@@ -80,6 +85,28 @@ export function NotificationsPopover() {
     enabled: !!user?.id,
   });
 
+  // Get user's existing reviews to check if they've already reviewed products
+  const { data: userReviews = [] } = useQuery({
+    queryKey: ['user-reviews', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('product_id, purchase_item_id')
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching user reviews:', error);
+        return [];
+      }
+    },
+    enabled: !!user
+  });
+
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const markAsRead = async (notificationId: number) => {
@@ -105,6 +132,22 @@ export function NotificationsPopover() {
     if (notification.type === 'review_request' && notification.products?.length > 0) {
       const firstProduct = notification.products[0];
       
+      // Check if user has already reviewed this product
+      const hasReviewed = userReviews.some(
+        review => 
+          review.product_id === firstProduct.product_id && 
+          review.purchase_item_id === notification.purchase_id
+      );
+
+      if (hasReviewed) {
+        setErrorMessage({
+          title: "Already Reviewed",
+          message: "You have already reviewed this product. You can only review a product once."
+        });
+        setErrorModalOpen(true);
+        return;
+      }
+
       setReviewProduct({
         id: firstProduct.product_id,
         name: firstProduct.products?.product_name || 'Product',
@@ -119,21 +162,27 @@ export function NotificationsPopover() {
   };
 
   const handleSubmitReview = async () => {
-    if (!user?.id || !reviewProduct) return;
+    if (!user?.id || !reviewProduct || rating === 0) {
+      toast("Please select a rating before submitting");
+      return;
+    }
 
     try {
-      const { data: existingReview, error: checkError } = await supabase
-        .from('reviews')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('product_id', reviewProduct.id)
-        .eq('purchase_item_id', reviewProduct.purchaseId)
-        .maybeSingle();
+      setIsSubmitting(true);
 
-      if (checkError) throw checkError;
+      // Check one more time if user has already reviewed this product
+      const hasReviewed = userReviews.some(
+        review => 
+          review.product_id === reviewProduct.id && 
+          review.purchase_item_id === reviewProduct.purchaseId
+      );
 
-      if (existingReview) {
-        toast("You have already reviewed this product");
+      if (hasReviewed) {
+        setErrorMessage({
+          title: "Already Reviewed",
+          message: "You have already reviewed this product. You can only review a product once."
+        });
+        setErrorModalOpen(true);
         setReviewProduct(null);
         setRating(0);
         setComment("");
@@ -150,12 +199,25 @@ export function NotificationsPopover() {
           purchase_item_id: reviewProduct.purchaseId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error submitting review:", error);
+        if (error.code === '23505') {
+          setErrorMessage({
+            title: "Already Reviewed",
+            message: "You have already reviewed this product. You can only review a product once."
+          });
+          setErrorModalOpen(true);
+        } else {
+          toast("Failed to submit review: " + error.message);
+        }
+        return;
+      }
 
       toast("Review submitted successfully!");
-      queryClient.invalidateQueries({ queryKey: ['product-reviews', reviewProduct.id] });
+      queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-reviews', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       
       setReviewProduct(null);
@@ -164,6 +226,8 @@ export function NotificationsPopover() {
     } catch (error) {
       console.error('Error submitting review:', error);
       toast("Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -306,12 +370,24 @@ export function NotificationsPopover() {
               onChange={(e) => setComment(e.target.value)}
               className="min-h-[100px]"
             />
-            <Button onClick={handleSubmitReview} disabled={rating === 0} className="w-full">
-              Submit Review
+            <Button 
+              onClick={handleSubmitReview} 
+              disabled={rating === 0 || isSubmitting} 
+              className="w-full"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Review"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        title={errorMessage.title}
+        message={errorMessage.message}
+      />
     </>
   );
 }

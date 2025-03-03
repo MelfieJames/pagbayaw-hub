@@ -1,8 +1,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useProductQueries() {
+  const { user } = useAuth();
+
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
@@ -43,10 +46,33 @@ export function useProductQueries() {
       }
     }
   });
+  
+  // Get reviews for the current user to check if they've already reviewed products
+  const { data: userReviews = [] } = useQuery({
+    queryKey: ['user-reviews', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('product_id, purchase_item_id')
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching user reviews:', error);
+        return [];
+      }
+    },
+    enabled: !!user
+  });
 
   return {
     products,
     inventoryData,
-    productReviews
+    productReviews,
+    userReviews
   };
 }
