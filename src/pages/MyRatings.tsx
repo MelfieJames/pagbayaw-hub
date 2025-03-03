@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +14,6 @@ export default function MyRatings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("pending");
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/login', {
@@ -27,7 +25,6 @@ export default function MyRatings() {
     }
   }, [user, navigate]);
 
-  // Get all review requests from notifications
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
@@ -64,7 +61,6 @@ export default function MyRatings() {
     enabled: !!user?.id,
   });
 
-  // Get all reviews the user has submitted
   const { data: userReviews = [] } = useQuery({
     queryKey: ['my-reviews', user?.id],
     queryFn: async () => {
@@ -94,7 +90,6 @@ export default function MyRatings() {
     enabled: !!user?.id,
   });
 
-  // Filter pending review products by checking if they've been reviewed
   const pendingReviews = notifications.filter(notification => {
     const productId = notification.products?.[0]?.product_id;
     return !userReviews.some(review => 
@@ -215,8 +210,7 @@ export default function MyRatings() {
                       <p className="mt-2 text-sm">{review.comment || "No comment provided."}</p>
                     </CardContent>
                   </Card>
-                ));
-                })}
+                ))}
               </div>
             )}
           </TabsContent>
