@@ -17,13 +17,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function NotificationsPopover() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [reviewProduct, setReviewProduct] = useState<{
     id: number;
     name: string;
     purchaseId: number;
+    image: string | null;
   } | null>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -41,13 +44,24 @@ export function NotificationsPopover() {
             id,
             total_amount,
             status
+          ),
+          products: purchase_items!inner(
+            product_id,
+            products(
+              product_name,
+              image
+            )
           )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Notifications fetch error:', error);
+        return [];
+      }
+      
+      return data || [];
     },
     enabled: !!user?.id,
   });
@@ -77,27 +91,26 @@ export function NotificationsPopover() {
 
     // If it's a review request, open the review dialog
     if (notification.type === 'review_request') {
-      // Extract product name and id from the message
+      // Extract product name from the message
       const productName = notification.message.replace('Please rate and review your purchase: ', '');
       
-      // First get the purchase items to find the product ID
-      const { data, error } = await supabase
-        .from('purchase_items')
-        .select('product_id')
-        .eq('purchase_id', notification.purchase_id)
-        .single();
+      // Get the product details from the nested query
+      const productDetails = notification.products?.[0]?.products;
+      const productId = notification.products?.[0]?.product_id;
       
-      if (error) {
-        console.error('Error fetching product ID:', error);
-        return;
+      if (productId) {
+        setReviewProduct({
+          id: productId,
+          name: productName,
+          purchaseId: notification.purchase_id,
+          image: productDetails?.image || null
+        });
       }
-      
-      setReviewProduct({
-        id: data.product_id,
-        name: productName,
-        purchaseId: notification.purchase_id
-      });
     }
+  };
+
+  const navigateToMyRatings = () => {
+    navigate('/my-ratings');
   };
 
   const handleSubmitReview = async () => {
@@ -138,6 +151,8 @@ export function NotificationsPopover() {
       toast("Review submitted successfully!");
       queryClient.invalidateQueries({ queryKey: ['product-reviews', reviewProduct.id] });
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       
       // Close the dialog and reset state
       setReviewProduct(null);
@@ -166,7 +181,14 @@ export function NotificationsPopover() {
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-80">
-          <h4 className="font-semibold mb-4">Notifications</h4>
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-semibold">Notifications</h4>
+            {user && (
+              <Button variant="ghost" size="sm" onClick={navigateToMyRatings}>
+                My Ratings
+              </Button>
+            )}
+          </div>
           <ScrollArea className="h-[300px]">
             {!user ? (
               <div className="text-center py-4">
@@ -175,7 +197,7 @@ export function NotificationsPopover() {
                 </p>
                 <Button 
                   className="w-full" 
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => navigate('/login')}
                 >
                   Log In
                 </Button>
@@ -186,27 +208,52 @@ export function NotificationsPopover() {
               </p>
             ) : (
               <div className="space-y-2">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-3 rounded-lg border ${
-                      !notification.is_read ? 'bg-muted/50' : ''
-                    }`}
-                    onClick={() => handleNotificationClick(notification)}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <p className="text-sm">{notification.message}</p>
-                    <div className="flex justify-between items-center mt-2">
-                      <Badge variant="outline">
-                        {notification.purchases?.status || 'Notification'}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(notification.created_at), 'PP')}
-                      </span>
+                {notifications.map((notification) => {
+                  const productDetails = notification.products?.[0]?.products;
+                  const isReviewRequest = notification.type === 'review_request';
+                  
+                  return (
+                    <div
+                      key={notification.id}
+                      className={`p-3 rounded-lg border ${
+                        !notification.is_read ? 'bg-muted/50' : ''
+                      }`}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div className="flex gap-3">
+                        {productDetails?.image && (
+                          <img 
+                            src={productDetails.image} 
+                            alt={productDetails.product_name}
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm">{notification.message}</p>
+                          <div className="flex justify-between items-center mt-2">
+                            {isReviewRequest ? (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleNotificationClick(notification)}
+                              >
+                                Rate Now
+                              </Button>
+                            ) : (
+                              <Badge variant="outline">
+                                {notification.purchases?.status || 'Notification'}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(notification.created_at), 'PP')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
@@ -219,6 +266,15 @@ export function NotificationsPopover() {
             <DialogTitle>Rate & Review {reviewProduct?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {reviewProduct?.image && (
+              <div className="flex justify-center">
+                <img 
+                  src={reviewProduct.image} 
+                  alt={reviewProduct.name}
+                  className="w-32 h-32 object-cover rounded-md"
+                />
+              </div>
+            )}
             <div className="flex gap-1 justify-center">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button

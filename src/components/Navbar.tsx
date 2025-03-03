@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsPopover } from "./notifications/NotificationsPopover";
 import { CartPopover } from "./products/CartPopover";
 import { useMediaQuery } from "@/hooks/use-mobile";
-import { Award, Package, MessageSquare, Menu, Home, Info } from "lucide-react";
+import { Award, Package, MessageSquare, Menu, Home, Info, Star } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sheet,
@@ -84,6 +84,10 @@ export default function Navbar() {
                     <DropdownMenuItem onClick={() => navigate("/admin")}>
                       Dashboard
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/my-ratings")}>
+                      <Star className="h-4 w-4 mr-2" />
+                      My Ratings
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => signOut()}>
                       Logout
                     </DropdownMenuItem>
@@ -110,6 +114,12 @@ export default function Navbar() {
                 <SheetContent>
                   <div className="flex flex-col space-y-4 mt-8">
                     <NavItems />
+                    {user && (
+                      <Link to="/my-ratings" className="flex items-center gap-2 hover:text-primary transition-colors">
+                        <Star className="h-4 w-4" />
+                        <span>My Ratings</span>
+                      </Link>
+                    )}
                     {!user && (
                       <div className="flex flex-col gap-2 mt-4">
                         <Button onClick={() => navigate("/login")}>
