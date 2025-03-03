@@ -190,6 +190,7 @@ export default function Checkout() {
         if (updateError) throw updateError;
       }
 
+      // Create purchase record
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchases')
         .insert({
@@ -218,6 +219,7 @@ export default function Checkout() {
 
       // Create notifications for each product to be rated
       for (const item of cartItems) {
+        // Add notification for review request
         const { error: notificationError } = await supabase
           .from('notifications')
           .insert({
@@ -227,7 +229,10 @@ export default function Checkout() {
             message: `Please rate and review your purchase: ${item.products?.product_name}`
           });
 
-        if (notificationError) throw notificationError;
+        if (notificationError) {
+          console.error('Notification error:', notificationError);
+          throw notificationError;
+        }
       }
 
       // Clear cart items
@@ -239,6 +244,7 @@ export default function Checkout() {
 
       if (cartError) throw cartError;
 
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-data'] });
