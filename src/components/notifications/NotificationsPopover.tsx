@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,32 +35,47 @@ export function NotificationsPopover() {
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('notifications')
-        .select(`
-          *,
-          purchases (
-            id,
-            total_amount,
-            status
-          ),
-          products: purchase_items!inner(
-            product_id,
-            products(
-              product_name,
-              image
-            )
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      
+      try {
+        const { data: notificationData, error: notificationError } = await supabase
+          .from('notifications')
+          .select('*, purchases(*)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Notifications fetch error:', error);
+        if (notificationError) {
+          console.error('Notifications fetch error:', notificationError);
+          return [];
+        }
+        
+        const notificationsWithProducts = await Promise.all(
+          notificationData.map(async (notification) => {
+            if (notification.type === 'review_request') {
+              const { data: purchaseItems, error: purchaseItemsError } = await supabase
+                .from('purchase_items')
+                .select('*, products(*)')
+                .eq('purchase_id', notification.purchase_id);
+                
+              if (purchaseItemsError) {
+                console.error('Purchase items fetch error:', purchaseItemsError);
+                return notification;
+              }
+              
+              return {
+                ...notification,
+                products: purchaseItems
+              };
+            }
+            
+            return notification;
+          })
+        );
+        
+        return notificationsWithProducts;
+      } catch (error) {
+        console.error('Unexpected error fetching notifications:', error);
         return [];
       }
-      
-      return data || [];
     },
     enabled: !!user?.id,
   });
@@ -84,28 +98,19 @@ export function NotificationsPopover() {
   };
 
   const handleNotificationClick = async (notification: any) => {
-    // Mark as read first
     if (!notification.is_read) {
       await markAsRead(notification.id);
     }
 
-    // If it's a review request, open the review dialog
-    if (notification.type === 'review_request') {
-      // Extract product name from the message
-      const productName = notification.message.replace('Please rate and review your purchase: ', '');
+    if (notification.type === 'review_request' && notification.products?.length > 0) {
+      const firstProduct = notification.products[0];
       
-      // Get the product details from the nested query
-      const productDetails = notification.products?.[0]?.products;
-      const productId = notification.products?.[0]?.product_id;
-      
-      if (productId) {
-        setReviewProduct({
-          id: productId,
-          name: productName,
-          purchaseId: notification.purchase_id,
-          image: productDetails?.image || null
-        });
-      }
+      setReviewProduct({
+        id: firstProduct.product_id,
+        name: firstProduct.products?.product_name || 'Product',
+        purchaseId: notification.purchase_id,
+        image: firstProduct.products?.image || null
+      });
     }
   };
 
@@ -117,7 +122,6 @@ export function NotificationsPopover() {
     if (!user?.id || !reviewProduct) return;
 
     try {
-      // Check if user has already reviewed this product from this purchase
       const { data: existingReview, error: checkError } = await supabase
         .from('reviews')
         .select('id')
@@ -154,7 +158,6 @@ export function NotificationsPopover() {
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       
-      // Close the dialog and reset state
       setReviewProduct(null);
       setRating(0);
       setComment("");
@@ -209,8 +212,12 @@ export function NotificationsPopover() {
             ) : (
               <div className="space-y-2">
                 {notifications.map((notification) => {
-                  const productDetails = notification.products?.[0]?.products;
                   const isReviewRequest = notification.type === 'review_request';
+                  let productDetails = null;
+                  
+                  if (isReviewRequest && notification.products?.length > 0) {
+                    productDetails = notification.products[0].products;
+                  }
                   
                   return (
                     <div

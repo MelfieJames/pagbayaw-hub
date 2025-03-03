@@ -171,7 +171,10 @@ export default function Checkout() {
     setIsProcessing(true);
 
     try {
-      // Update inventory before finalizing purchase
+      console.log("Starting checkout process with items:", cartItems);
+      console.log("Current inventory:", inventoryData);
+      
+      // Check inventory before finalizing purchase
       for (const item of cartItems) {
         const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
         
@@ -180,14 +183,6 @@ export default function Checkout() {
           setIsProcessing(false);
           return;
         }
-
-        // Update inventory quantity
-        const { error: updateError } = await supabase
-          .from('inventory')
-          .update({ quantity: inventoryItem.quantity - item.quantity })
-          .eq('product_id', item.product_id);
-
-        if (updateError) throw updateError;
       }
 
       // Create purchase record
@@ -201,7 +196,12 @@ export default function Checkout() {
         .select()
         .single();
 
-      if (purchaseError) throw purchaseError;
+      if (purchaseError) {
+        console.error("Purchase creation error:", purchaseError);
+        throw purchaseError;
+      }
+      
+      console.log("Created purchase:", purchase);
 
       // Create purchase items
       const purchaseItems = cartItems.map(item => ({
@@ -215,7 +215,35 @@ export default function Checkout() {
         .from('purchase_items')
         .insert(purchaseItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Purchase items error:", itemsError);
+        throw itemsError;
+      }
+      
+      console.log("Created purchase items:", purchaseItems);
+
+      // Update inventory AFTER successful purchase creation
+      for (const item of cartItems) {
+        const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+        
+        if (inventoryItem) {
+          const newQuantity = inventoryItem.quantity - item.quantity;
+          console.log(`Updating inventory for product ${item.product_id} from ${inventoryItem.quantity} to ${newQuantity}`);
+          
+          const { error: updateError } = await supabase
+            .from('inventory')
+            .update({ 
+              quantity: newQuantity,
+              updated_at: new Date().toISOString()
+            })
+            .eq('product_id', item.product_id);
+
+          if (updateError) {
+            console.error(`Inventory update error for product ${item.product_id}:`, updateError);
+            throw updateError;
+          }
+        }
+      }
 
       // Create notifications for each product to be rated
       for (const item of cartItems) {
@@ -230,10 +258,12 @@ export default function Checkout() {
           });
 
         if (notificationError) {
-          console.error('Notification error:', notificationError);
+          console.error('Notification creation error:', notificationError);
           throw notificationError;
         }
       }
+      
+      console.log("Created notifications for all items");
 
       // Clear cart items
       const { error: cartError } = await supabase
@@ -242,12 +272,16 @@ export default function Checkout() {
         .eq('user_id', user.id)
         .in('product_id', cartItems.map(item => item.product_id));
 
-      if (cartError) throw cartError;
+      if (cartError) {
+        console.error("Cart clearing error:", cartError);
+        throw cartError;
+      }
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-data'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       
       setShowSuccessDialog(true);
     } catch (error) {

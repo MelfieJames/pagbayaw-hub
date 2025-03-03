@@ -23,6 +23,8 @@ export function useProductActions() {
     }
 
     try {
+      console.log("Buy Now for product:", productId);
+      
       // Get inventory quantity first
       const { data: inventoryData, error: inventoryError } = await supabase
         .from('inventory')
@@ -30,25 +32,29 @@ export function useProductActions() {
         .eq('product_id', productId)
         .single();
 
-      if (inventoryError) throw inventoryError;
+      if (inventoryError) {
+        console.error("Inventory check error:", inventoryError);
+        throw inventoryError;
+      }
 
       if (!inventoryData || inventoryData.quantity < 1) {
         toast("Item is out of stock");
         return;
       }
 
-      // Add to cart with quantity of 1
-      const { error } = await supabase
-        .from('cart')
-        .upsert({
-          user_id: user.id,
-          product_id: productId,
-          quantity: 1
-        });
+      // Get product details
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+        
+      if (productError) {
+        console.error("Product fetch error:", productError);
+        throw productError;
+      }
 
-      if (error) throw error;
-
-      // Navigate to checkout with the selected item
+      // Navigate to checkout with the selected item and quantity
       navigate("/checkout", { 
         state: { 
           selectedItems: [productId],
@@ -74,6 +80,8 @@ export function useProductActions() {
     }
 
     try {
+      console.log("Adding to cart product:", productId, "quantity:", quantity);
+      
       // Get inventory quantity first
       const { data: inventoryData, error: inventoryError } = await supabase
         .from('inventory')
@@ -81,7 +89,10 @@ export function useProductActions() {
         .eq('product_id', productId)
         .single();
 
-      if (inventoryError) throw inventoryError;
+      if (inventoryError) {
+        console.error("Inventory check error:", inventoryError);
+        throw inventoryError;
+      }
 
       if (!inventoryData || inventoryData.quantity < 1) {
         toast("Item is out of stock");
@@ -94,9 +105,10 @@ export function useProductActions() {
         .select('quantity')
         .eq('user_id', user.id)
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Cart check error:", checkError);
         throw checkError;
       }
 
@@ -108,6 +120,8 @@ export function useProductActions() {
         return;
       }
 
+      // Attempt to insert/update cart item
+      console.log("Upserting cart with quantity:", newQuantity);
       const { error } = await supabase
         .from('cart')
         .upsert({
@@ -116,7 +130,10 @@ export function useProductActions() {
           quantity: newQuantity
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Cart upsert error:", error);
+        throw error;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       toast("Item added to cart");

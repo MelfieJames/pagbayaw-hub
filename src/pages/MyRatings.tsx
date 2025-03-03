@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,38 +26,62 @@ export default function MyRatings() {
     }
   }, [user, navigate]);
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('notifications')
-        .select(`
-          *,
-          purchases (
-            id,
-            total_amount,
-            status
-          ),
-          products: purchase_items!inner(
-            product_id,
-            products(
-              product_name,
-              image
-            )
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('type', 'review_request')
-        .order('created_at', { ascending: false });
+      console.log("Fetching notifications for user:", user.id);
+      
+      try {
+        // First get notifications
+        const { data: notificationData, error: notificationError } = await supabase
+          .from('notifications')
+          .select('*, purchases(*)')
+          .eq('user_id', user.id)
+          .eq('type', 'review_request')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Notifications fetch error:', error);
+        if (notificationError) {
+          console.error('Notifications fetch error:', notificationError);
+          return [];
+        }
+        
+        if (!notificationData?.length) {
+          console.log("No notifications found");
+          return [];
+        }
+        
+        console.log("Fetched notifications:", notificationData);
+        
+        // For each notification, get associated purchase items and product details
+        const notificationsWithProducts = await Promise.all(
+          notificationData.map(async (notification) => {
+            // Get purchase items for this purchase
+            const { data: purchaseItems, error: purchaseItemsError } = await supabase
+              .from('purchase_items')
+              .select('*, products(*)')
+              .eq('purchase_id', notification.purchase_id);
+              
+            if (purchaseItemsError) {
+              console.error('Purchase items fetch error:', purchaseItemsError);
+              return notification;
+            }
+            
+            // Attach the products data to the notification
+            return {
+              ...notification,
+              products: purchaseItems
+            };
+          })
+        );
+        
+        console.log("Notifications with products:", notificationsWithProducts);
+        return notificationsWithProducts;
+      } catch (error) {
+        console.error('Unexpected error fetching notifications:', error);
         return [];
       }
-      
-      return data || [];
     },
     enabled: !!user?.id,
   });
@@ -66,50 +91,60 @@ export default function MyRatings() {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          products (
-            id,
-            product_name,
-            image,
-            product_price
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      console.log("Fetching reviews for user:", user.id);
+      
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select(`
+            *,
+            products (
+              id,
+              product_name,
+              image,
+              product_price
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Reviews fetch error:', error);
+        if (error) {
+          console.error('Reviews fetch error:', error);
+          return [];
+        }
+        
+        console.log("Fetched user reviews:", data);
+        return data || [];
+      } catch (error) {
+        console.error('Unexpected error fetching reviews:', error);
         return [];
       }
-      
-      return data || [];
     },
     enabled: !!user?.id,
   });
 
+  // Filter pending review products by checking if they've been reviewed
   const pendingReviews = notifications.filter(notification => {
-    const productId = notification.products?.[0]?.product_id;
-    return !userReviews.some(review => 
-      review.product_id === productId && 
-      review.purchase_item_id === notification.purchase_id
+    // Get all product IDs from this notification's purchase items
+    const productIds = notification.products?.map(item => item.product_id) || [];
+    
+    // Check if any of these products haven't been reviewed for this purchase
+    return productIds.some(productId => 
+      !userReviews.some(review => 
+        review.product_id === productId && 
+        review.purchase_item_id === notification.purchase_id
+      )
     );
   });
 
-  const handleRateNow = (notification: any) => {
-    const productId = notification.products?.[0]?.product_id;
-    const productName = notification.products?.[0]?.products?.product_name;
-    const productImage = notification.products?.[0]?.products?.image;
-    
+  const handleRateNow = (notification: any, productItem: any) => {
     navigate(`/products`, { 
       state: { 
         openReview: true,
         reviewProduct: {
-          id: productId,
-          name: productName,
-          image: productImage,
+          id: productItem.product_id,
+          name: productItem.products?.product_name,
+          image: productItem.products?.image,
           purchaseId: notification.purchase_id
         }
       } 
@@ -133,7 +168,13 @@ export default function MyRatings() {
           </TabsList>
           
           <TabsContent value="pending" className="space-y-4">
-            {pendingReviews.length === 0 ? (
+            {notificationsLoading ? (
+              <Card>
+                <CardContent className="pt-6 text-center">
+                  <p className="text-muted-foreground">Loading pending reviews...</p>
+                </CardContent>
+              </Card>
+            ) : pendingReviews.length === 0 ? (
               <Card>
                 <CardContent className="pt-6 text-center">
                   <p className="text-muted-foreground">No pending reviews. Great job!</p>
@@ -141,19 +182,18 @@ export default function MyRatings() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingReviews.map((notification) => {
-                  const productDetails = notification.products?.[0]?.products;
-                  return (
-                    <Card key={notification.id}>
+                {pendingReviews.flatMap((notification) => 
+                  notification.products?.map((productItem) => (
+                    <Card key={`${notification.id}-${productItem.product_id}`}>
                       <CardHeader className="pb-2">
                         <div className="flex items-center gap-3">
                           <img 
-                            src={productDetails?.image || "/placeholder.svg"} 
-                            alt={productDetails?.product_name}
+                            src={productItem.products?.image || "/placeholder.svg"} 
+                            alt={productItem.products?.product_name}
                             className="w-16 h-16 object-cover rounded-md"
                           />
                           <div>
-                            <CardTitle className="text-lg">{productDetails?.product_name}</CardTitle>
+                            <CardTitle className="text-lg">{productItem.products?.product_name}</CardTitle>
                             <CardDescription>Purchased on {new Date(notification.created_at).toLocaleDateString()}</CardDescription>
                           </div>
                         </div>
@@ -161,14 +201,14 @@ export default function MyRatings() {
                       <CardContent>
                         <Button 
                           className="w-full mt-2" 
-                          onClick={() => handleRateNow(notification)}
+                          onClick={() => handleRateNow(notification, productItem)}
                         >
                           Rate Now
                         </Button>
                       </CardContent>
                     </Card>
-                  );
-                })}
+                  ))
+                )}
               </div>
             )}
           </TabsContent>

@@ -27,16 +27,20 @@ export function useProductQueries() {
   const { data: productReviews = [] } = useQuery({
     queryKey: ['all-reviews'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          profiles(email),
-          products(product_name, image)
-        `)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select(`
+            *,
+            products(product_name, image)
+          `)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching product reviews:', error);
+        return [];
+      }
     }
   });
 

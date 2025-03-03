@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
@@ -55,9 +54,14 @@ export default function Products() {
   }, {} as Record<number, { total: number; count: number }>);
 
   const handleSubmitReview = async () => {
-    if (!user?.id || !reviewProduct) return;
+    if (!user?.id || !reviewProduct || rating === 0) {
+      toast("Please select a rating before submitting");
+      return;
+    }
 
     try {
+      console.log("Submitting review for product:", reviewProduct);
+      
       // Check if user has already reviewed this product from this purchase
       const { data: existingReview, error: checkError } = await supabase
         .from('reviews')
@@ -67,7 +71,10 @@ export default function Products() {
         .eq('purchase_item_id', reviewProduct.purchaseId)
         .maybeSingle();
 
-      if (checkError) throw checkError;
+      if (checkError) {
+        console.error("Error checking existing review:", checkError);
+        throw checkError;
+      }
 
       if (existingReview) {
         toast("You have already reviewed this product");
@@ -88,10 +95,13 @@ export default function Products() {
           purchase_item_id: reviewProduct.purchaseId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error submitting review:", error);
+        throw error;
+      }
 
       toast("Review submitted successfully!");
-      queryClient.invalidateQueries({ queryKey: ['product-reviews', reviewProduct.id] });
+      queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
