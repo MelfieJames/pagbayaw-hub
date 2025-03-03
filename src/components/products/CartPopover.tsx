@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -81,7 +82,16 @@ export function CartPopover() {
   });
 
   const updateQuantity = async (productId: number, newQuantity: number) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast("Please log in to update your cart");
+      navigate('/login', {
+        state: {
+          redirectAfterLogin: '/products',
+          message: "Please log in to manage your cart"
+        }
+      });
+      return;
+    }
 
     const inventoryItem = inventoryData.find(item => item.product_id === productId);
     const maxQuantity = inventoryItem?.quantity || 0;
@@ -152,6 +162,17 @@ export function CartPopover() {
     .reduce((sum, item) => sum + (item.quantity * (item.products?.product_price || 0)), 0);
 
   const handleCheckout = () => {
+    if (!user) {
+      toast("Please log in to checkout");
+      navigate('/login', {
+        state: {
+          redirectAfterLogin: '/products',
+          message: "Please log in to checkout"
+        }
+      });
+      return;
+    }
+    
     if (selectedItems.length === 0) {
       toast("Please select items to checkout");
       return;
@@ -172,6 +193,10 @@ export function CartPopover() {
     });
   };
 
+  const handleNavigateToProducts = () => {
+    navigate('/products');
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -181,7 +206,7 @@ export function CartPopover() {
           className="relative"
         >
           <ShoppingCart className="h-5 w-5" />
-          {cartItems.length > 0 && (
+          {user && cartItems.length > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
               {cartItems.length}
             </span>
@@ -192,84 +217,119 @@ export function CartPopover() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">Shopping Cart</h4>
-            <span className="text-sm text-muted-foreground">
-              {selectedItems.length} selected
-            </span>
+            {user && (
+              <span className="text-sm text-muted-foreground">
+                {selectedItems.length} selected
+              </span>
+            )}
           </div>
-          <div className="space-y-4 max-h-[60vh] overflow-auto">
-            {Object.entries(groupedCartItems).map(([category, items]) => (
-              <div key={category} className="space-y-2">
-                <h5 className="font-medium text-sm text-muted-foreground">{category}</h5>
-                {items.map((item) => (
-                  <div 
-                    key={item.product_id} 
-                    className="flex items-start gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95"
-                  >
-                    <Checkbox 
-                      checked={selectedItems.includes(item.product_id)}
-                      onCheckedChange={() => toggleItemSelection(item.product_id)}
-                      className="mt-2"
-                    />
-                    <img 
-                      src={item.products?.image || "/placeholder.svg"} 
-                      alt={item.products?.product_name} 
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {item.products?.product_name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        ₱{item.products?.product_price.toFixed(2)}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="text-sm w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeFromCart(item.product_id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-          {cartItems.length > 0 ? (
-            <div className="pt-4 border-t">
-              <div className="flex justify-between mb-4">
-                <span className="font-medium">Selected Total:</span>
-                <span className="font-medium">₱{selectedTotal.toFixed(2)}</span>
-              </div>
+          
+          {!user ? (
+            <div className="text-center py-4 space-y-4">
+              <p className="text-muted-foreground">Please log in to view your cart</p>
               <Button 
-                className="w-full" 
-                onClick={handleCheckout}
-                disabled={selectedItems.length === 0}
+                className="w-full"
+                onClick={() => navigate('/login', {
+                  state: {
+                    redirectAfterLogin: '/products',
+                    message: "Please log in to view your cart"
+                  }
+                })}
               >
-                Proceed to Checkout ({selectedItems.length} items)
+                Log In
+              </Button>
+              <Button 
+                variant="outline"
+                className="w-full"
+                onClick={handleNavigateToProducts}
+              >
+                Browse Products
+              </Button>
+            </div>
+          ) : cartItems.length === 0 ? (
+            <div className="text-center py-4 space-y-4">
+              <p className="text-muted-foreground">Your cart is empty</p>
+              <Button 
+                className="w-full"
+                onClick={handleNavigateToProducts}
+              >
+                Browse Products
               </Button>
             </div>
           ) : (
-            <p className="text-center text-muted-foreground">Your cart is empty</p>
+            <>
+              <div className="space-y-4 max-h-[60vh] overflow-auto">
+                {Object.entries(groupedCartItems).map(([category, items]) => (
+                  <div key={category} className="space-y-2">
+                    <h5 className="font-medium text-sm text-muted-foreground">{category}</h5>
+                    {items.map((item) => (
+                      <div 
+                        key={item.product_id} 
+                        className="flex items-start gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95"
+                      >
+                        <Checkbox 
+                          checked={selectedItems.includes(item.product_id)}
+                          onCheckedChange={() => toggleItemSelection(item.product_id)}
+                          className="mt-2"
+                        />
+                        <img 
+                          src={item.products?.image || "/placeholder.svg"} 
+                          alt={item.products?.product_name} 
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {item.products?.product_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            ₱{item.products?.product_price.toFixed(2)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-sm w-8 text-center">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeFromCart(item.product_id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className="pt-4 border-t">
+                <div className="flex justify-between mb-4">
+                  <span className="font-medium">Selected Total:</span>
+                  <span className="font-medium">₱{selectedTotal.toFixed(2)}</span>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleCheckout}
+                  disabled={selectedItems.length === 0}
+                >
+                  Proceed to Checkout ({selectedItems.length} items)
+                </Button>
+              </div>
+            </>
           )}
         </div>
       </PopoverContent>

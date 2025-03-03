@@ -13,7 +13,12 @@ export function useProductActions() {
   const handleBuyNow = async (productId: number) => {
     if (!user) {
       toast("Please log in to purchase items");
-      navigate("/login");
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: "/products",
+          message: "Please log in to continue with your purchase."
+        } 
+      });
       return;
     }
 
@@ -59,7 +64,12 @@ export function useProductActions() {
   const handleAddToCart = async (productId: number, quantity: number = 1) => {
     if (!user) {
       toast("Please log in to add items to cart");
-      navigate("/login");
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: "/products",
+          message: "Please log in to add items to your cart."
+        } 
+      });
       return;
     }
 

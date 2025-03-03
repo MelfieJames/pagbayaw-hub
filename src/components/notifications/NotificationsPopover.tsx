@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +27,7 @@ export function NotificationsPopover() {
   } | null>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const queryClient = useQueryClient();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications', user?.id],
@@ -40,12 +41,6 @@ export function NotificationsPopover() {
             id,
             total_amount,
             status
-          ),
-          purchase_items (
-            product_id,
-            products (
-              product_name
-            )
           )
         `)
         .eq('user_id', user.id)
@@ -61,16 +56,73 @@ export function NotificationsPopover() {
 
   const markAsRead = async (notificationId: number) => {
     if (!user?.id) return;
-    await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', notificationId);
+    
+    try {
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+      
+      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    // Mark as read first
+    if (!notification.is_read) {
+      await markAsRead(notification.id);
+    }
+
+    // If it's a review request, open the review dialog
+    if (notification.type === 'review_request') {
+      // Extract product name and id from the message
+      const productName = notification.message.replace('Please rate and review your purchase: ', '');
+      
+      // First get the purchase items to find the product ID
+      const { data, error } = await supabase
+        .from('purchase_items')
+        .select('product_id')
+        .eq('purchase_id', notification.purchase_id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching product ID:', error);
+        return;
+      }
+      
+      setReviewProduct({
+        id: data.product_id,
+        name: productName,
+        purchaseId: notification.purchase_id
+      });
+    }
   };
 
   const handleSubmitReview = async () => {
     if (!user?.id || !reviewProduct) return;
 
     try {
+      // Check if user has already reviewed this product from this purchase
+      const { data: existingReview, error: checkError } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('product_id', reviewProduct.id)
+        .eq('purchase_item_id', reviewProduct.purchaseId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingReview) {
+        toast("You have already reviewed this product");
+        setReviewProduct(null);
+        setRating(0);
+        setComment("");
+        return;
+      }
+
       const { error } = await supabase
         .from('reviews')
         .insert({
@@ -84,6 +136,10 @@ export function NotificationsPopover() {
       if (error) throw error;
 
       toast("Review submitted successfully!");
+      queryClient.invalidateQueries({ queryKey: ['product-reviews', reviewProduct.id] });
+      queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
+      
+      // Close the dialog and reset state
       setReviewProduct(null);
       setRating(0);
       setComment("");
@@ -112,7 +168,19 @@ export function NotificationsPopover() {
         <PopoverContent align="end" className="w-80">
           <h4 className="font-semibold mb-4">Notifications</h4>
           <ScrollArea className="h-[300px]">
-            {notifications.length === 0 ? (
+            {!user ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Please log in to view your notifications
+                </p>
+                <Button 
+                  className="w-full" 
+                  onClick={() => window.location.href = '/login'}
+                >
+                  Log In
+                </Button>
+              </div>
+            ) : notifications.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No notifications yet
               </p>
@@ -124,14 +192,14 @@ export function NotificationsPopover() {
                     className={`p-3 rounded-lg border ${
                       !notification.is_read ? 'bg-muted/50' : ''
                     }`}
-                    onClick={() => markAsRead(notification.id)}
+                    onClick={() => handleNotificationClick(notification)}
                     role="button"
                     tabIndex={0}
                   >
                     <p className="text-sm">{notification.message}</p>
                     <div className="flex justify-between items-center mt-2">
                       <Badge variant="outline">
-                        {notification.purchases?.status}
+                        {notification.purchases?.status || 'Notification'}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(notification.created_at), 'PP')}
@@ -151,23 +219,31 @@ export function NotificationsPopover() {
             <DialogTitle>Rate & Review {reviewProduct?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex gap-1">
+            <div className="flex gap-1 justify-center">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   onClick={() => setRating(star)}
-                  className={`p-1 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}
+                  className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}
                 >
-                  <Star className="h-6 w-6" fill={rating >= star ? "currentColor" : "none"} />
+                  <Star className="h-8 w-8" fill={rating >= star ? "currentColor" : "none"} />
                 </button>
               ))}
             </div>
+            <p className="text-center text-sm text-muted-foreground">
+              {rating === 1 && "Poor"}
+              {rating === 2 && "Fair"}
+              {rating === 3 && "Good"}
+              {rating === 4 && "Very Good"}
+              {rating === 5 && "Excellent"}
+            </p>
             <Textarea
-              placeholder="Write your review..."
+              placeholder="Share your experience with this product..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
+              className="min-h-[100px]"
             />
-            <Button onClick={handleSubmitReview} disabled={rating === 0}>
+            <Button onClick={handleSubmitReview} disabled={rating === 0} className="w-full">
               Submit Review
             </Button>
           </div>

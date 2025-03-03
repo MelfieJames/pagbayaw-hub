@@ -46,12 +46,6 @@ export function ProductDetailsModal({
   const stockQuantity = inventory?.quantity ?? 0;
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
-  }, [user, navigate]);
-
-  useEffect(() => {
     setQuantity(1);
   }, [product?.id]);
 

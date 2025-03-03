@@ -9,7 +9,8 @@ import { MinusCircle, PlusCircle, Trash2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -29,11 +30,18 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const selectedItems = location.state?.selectedItems || [];
   const selectedQuantities = location.state?.quantities || {};
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/login', {
+        state: {
+          redirectAfterLogin: '/checkout',
+          message: "Please log in to access checkout"
+        }
+      });
     }
   }, [user, navigate]);
 
@@ -160,7 +168,28 @@ export default function Checkout() {
       return;
     }
 
+    setIsProcessing(true);
+
     try {
+      // Update inventory before finalizing purchase
+      for (const item of cartItems) {
+        const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+        
+        if (!inventoryItem || inventoryItem.quantity < item.quantity) {
+          toast.error(`Not enough stock for ${item.products?.product_name}`);
+          setIsProcessing(false);
+          return;
+        }
+
+        // Update inventory quantity
+        const { error: updateError } = await supabase
+          .from('inventory')
+          .update({ quantity: inventoryItem.quantity - item.quantity })
+          .eq('product_id', item.product_id);
+
+        if (updateError) throw updateError;
+      }
+
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchases')
         .insert({
@@ -211,11 +240,15 @@ export default function Checkout() {
       if (cartError) throw cartError;
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
-      toast.success("Order processed successfully! Please check your notifications to rate your purchases.");
-      navigate('/products');
+      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-data'] });
+      
+      setShowSuccessDialog(true);
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error("Failed to process order. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -296,7 +329,7 @@ export default function Checkout() {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>Calculated at next step</span>
+                    <span>Free</span>
                   </div>
                 </div>
                 <div className="border-t pt-4">
@@ -307,9 +340,9 @@ export default function Checkout() {
                   <Button 
                     className="w-full"
                     onClick={handleCheckout}
-                    disabled={cartItems.length === 0}
+                    disabled={cartItems.length === 0 || isProcessing}
                   >
-                    Proceed to Payment
+                    {isProcessing ? "Processing..." : "Proceed to Payment"}
                   </Button>
                 </div>
               </div>
@@ -317,6 +350,27 @@ export default function Checkout() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Order Successful!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your order has been successfully processed. Please check your notifications to rate your purchases.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowSuccessDialog(false);
+                navigate('/products');
+              }}
+            >
+              Continue Shopping
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

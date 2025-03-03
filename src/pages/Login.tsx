@@ -1,20 +1,26 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ErrorModal from "@/components/ErrorModal";
 import { supabase } from "@/services/supabase/client";
 import LoginForm from "@/components/auth/LoginForm";
 import { handleAdminAuth, handleUserAuth } from "@/services/authService";
 import { getAuthErrorMessage } from "@/utils/authErrors";
+import { toast } from "sonner";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectPath = location.state?.redirectAfterLogin || "/";
+  const message = location.state?.message || null;
 
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorModalContent, setErrorModalContent] = useState({
@@ -23,14 +29,20 @@ const Login = () => {
   });
 
   useEffect(() => {
+    if (message) {
+      toast(message);
+    }
+  }, [message]);
+
+  useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        navigate(redirectPath);
       }
     };
     checkSession();
-  }, [navigate]);
+  }, [navigate, redirectPath]);
 
   const showError = (title: string, message: string) => {
     setErrorModalContent({ title, message });
@@ -53,7 +65,7 @@ const Login = () => {
         }
 
         if (user) {
-          toast({
+          uiToast({
             title: "Admin Login Successful",
             description: "Welcome back, Admin!",
           });
@@ -73,13 +85,13 @@ const Login = () => {
 
       if (user) {
         if (isLogin) {
-          toast({
+          uiToast({
             title: "Login Successful",
             description: "Welcome back!",
           });
-          navigate("/");
+          navigate(redirectPath);
         } else {
-          toast({
+          uiToast({
             title: "Sign Up Successful",
             description: "You can now log in with your credentials.",
           });
