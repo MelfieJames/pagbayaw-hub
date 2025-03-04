@@ -1,6 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { Product } from "@/types/product";
 
@@ -23,6 +23,7 @@ export function ProductCard({ product, inventory, rating, onProductClick }: Prod
           ? 'opacity-60 cursor-not-allowed' 
           : 'hover:shadow-lg cursor-pointer'
       }`}
+      data-product-id={product.id}
     >
       <div className="aspect-square relative">
         <img 
@@ -43,24 +44,24 @@ export function ProductCard({ product, inventory, rating, onProductClick }: Prod
           {product.category}
         </Badge>
         <CardTitle className="text-lg">{product.product_name}</CardTitle>
-        <CardContent className="p-0">
-          <div className="flex items-center justify-between">
-            <span>₱{product.product_price.toFixed(2)}</span>
-            <div className="flex flex-col items-end gap-1">
-              {rating && (
-                <span className="text-xs flex items-center gap-1">
-                  {averageRating.toFixed(1)}
-                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                  ({rating.count})
-                </span>
-              )}
-              <span className="text-xs">
-                {inventory?.quantity || 0} available
-              </span>
-            </div>
-          </div>
-        </CardContent>
       </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <span>₱{product.product_price.toFixed(2)}</span>
+          <div className="flex flex-col items-end gap-1">
+            {rating && (
+              <span className="text-xs flex items-center gap-1">
+                {averageRating.toFixed(1)}
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                ({rating.count})
+              </span>
+            )}
+            <span className="text-xs">
+              {inventory?.quantity || 0} available
+            </span>
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 }

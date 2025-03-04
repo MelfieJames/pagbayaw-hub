@@ -130,7 +130,7 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
-      <div className="container mx-auto px-4 pt-20 flex-grow">
+      <div className="container mx-auto px-4 pt-24 flex-grow"> {/* Increased padding top from pt-20 to pt-24 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <FilterSidebar
             products={products}
@@ -144,14 +144,16 @@ export default function Products() {
               onSearchChange={setSearchQuery}
             />
 
-            <ProductList
-              products={products}
-              searchQuery={searchQuery}
-              selectedCategory={selectedCategory}
-              inventoryData={inventoryData || []}
-              productRatings={productRatings}
-              onProductClick={setSelectedProduct}
-            />
+            <div className="mt-4"> {/* Added margin-top to push products down from search bar */}
+              <ProductList
+                products={products}
+                searchQuery={searchQuery}
+                selectedCategory={selectedCategory}
+                inventoryData={inventoryData || []}
+                productRatings={productRatings}
+                onProductClick={setSelectedProduct}
+              />
+            </div>
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/types/product";
@@ -20,7 +21,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { format } from "date-fns";
-import { DialogDescription } from "@/components/ui/dialog";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -54,15 +54,10 @@ export function ProductDetailsModal({
     queryKey: ['product-reviews', product?.id],
     queryFn: async () => {
       if (!product?.id) return [];
+      // Changed this query to not use profiles join which was causing 400 errors
       const { data, error } = await supabase
         .from('reviews')
-        .select(`
-          *,
-          profiles (
-            id,
-            email
-          )
-        `)
+        .select('*')
         .eq('product_id', product.id)
         .order('created_at', { ascending: false });
 
@@ -161,8 +156,8 @@ export function ProductDetailsModal({
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <p className="font-medium text-sm">{
-                                review.profiles?.email 
-                                  ? review.profiles.email.split('@')[0]  // Show username part of email
+                                review.user_id 
+                                  ? review.user_id.substring(0, 8)  // Show first part of user_id
                                   : "Anonymous User"
                               }</p>
                               <div className="flex">

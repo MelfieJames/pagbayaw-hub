@@ -72,3 +72,34 @@ export const deleteAchievementImage = async (imageId: number) => {
   if (error) throw error;
   return { success: true };
 };
+
+// Add new function to delete all achievement images for an achievement
+export const deleteAllAchievementImages = async (achievementId: number) => {
+  const { error } = await supabase
+    .from('achievement_images')
+    .delete()
+    .eq('achievement_id', achievementId);
+
+  if (error) throw error;
+  return { success: true };
+};
+
+// Add new function for safe achievement deletion
+export const deleteAchievement = async (achievementId: number) => {
+  try {
+    // First delete all associated images
+    await deleteAllAchievementImages(achievementId);
+    
+    // Then delete the achievement
+    const { error } = await supabase
+      .from('achievements')
+      .delete()
+      .eq('id', achievementId);
+      
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting achievement:', error);
+    throw error;
+  }
+};

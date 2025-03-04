@@ -15,6 +15,7 @@ import { useState } from "react";
 import { AchievementTableRow } from "./AchievementTableRow";
 import { AchievementDetailsModal } from "./AchievementDetailsModal";
 import ErrorModal from "@/components/ErrorModal";
+import { deleteAchievement } from "@/utils/achievementOperations";
 
 interface Achievement {
   id: number;
@@ -90,13 +91,8 @@ export const AchievementList = ({ onEdit }: AchievementListProps) => {
 
   const handleDelete = async (id: number) => {
     try {
-      // Delete the achievement
-      const { error } = await supabase
-        .from('achievements')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      // Use the new safe delete function that handles foreign key constraints
+      await deleteAchievement(id);
 
       toast({
         title: "Success",

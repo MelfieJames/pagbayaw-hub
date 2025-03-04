@@ -36,7 +36,7 @@ export function NotificationsPopover() {
   const [errorMessage, setErrorMessage] = useState({ title: "", message: "" });
   const queryClient = useQueryClient();
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], refetch: refetchNotifications } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -118,13 +118,15 @@ export function NotificationsPopover() {
         .update({ is_read: true })
         .eq('id', notificationId);
       
-      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+      // Refetch notifications to update the unread count
+      refetchNotifications();
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
 
   const handleNotificationClick = async (notification: any) => {
+    // Mark notification as read when clicked
     if (!notification.is_read) {
       await markAsRead(notification.id);
     }
@@ -291,6 +293,12 @@ export function NotificationsPopover() {
                       }`}
                       role="button"
                       tabIndex={0}
+                      onClick={() => handleNotificationClick(notification)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleNotificationClick(notification);
+                        }
+                      }}
                     >
                       <div className="flex gap-3">
                         {productDetails?.image && (
@@ -307,7 +315,10 @@ export function NotificationsPopover() {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => handleNotificationClick(notification)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNotificationClick(notification);
+                                }}
                               >
                                 Rate Now
                               </Button>

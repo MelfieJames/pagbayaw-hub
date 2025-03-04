@@ -65,7 +65,7 @@ export default function Navbar() {
             <NavItems />
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {user ? (
               <>
                 <CartPopover />
@@ -97,7 +97,7 @@ export default function Navbar() {
             ) : (
               <div className="flex gap-2">
                 {!isMobile && (
-                  <Button variant="ghost" onClick={() => navigate("/login")}>
+                  <Button onClick={() => navigate("/login")} className="mr-6">
                     Login
                   </Button>
                 )}
