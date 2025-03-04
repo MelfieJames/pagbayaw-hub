@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -54,15 +53,45 @@ export function ProductDetailsModal({
     queryKey: ['product-reviews', product?.id],
     queryFn: async () => {
       if (!product?.id) return [];
-      // Changed this query to not use profiles join which was causing 400 errors
-      const { data, error } = await supabase
+      
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
         .select('*')
         .eq('product_id', product.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (reviewsError) throw reviewsError;
+      
+      const reviewsWithUserInfo = await Promise.all((reviewsData || []).map(async (review) => {
+        if (review.user_id) {
+          const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', review.user_id)
+            .single();
+            
+          if (!userError && userData) {
+            const email = userData.email;
+            const namePart = email.split('@')[0];
+            const formattedName = namePart
+              .split(/[._-]/)
+              .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+              .join(' ');
+              
+            return { 
+              ...review, 
+              user_name: formattedName,
+              user_email: email 
+            };
+          }
+        }
+        return { 
+          ...review, 
+          user_name: "Anonymous User" 
+        };
+      }));
+      
+      return reviewsWithUserInfo;
     },
     enabled: !!product?.id,
   });
@@ -72,12 +101,16 @@ export function ProductDetailsModal({
   const rating = productRatings[product.id];
   const averageRating = rating ? rating.total / rating.count : 0;
 
+  const getAvatarLetter = (name: string) => {
+    return name ? name.charAt(0).toUpperCase() : 'A';
+  };
+
   return (
     <Dialog open={!!product} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-xl">{product.product_name}</DialogTitle>
-          <DialogDescription className="sr-only">Product details</DialogDescription>
+          <DialogDescription className="sr-only">Product details for {product.product_name}</DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="h-full pr-4">
@@ -153,31 +186,34 @@ export function ProductDetailsModal({
                     ) : (
                       reviews.map((review) => (
                         <div key={review.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <p className="font-medium text-sm">{
-                                review.user_id 
-                                  ? review.user_id.substring(0, 8)  // Show first part of user_id
-                                  : "Anonymous User"
-                              }</p>
-                              <div className="flex">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star
-                                    key={star}
-                                    className={`h-4 w-4 ${
-                                      review.rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                          <div className="flex items-start gap-3">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                              {getAvatarLetter(review.user_name)}
                             </div>
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(review.created_at), 'PP')}
-                            </span>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-medium">{review.user_name}</p>
+                                  <div className="flex mt-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`h-4 w-4 ${
+                                          review.rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(review.created_at), 'PP')}
+                                </span>
+                              </div>
+                              {review.comment && (
+                                <p className="text-sm text-gray-600 mt-2">{review.comment}</p>
+                              )}
+                            </div>
                           </div>
-                          {review.comment && (
-                            <p className="text-sm text-gray-600">{review.comment}</p>
-                          )}
                         </div>
                       ))
                     )}

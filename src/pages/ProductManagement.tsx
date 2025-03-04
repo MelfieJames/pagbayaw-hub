@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -10,15 +11,26 @@ import { Product } from "@/types/product";
 import { createProduct, getProducts, deleteProduct, updateProduct } from "@/services/productService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Edit, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +46,7 @@ const ProductManagementContent = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -49,7 +62,7 @@ const ProductManagementContent = () => {
     }
   }, [user, navigate, toast]);
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
     enabled: !!user?.isAdmin,
@@ -94,6 +107,8 @@ const ProductManagementContent = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedProduct(null);
       toast({ title: "Product deleted successfully" });
     },
     onError: (error: Error) => {
@@ -118,6 +133,60 @@ const ProductManagementContent = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleDelete = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedProduct) {
+      await deleteMutation.mutateAsync(selectedProduct.id);
+    }
+  };
+
+  // Custom ProductList with edit/delete buttons
+  const AdminProductList = ({ products }: { products: Product[] }) => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {products.map(product => (
+        <div key={product.id} className="border rounded-lg overflow-hidden">
+          <div className="aspect-square relative">
+            <img 
+              src={product.image || "/placeholder.svg"} 
+              alt={product.product_name} 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="p-4">
+            <h3 className="font-medium">{product.product_name}</h3>
+            <p className="text-sm text-muted-foreground">{product.category}</p>
+            <p className="font-bold mt-2">₱{product.product_price.toFixed(2)}</p>
+            
+            <div className="flex justify-between mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleEdit(product)}
+                className="flex items-center gap-1"
+              >
+                <Edit className="h-4 w-4" />
+                Edit
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => handleDelete(product)}
+                className="flex items-center gap-1"
+              >
+                <Trash className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   if (!user?.isAdmin) {
     return null;
   }
@@ -141,6 +210,7 @@ const ProductManagementContent = () => {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add New Product</DialogTitle>
+                  <DialogDescription>Fill in the details to create a new product</DialogDescription>
                 </DialogHeader>
                 <ProductForm
                   onSubmit={handleSubmit}
@@ -156,11 +226,11 @@ const ProductManagementContent = () => {
               <TabsTrigger value="inventory">Inventory</TabsTrigger>
             </TabsList>
             <TabsContent value="products">
-              <ProductList 
-                products={products}
-                onEdit={handleEdit}
-                onDelete={(id) => deleteMutation.mutate(id)}
-              />
+              {isLoading ? (
+                <div className="text-center py-8">Loading products...</div>
+              ) : (
+                <AdminProductList products={products} />
+              )}
             </TabsContent>
             <TabsContent value="inventory">
               <InventoryList />
@@ -174,6 +244,7 @@ const ProductManagementContent = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>Update the product information</DialogDescription>
           </DialogHeader>
           <ProductForm
             onSubmit={handleSubmit}
@@ -182,6 +253,28 @@ const ProductManagementContent = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product 
+              "{selectedProduct?.product_name}" and remove it from the inventory.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

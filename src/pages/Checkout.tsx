@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +32,6 @@ export default function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/login', {
@@ -50,7 +48,6 @@ export default function Checkout() {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // If no selected items, get all cart items
       let query = supabase
         .from('cart')
         .select(`
@@ -65,7 +62,6 @@ export default function Checkout() {
         `)
         .eq('user_id', user.id);
 
-      // If we have selected items, filter by them
       if (selectedItems.length > 0) {
         query = query.in('product_id', selectedItems);
       }
@@ -95,7 +91,6 @@ export default function Checkout() {
     staleTime: Infinity,
   });
 
-  // Add inventory query
   const { data: inventoryData = [] } = useQuery({
     queryKey: ['inventory-data'],
     queryFn: async () => {
@@ -110,7 +105,6 @@ export default function Checkout() {
   const updateQuantity = async (productId: number, newQuantity: number) => {
     if (!user?.id || newQuantity < 1) return;
 
-    // Check inventory limits
     const inventoryItem = inventoryData.find(item => item.product_id === productId);
     const maxQuantity = inventoryItem?.quantity || 0;
 
@@ -120,6 +114,18 @@ export default function Checkout() {
     }
 
     try {
+      if (selectedItems.length > 0 && !location.state?.fromCart) {
+        const updatedItems = cartItems.map(item => {
+          if (item.product_id === productId) {
+            return { ...item, quantity: newQuantity };
+          }
+          return item;
+        });
+        
+        queryClient.setQueryData(['checkout-items', selectedItems], updatedItems);
+        return;
+      }
+
       const { error } = await supabase
         .from('cart')
         .update({ quantity: newQuantity })
@@ -174,7 +180,6 @@ export default function Checkout() {
       console.log("Starting checkout process with items:", cartItems);
       console.log("Current inventory:", inventoryData);
       
-      // Check inventory before finalizing purchase
       for (const item of cartItems) {
         const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
         
@@ -185,7 +190,6 @@ export default function Checkout() {
         }
       }
 
-      // Create purchase record
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchases')
         .insert({
@@ -203,7 +207,6 @@ export default function Checkout() {
       
       console.log("Created purchase:", purchase);
 
-      // Create purchase items
       const purchaseItems = cartItems.map(item => ({
         purchase_id: purchase.id,
         product_id: item.product_id,
@@ -222,7 +225,6 @@ export default function Checkout() {
       
       console.log("Created purchase items:", purchaseItems);
 
-      // Update inventory AFTER successful purchase creation
       for (const item of cartItems) {
         const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
         
@@ -245,9 +247,7 @@ export default function Checkout() {
         }
       }
 
-      // Create notifications for each product to be rated
       for (const item of cartItems) {
-        // Add notification for review request
         const { error: notificationError } = await supabase
           .from('notifications')
           .insert({
@@ -265,7 +265,6 @@ export default function Checkout() {
       
       console.log("Created notifications for all items");
 
-      // Clear cart items
       const { error: cartError } = await supabase
         .from('cart')
         .delete()
@@ -277,7 +276,6 @@ export default function Checkout() {
         throw cartError;
       }
 
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-data'] });
@@ -333,6 +331,7 @@ export default function Checkout() {
                           variant="outline"
                           size="icon"
                           onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
                         >
                           <MinusCircle className="h-4 w-4" />
                         </Button>
@@ -340,7 +339,15 @@ export default function Checkout() {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                          onClick={() => {
+                            const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+                            const maxQuantity = inventoryItem?.quantity || 0;
+                            if (item.quantity < maxQuantity) {
+                              updateQuantity(item.product_id, item.quantity + 1);
+                            } else {
+                              toast.error("Cannot exceed available stock");
+                            }
+                          }}
                         >
                           <PlusCircle className="h-4 w-4" />
                         </Button>
