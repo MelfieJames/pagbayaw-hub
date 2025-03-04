@@ -41,8 +41,8 @@ export default function Navbar() {
       </Link>
     </>;
   return <nav className="fixed top-0 w-full bg-white border-b z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 my-0 py-0 mx-[40px] px-[10px]">
+      <div className="container mx-auto px-0">
+        <div className="flex items-center justify-between h-16 my-0 py-0 mx-0 px-0">
           <Link to="/" className="text-xl font-bold mx-0 my-0 px-0">
             UNVAS®
           </Link>
@@ -78,7 +78,7 @@ export default function Navbar() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </> : <div className="flex gap-2">
+              </> : <div className="flex gap-2 mx-[55px]">
                 {!isMobile && <Button onClick={() => navigate("/login")} className="mr-2 mx-[30px]">
                     Login
                   </Button>}
