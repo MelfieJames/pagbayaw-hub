@@ -54,6 +54,23 @@ export function useProductActions() {
         throw productError;
       }
 
+      // Pre-fetch data for the checkout page
+      await queryClient.prefetchQuery({
+        queryKey: ['checkout-items', [productId]],
+        queryFn: async () => {
+          return [{
+            quantity: 1,
+            product_id: productId,
+            products: {
+              product_name: product.product_name,
+              product_price: product.product_price,
+              image: product.image,
+              category: product.category
+            }
+          }];
+        }
+      });
+
       // Navigate to checkout with the selected item and quantity
       navigate("/checkout", { 
         state: { 

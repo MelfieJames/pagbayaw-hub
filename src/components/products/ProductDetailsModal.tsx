@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { format } from "date-fns";
+import { DialogDescription } from "@/components/ui/dialog";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -81,6 +82,7 @@ export function ProductDetailsModal({
       <DialogContent className="max-w-4xl h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-xl">{product.product_name}</DialogTitle>
+          <DialogDescription className="sr-only">Product details</DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="h-full pr-4">

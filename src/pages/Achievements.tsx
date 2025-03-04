@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import Footer from "@/components/Footer";
 
 interface Achievement {
   id: number;
@@ -47,12 +48,13 @@ const Achievements = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="pt-20 container mx-auto">
+        <div className="pt-20 container mx-auto flex-grow">
           <h1 className="text-4xl font-bold text-center">Achievements</h1>
           <div className="text-center mt-8">Loading achievements...</div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -66,9 +68,9 @@ const Achievements = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <div className="container mx-auto pt-24 px-4">
+      <div className="container mx-auto pt-24 px-4 flex-grow">
         <h1 className="text-4xl font-bold text-center mb-8">Our Achievements</h1>
         
         {/* Search Bar */}
@@ -116,6 +118,7 @@ const Achievements = () => {
           ))}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

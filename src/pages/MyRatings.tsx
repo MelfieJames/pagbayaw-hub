@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -123,27 +124,34 @@ export default function MyRatings() {
     enabled: !!user?.id,
   });
 
-  // Filter pending review products by checking if they've been reviewed
-  const pendingReviews = notifications.filter(notification => {
-    if (!notification.products) return false;
+  // Create a unique list of products that need reviews
+  // Group by product ID to avoid duplicates
+  const pendingProductMap = new Map();
+  
+  notifications.forEach(notification => {
+    if (!notification.products) return;
     
-    // Get all product IDs from this notification's purchase items
-    const productItems = notification.products || [];
-    
-    // Filter out products that have already been reviewed
-    const pendingProductItems = productItems.filter(item => {
-      return !userReviews.some(review => review.product_id === item.product_id);
+    notification.products.forEach(item => {
+      // Skip products that have already been reviewed
+      if (userReviews.some(review => review.product_id === item.product_id)) {
+        return;
+      }
+      
+      // Only add if not already in the map
+      if (!pendingProductMap.has(item.product_id)) {
+        pendingProductMap.set(item.product_id, {
+          ...item,
+          notificationId: notification.id,
+          purchaseId: notification.purchase_id
+        });
+      }
     });
-    
-    // Only keep notifications that have at least one unreviewed product
-    if (pendingProductItems.length === 0) return false;
-    
-    // Update the products array to only include pending products
-    notification.products = pendingProductItems;
-    return true;
   });
+  
+  // Convert map to array
+  const pendingReviews = Array.from(pendingProductMap.values());
 
-  const handleRateNow = (notification: any, productItem: any) => {
+  const handleRateNow = (productItem) => {
     navigate(`/products`, { 
       state: { 
         openReview: true,
@@ -151,7 +159,7 @@ export default function MyRatings() {
           id: productItem.product_id,
           name: productItem.products?.product_name,
           image: productItem.products?.image,
-          purchaseId: notification.purchase_id
+          purchaseId: productItem.purchaseId
         }
       } 
     });
@@ -188,33 +196,31 @@ export default function MyRatings() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingReviews.flatMap((notification) => 
-                  notification.products?.map((productItem) => (
-                    <Card key={`${notification.id}-${productItem.product_id}`}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-3">
-                          <img 
-                            src={productItem.products?.image || "/placeholder.svg"} 
-                            alt={productItem.products?.product_name}
-                            className="w-16 h-16 object-cover rounded-md"
-                          />
-                          <div>
-                            <CardTitle className="text-lg">{productItem.products?.product_name}</CardTitle>
-                            <CardDescription>Purchased on {new Date(notification.created_at).toLocaleDateString()}</CardDescription>
-                          </div>
+                {pendingReviews.map((productItem) => (
+                  <Card key={`pending-${productItem.product_id}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={productItem.products?.image || "/placeholder.svg"} 
+                          alt={productItem.products?.product_name}
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                        <div>
+                          <CardTitle className="text-lg">{productItem.products?.product_name}</CardTitle>
+                          <CardDescription>Ready to review</CardDescription>
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Button 
-                          className="w-full mt-2" 
-                          onClick={() => handleRateNow(notification, productItem)}
-                        >
-                          Rate Now
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Button 
+                        className="w-full mt-2" 
+                        onClick={() => handleRateNow(productItem)}
+                      >
+                        Rate Now
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </TabsContent>
