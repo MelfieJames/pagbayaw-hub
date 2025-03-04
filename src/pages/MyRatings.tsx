@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Footer from "@/components/Footer";
 
 export default function MyRatings() {
   const { user } = useAuth();
@@ -125,16 +125,22 @@ export default function MyRatings() {
 
   // Filter pending review products by checking if they've been reviewed
   const pendingReviews = notifications.filter(notification => {
-    // Get all product IDs from this notification's purchase items
-    const productIds = notification.products?.map(item => item.product_id) || [];
+    if (!notification.products) return false;
     
-    // Check if any of these products haven't been reviewed for this purchase
-    return productIds.some(productId => 
-      !userReviews.some(review => 
-        review.product_id === productId && 
-        review.purchase_item_id === notification.purchase_id
-      )
-    );
+    // Get all product IDs from this notification's purchase items
+    const productItems = notification.products || [];
+    
+    // Filter out products that have already been reviewed
+    const pendingProductItems = productItems.filter(item => {
+      return !userReviews.some(review => review.product_id === item.product_id);
+    });
+    
+    // Only keep notifications that have at least one unreviewed product
+    if (pendingProductItems.length === 0) return false;
+    
+    // Update the products array to only include pending products
+    notification.products = pendingProductItems;
+    return true;
   });
 
   const handleRateNow = (notification: any, productItem: any) => {
@@ -156,9 +162,9 @@ export default function MyRatings() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="container mx-auto px-4 pt-20">
+      <div className="container mx-auto px-4 pt-20 flex-grow">
         <h1 className="text-3xl font-bold mb-6">My Product Ratings</h1>
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -256,6 +262,7 @@ export default function MyRatings() {
           </TabsContent>
         </Tabs>
       </div>
+      <Footer />
     </div>
   );
 }

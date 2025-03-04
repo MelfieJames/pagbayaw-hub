@@ -58,6 +58,7 @@ export function ProductDetailsModal({
         .select(`
           *,
           profiles (
+            id,
             email
           )
         `)
@@ -150,31 +151,39 @@ export function ProductDetailsModal({
                   </div>
                   
                   <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium text-sm">{review.profiles.email}</p>
-                            <div className="flex">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                  key={star}
-                                  className={`h-4 w-4 ${
-                                    review.rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
+                    {reviews.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-2">No reviews yet</p>
+                    ) : (
+                      reviews.map((review) => (
+                        <div key={review.id} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-medium text-sm">{
+                                review.profiles?.email 
+                                  ? review.profiles.email.split('@')[0]  // Show username part of email
+                                  : "Anonymous User"
+                              }</p>
+                              <div className="flex">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-4 w-4 ${
+                                      review.rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
                             </div>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(review.created_at), 'PP')}
+                            </span>
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(review.created_at), 'PP')}
-                          </span>
+                          {review.comment && (
+                            <p className="text-sm text-gray-600">{review.comment}</p>
+                          )}
                         </div>
-                        {review.comment && (
-                          <p className="text-sm text-gray-600">{review.comment}</p>
-                        )}
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

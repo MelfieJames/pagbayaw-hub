@@ -18,6 +18,7 @@ import { supabase } from "@/services/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ErrorModal from "@/components/ErrorModal";
+import Footer from "@/components/Footer";
 
 export default function Products() {
   const { user } = useAuth();
@@ -36,7 +37,7 @@ export default function Products() {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState({ title: "", message: "" });
 
-  const { products, inventoryData, productReviews, userReviews } = useProductQueries();
+  const { products, inventoryData, productReviews, hasUserReviewedProduct } = useProductQueries();
   const { handleBuyNow, handleAddToCart } = useProductActions();
 
   // Check if we need to open the review dialog from navigation state
@@ -69,11 +70,7 @@ export default function Products() {
       console.log("Submitting review for product:", reviewProduct);
       
       // Check if user has already reviewed this product
-      const hasReviewed = userReviews.some(
-        review => review.product_id === reviewProduct.id
-      );
-
-      if (hasReviewed) {
+      if (hasUserReviewedProduct(reviewProduct.id)) {
         setErrorMessage({
           title: "Already Reviewed",
           message: "You have already reviewed this product. You can only review a product once."
@@ -131,9 +128,9 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
-      <div className="container mx-auto px-4 pt-20">
+      <div className="container mx-auto px-4 pt-20 flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <FilterSidebar
             products={products}
@@ -227,6 +224,7 @@ export default function Products() {
           message={errorMessage.message}
         />
       </div>
+      <Footer />
     </div>
   );
 }
