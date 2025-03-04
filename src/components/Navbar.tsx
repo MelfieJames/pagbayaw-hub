@@ -40,16 +40,18 @@ export default function Navbar() {
         <span>Contact Us</span>
       </Link>
     </>;
-  return <nav className="fixed top-0 w-full bg-white border-b z-50 mx-0 px-0">
-      <div className="container my-0 py-0 mx-0 px-[70px]">
-        <div className="flex items-center justify-between h-16 px-0 mx-0 my-0 py-0">
-          <Link to="/" className="text-xl font-bold my-0 py-0 mx-0 px-0">UNVAS®</Link>
+  return <nav className="fixed top-0 w-full bg-white border-b z-50">
+      <div className="container mx-0 px-0">
+        <div className="flex items-center justify-between h-16 my-0 py-0 mx-0 px-0">
+          <Link to="/" className="text-xl font-bold mx-0 my-0 px-0">
+            UNVAS®
+          </Link>
 
-          <div className="hidden md:flex space-x-6">
+          <div className="">
             <NavItems />
           </div>
 
-          <div className="flex items-center space-x-3 pr-4 mx-[55px]">
+          <div className="flex items-center space-x-3 pr-4">
             {user ? <>
                 <CartPopover />
                 <NotificationsPopover />
@@ -76,8 +78,8 @@ export default function Navbar() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </> : <div className="flex gap-2">
-                {!isMobile && <Button onClick={() => navigate("/login")} className="mr-2 mx-[135px] text-base font-medium bg-orange-400 hover:bg-orange-300 rounded-md text-slate-900">
+              </> : <div className="flex gap-2 mx-0 px-[70px]">
+                {!isMobile && <Button onClick={() => navigate("/login")} className="mr-2 mx-[30px]">
                     Login
                   </Button>}
               </div>}
