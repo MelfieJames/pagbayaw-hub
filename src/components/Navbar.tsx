@@ -40,16 +40,16 @@ export default function Navbar() {
         <span>Contact Us</span>
       </Link>
     </>;
-  return <nav className="fixed top-0 w-full bg-white border-b z-50">
-      <div className="container mx-0 my-0 py-0 px-[10px]">
+  return <nav className="fixed top-0 w-full bg-white border-b z-50 mx-0 px-0">
+      <div className="container my-0 py-0 mx-0 px-[70px]">
         <div className="flex items-center justify-between h-16 px-0 mx-0 my-0 py-0">
-          <Link to="/" className="text-xl font-bold px-0 mx-0 my-0 py-0">UNVAS®</Link>
+          <Link to="/" className="text-xl font-bold my-0 py-0 mx-0 px-0">UNVAS®</Link>
 
           <div className="hidden md:flex space-x-6">
             <NavItems />
           </div>
 
-          <div className="flex items-center space-x-3 pr-4">
+          <div className="flex items-center space-x-3 pr-4 mx-[50px]">
             {user ? <>
                 <CartPopover />
                 <NotificationsPopover />

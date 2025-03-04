@@ -168,7 +168,7 @@ export function CartPopover() {
   };
   return <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative mx-[5px]">
+        <Button variant="ghost" size="icon" className="relative mx-[20px]">
           <ShoppingCart className="h-5 w-5" />
           {user && cartItems.length > 0 && <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
               {cartItems.length}
