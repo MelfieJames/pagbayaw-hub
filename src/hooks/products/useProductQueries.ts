@@ -56,7 +56,7 @@ export function useProductQueries() {
       try {
         const { data, error } = await supabase
           .from('reviews')
-          .select('product_id, purchase_item_id')
+          .select('product_id')
           .eq('user_id', user.id);
           
         if (error) throw error;
@@ -69,10 +69,16 @@ export function useProductQueries() {
     enabled: !!user
   });
 
+  // This function helps determine if a user has already reviewed a specific product
+  const hasUserReviewedProduct = (productId: number) => {
+    return userReviews.some(review => review.product_id === productId);
+  };
+
   return {
     products,
     inventoryData,
     productReviews,
-    userReviews
+    userReviews,
+    hasUserReviewedProduct
   };
 }
