@@ -42,8 +42,8 @@ export default function Navbar() {
     </>;
   return <nav className="fixed top-0 w-full bg-white border-b z-50">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 my-0 py-0 px-[10px] rounded-full mx-[200px]">
-          <Link to="/" className="text-xl font-bold mx-0 my-0 px-0">
+        <div className="flex items-center justify-between h-16 mx-0 my-0 py-0 px-[55px]">
+          <Link to="/" className="text-xl font-bold">
             UNVAS®
           </Link>
 
