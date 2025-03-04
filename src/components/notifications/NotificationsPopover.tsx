@@ -214,7 +214,7 @@ export function NotificationsPopover() {
   return <>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative mx-[20px]">
+          <Button variant="ghost" size="icon" className="relative mx-[5px]">
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
                 {unreadCount}
