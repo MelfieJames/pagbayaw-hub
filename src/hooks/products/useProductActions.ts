@@ -225,8 +225,8 @@ export function useProductActions() {
           .update({
             rating,
             comment,
-            image_url: imageUrl,
-            video_url: videoUrl,
+            image_url: imageUrl || undefined,
+            video_url: videoUrl || undefined,
             updated_at: new Date().toISOString()
           })
           .eq('id', reviewId);
@@ -247,8 +247,8 @@ export function useProductActions() {
             product_id: productId,
             rating,
             comment,
-            image_url: imageUrl,
-            video_url: videoUrl
+            image_url: imageUrl || undefined,
+            video_url: videoUrl || undefined
           });
 
         if (error) {

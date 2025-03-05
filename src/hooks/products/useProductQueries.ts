@@ -28,7 +28,7 @@ export function useProductQueries() {
     }
   });
 
-  const { data: productReviews = [] } = useQuery({
+  const { data: productReviews = [], refetch: refetchProductReviews } = useQuery({
     queryKey: ['all-reviews'],
     queryFn: async () => {
       try {
@@ -84,6 +84,7 @@ export function useProductQueries() {
     products,
     inventoryData,
     productReviews,
+    refetchProductReviews,
     userReviews,
     hasUserReviewedProduct,
     getUserReviewForProduct

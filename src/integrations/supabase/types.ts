@@ -357,28 +357,37 @@ export type Database = {
           comment: string | null
           created_at: string | null
           id: number
+          image_url: string | null
           product_id: number | null
           purchase_item_id: number | null
           rating: number
+          updated_at: string | null
           user_id: string | null
+          video_url: string | null
         }
         Insert: {
           comment?: string | null
           created_at?: string | null
           id?: number
+          image_url?: string | null
           product_id?: number | null
           purchase_item_id?: number | null
           rating: number
+          updated_at?: string | null
           user_id?: string | null
+          video_url?: string | null
         }
         Update: {
           comment?: string | null
           created_at?: string | null
           id?: number
+          image_url?: string | null
           product_id?: number | null
           purchase_item_id?: number | null
           rating?: number
+          updated_at?: string | null
           user_id?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {

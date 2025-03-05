@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
       setUser(null);
+      // Don't automatically redirect after logout
     } catch (error) {
       console.error("Error during logout:", error);
     }
