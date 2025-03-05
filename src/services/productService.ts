@@ -1,3 +1,4 @@
+
 import { supabase } from "@/services/supabase/client";
 import { Product, ProductFormData } from "@/types/product";
 
@@ -104,6 +105,7 @@ export async function deleteProduct(id: number): Promise<void> {
       throw new Error('Authentication required');
     }
 
+    // With cascading deletes now in place, we can just delete the product
     const { error } = await supabase
       .from('products')
       .delete()
@@ -205,6 +207,109 @@ export async function updateProduct({ id, data }: UpdateProductParams): Promise<
     return updatedProduct;
   } catch (error) {
     console.error('Unexpected error updating product:', error);
+    throw error;
+  }
+}
+
+export async function getProductReviews(productId: number) {
+  console.log('Fetching reviews for product:', productId);
+  
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*, profiles(email, id)')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching product reviews:', error);
+      throw error;
+    }
+    
+    console.log('Reviews fetched successfully:', data);
+    return data || [];
+  } catch (error) {
+    console.error('Error in getProductReviews:', error);
+    throw error;
+  }
+}
+
+export async function createReview({ productId, rating, comment, userId }: { 
+  productId: number, 
+  rating: number, 
+  comment: string, 
+  userId: string 
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert({
+        product_id: productId,
+        rating,
+        comment,
+        user_id: userId
+      })
+      .select();
+      
+    if (error) {
+      console.error('Error creating review:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in createReview:', error);
+    throw error;
+  }
+}
+
+export async function updateReview({ 
+  reviewId, 
+  rating, 
+  comment 
+}: { 
+  reviewId: number, 
+  rating: number, 
+  comment: string 
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({
+        rating,
+        comment,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', reviewId)
+      .select();
+      
+    if (error) {
+      console.error('Error updating review:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in updateReview:', error);
+    throw error;
+  }
+}
+
+export async function deleteReview(reviewId: number) {
+  try {
+    const { error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', reviewId);
+      
+    if (error) {
+      console.error('Error deleting review:', error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in deleteReview:', error);
     throw error;
   }
 }

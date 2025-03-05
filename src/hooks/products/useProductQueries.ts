@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getProductReviews } from "@/services/productService";
 
 export function useProductQueries() {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ export function useProductQueries() {
           .from('reviews')
           .select(`
             *,
-            products(product_name, image)
+            profiles(email, id)
           `)
           .order('created_at', { ascending: false });
         if (error) throw error;
@@ -56,7 +57,7 @@ export function useProductQueries() {
       try {
         const { data, error } = await supabase
           .from('reviews')
-          .select('product_id')
+          .select('product_id, id')
           .eq('user_id', user.id);
           
         if (error) throw error;
@@ -73,12 +74,18 @@ export function useProductQueries() {
   const hasUserReviewedProduct = (productId: number) => {
     return userReviews.some(review => review.product_id === productId);
   };
+  
+  // Get a specific user review for a product
+  const getUserReviewForProduct = (productId: number) => {
+    return userReviews.find(review => review.product_id === productId);
+  };
 
   return {
     products,
     inventoryData,
     productReviews,
     userReviews,
-    hasUserReviewedProduct
+    hasUserReviewedProduct,
+    getUserReviewForProduct
   };
 }

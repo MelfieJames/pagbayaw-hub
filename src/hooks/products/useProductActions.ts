@@ -4,13 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
+import { createReview, updateReview, deleteReview } from "@/services/productService";
+import { useState } from "react";
 
 export function useProductActions() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleBuyNow = async (productId: number) => {
+  const handleBuyNow = async (productId: number, quantity: number = 1) => {
     if (!user) {
       toast("Please log in to purchase items");
       navigate("/login", { 
@@ -23,7 +26,7 @@ export function useProductActions() {
     }
 
     try {
-      console.log("Buy Now for product:", productId);
+      console.log("Buy Now for product:", productId, "quantity:", quantity);
       
       // Get inventory quantity first
       const { data: inventoryData, error: inventoryError } = await supabase
@@ -37,8 +40,8 @@ export function useProductActions() {
         throw inventoryError;
       }
 
-      if (!inventoryData || inventoryData.quantity < 1) {
-        toast("Item is out of stock");
+      if (!inventoryData || inventoryData.quantity < quantity) {
+        toast("Not enough items in stock");
         return;
       }
 
@@ -59,7 +62,7 @@ export function useProductActions() {
         queryKey: ['checkout-items', [productId]],
         queryFn: async () => {
           return [{
-            quantity: 1,
+            quantity: quantity,
             product_id: productId,
             products: {
               product_name: product.product_name,
@@ -75,7 +78,7 @@ export function useProductActions() {
       navigate("/checkout", { 
         state: { 
           selectedItems: [productId],
-          quantities: { [productId]: 1 }
+          quantities: { [productId]: quantity }
         } 
       });
     } catch (error) {
@@ -160,8 +163,101 @@ export function useProductActions() {
     }
   };
 
+  const handleSubmitReview = async (productId: number, rating: number, comment: string, reviewId?: number) => {
+    if (!user) {
+      toast("Please log in to submit a review");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      if (reviewId) {
+        // Update existing review
+        await updateReview({
+          reviewId,
+          rating,
+          comment
+        });
+        toast("Review updated successfully");
+      } else {
+        // Create new review
+        await createReview({
+          productId,
+          rating,
+          comment,
+          userId: user.id
+        });
+        toast("Review submitted successfully");
+      }
+      
+      // Invalidate relevant queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['user-reviews', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
+      
+      return true;
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast("Failed to submit review");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    if (!user) {
+      toast("Please log in to delete a review");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await deleteReview(reviewId);
+      
+      // Invalidate relevant queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['user-reviews', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
+      
+      toast("Review deleted successfully");
+      return true;
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      toast("Failed to delete review");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: number) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+      
+      // Invalidate notifications query to update UI
+      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
   return {
     handleBuyNow,
-    handleAddToCart
+    handleAddToCart,
+    handleSubmitReview,
+    handleDeleteReview,
+    isSubmitting,
+    markNotificationAsRead
   };
 }
