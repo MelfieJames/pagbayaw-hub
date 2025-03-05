@@ -29,6 +29,7 @@ export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1); // Add this line to define the quantity state
   
   // Review dialog state
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -278,7 +279,7 @@ export default function Products() {
               onSearchChange={setSearchQuery}
             />
 
-            <div className="mt-6"> {/* Increased margin-top from 4 to 6 */}
+            <div className="mt-6">
               <ProductList
                 products={products}
                 searchQuery={searchQuery}
