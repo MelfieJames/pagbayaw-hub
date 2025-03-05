@@ -51,7 +51,7 @@ export default function Navbar() {
             <NavItems />
           </div>
 
-          <div className="flex items-center space-x-3 pr-8">
+          <div className="flex items-center space-x-3 pr-8 mx-[60px]">
             {user ? <>
                 <CartPopover />
                 <NotificationsPopover />
