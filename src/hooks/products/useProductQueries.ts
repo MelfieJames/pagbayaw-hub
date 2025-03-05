@@ -57,7 +57,7 @@ export function useProductQueries() {
       try {
         const { data, error } = await supabase
           .from('reviews')
-          .select('product_id, id')
+          .select('product_id, id, rating, comment, image_url, video_url')
           .eq('user_id', user.id);
           
         if (error) throw error;

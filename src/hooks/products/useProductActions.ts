@@ -163,31 +163,100 @@ export function useProductActions() {
     }
   };
 
-  const handleSubmitReview = async (productId: number, rating: number, comment: string, reviewId?: number) => {
+  const handleSubmitReview = async (productId: number, rating: number, comment: string, reviewId?: number, mediaFiles?: { image?: File, video?: File }) => {
     if (!user) {
       toast("Please log in to submit a review");
-      return;
+      return false;
     }
 
     try {
       setIsSubmitting(true);
       
+      let imageUrl = null;
+      let videoUrl = null;
+
+      // Upload media files if provided
+      if (mediaFiles) {
+        if (mediaFiles.image) {
+          const fileExt = mediaFiles.image.name.split('.').pop();
+          const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(filePath, mediaFiles.image);
+
+          if (uploadError) {
+            console.error('Error uploading image:', uploadError);
+            throw new Error('Error uploading image');
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(filePath);
+
+          imageUrl = publicUrl;
+        }
+
+        if (mediaFiles.video) {
+          const fileExt = mediaFiles.video.name.split('.').pop();
+          const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(filePath, mediaFiles.video);
+
+          if (uploadError) {
+            console.error('Error uploading video:', uploadError);
+            throw new Error('Error uploading video');
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(filePath);
+
+          videoUrl = publicUrl;
+        }
+      }
+      
       if (reviewId) {
         // Update existing review
-        await updateReview({
-          reviewId,
-          rating,
-          comment
-        });
+        const { error } = await supabase
+          .from('reviews')
+          .update({
+            rating,
+            comment,
+            image_url: imageUrl,
+            video_url: videoUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', reviewId);
+
+        if (error) {
+          console.error("Error updating review:", error);
+          toast("Failed to update review: " + error.message);
+          return false;
+        }
+
         toast("Review updated successfully");
       } else {
         // Create new review
-        await createReview({
-          productId,
-          rating,
-          comment,
-          userId: user.id
-        });
+        const { error } = await supabase
+          .from('reviews')
+          .insert({
+            user_id: user.id,
+            product_id: productId,
+            rating,
+            comment,
+            image_url: imageUrl,
+            video_url: videoUrl
+          });
+
+        if (error) {
+          console.error("Error submitting review:", error);
+          toast("Failed to submit review: " + error.message);
+          return false;
+        }
+
         toast("Review submitted successfully");
       }
       
@@ -210,7 +279,7 @@ export function useProductActions() {
   const handleDeleteReview = async (reviewId: number) => {
     if (!user) {
       toast("Please log in to delete a review");
-      return;
+      return false;
     }
 
     try {
@@ -222,6 +291,7 @@ export function useProductActions() {
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['user-reviews', user.id] });
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       
       toast("Review deleted successfully");
       return true;

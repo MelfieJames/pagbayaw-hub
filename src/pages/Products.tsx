@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
 import { ProductList } from "@/components/products/ProductList";
@@ -12,13 +12,15 @@ import { useProductActions } from "@/hooks/products/useProductActions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Star } from "lucide-react";
+import { Star, Image as ImageIcon, Video } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ErrorModal from "@/components/ErrorModal";
 import Footer from "@/components/Footer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Products() {
   const { user } = useAuth();
@@ -36,14 +38,30 @@ export default function Products() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState({ title: "", message: "" });
+  
+  // Media upload state
+  const [reviewImage, setReviewImage] = useState<File | null>(null);
+  const [reviewVideo, setReviewVideo] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const { products, inventoryData, productReviews, hasUserReviewedProduct } = useProductQueries();
-  const { handleBuyNow, handleAddToCart } = useProductActions();
+  const { handleBuyNow, handleAddToCart, handleSubmitReview } = useProductActions();
 
   // Check if we need to open the review dialog from navigation state
   useEffect(() => {
     if (location.state?.openReview && location.state?.reviewProduct) {
-      setReviewProduct(location.state.reviewProduct);
+      const product = location.state.reviewProduct;
+      setReviewProduct(product);
+      
+      // If editing an existing review, set the initial values
+      if (product.isEditing) {
+        setRating(product.existingRating || 0);
+        setComment(product.existingComment || "");
+      }
+      
       setReviewDialogOpen(true);
       // Clear the location state to prevent dialog from reopening on refresh
       window.history.replaceState({}, document.title);
@@ -59,7 +77,91 @@ export default function Products() {
     return acc;
   }, {} as Record<number, { total: number; count: number }>);
 
-  const handleSubmitReview = async () => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReviewImage(file);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewImage(objectUrl);
+    }
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReviewVideo(file);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewVideo(objectUrl);
+    }
+  };
+
+  const resetMediaFiles = () => {
+    if (previewImage) {
+      URL.revokeObjectURL(previewImage);
+    }
+    if (previewVideo) {
+      URL.revokeObjectURL(previewVideo);
+    }
+    setReviewImage(null);
+    setReviewVideo(null);
+    setPreviewImage(null);
+    setPreviewVideo(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
+  };
+
+  const uploadMedia = async () => {
+    let imageUrl = null;
+    let videoUrl = null;
+
+    if (reviewImage) {
+      const fileExt = reviewImage.name.split('.').pop();
+      const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, reviewImage);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        throw new Error('Error uploading image');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      imageUrl = publicUrl;
+    }
+
+    if (reviewVideo) {
+      const fileExt = reviewVideo.name.split('.').pop();
+      const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, reviewVideo);
+
+      if (uploadError) {
+        console.error('Error uploading video:', uploadError);
+        throw new Error('Error uploading video');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      videoUrl = publicUrl;
+    }
+
+    return { imageUrl, videoUrl };
+  };
+
+  const handleSubmitReviewWithMedia = async () => {
     if (!user?.id || !reviewProduct || rating === 0) {
       toast("Please select a rating before submitting");
       return;
@@ -67,47 +169,74 @@ export default function Products() {
 
     try {
       setIsSubmitting(true);
-      console.log("Submitting review for product:", reviewProduct);
       
-      // Check if user has already reviewed this product
-      if (hasUserReviewedProduct(reviewProduct.id)) {
+      // Check if user has already reviewed this product when not editing
+      if (!reviewProduct.isEditing && hasUserReviewedProduct(reviewProduct.id)) {
         setErrorMessage({
           title: "Already Reviewed",
           message: "You have already reviewed this product. You can only review a product once."
         });
         setErrorModalOpen(true);
         setReviewDialogOpen(false);
-        setReviewProduct(null);
-        setRating(0);
-        setComment("");
+        resetReviewState();
         return;
       }
 
-      const { error } = await supabase
-        .from('reviews')
-        .insert({
-          user_id: user.id,
-          product_id: reviewProduct.id,
-          rating,
-          comment,
-          purchase_item_id: reviewProduct.purchaseId
-        });
+      // Upload media files if any
+      const { imageUrl, videoUrl } = await uploadMedia();
 
-      if (error) {
-        console.error("Error submitting review:", error);
-        if (error.code === '23505') {
-          setErrorMessage({
-            title: "Already Reviewed",
-            message: "You have already reviewed this product. You can only review a product once."
-          });
-          setErrorModalOpen(true);
-        } else {
-          toast("Failed to submit review: " + error.message);
+      if (reviewProduct.isEditing && reviewProduct.reviewId) {
+        // Update existing review
+        const { error } = await supabase
+          .from('reviews')
+          .update({
+            rating,
+            comment,
+            image_url: imageUrl || undefined,
+            video_url: videoUrl || undefined,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', reviewProduct.reviewId);
+
+        if (error) {
+          console.error("Error updating review:", error);
+          toast("Failed to update review: " + error.message);
+          return;
         }
-        return;
-      }
 
-      toast("Review submitted successfully!");
+        toast("Review updated successfully!");
+      } else {
+        // Create new review
+        const { error } = await supabase
+          .from('reviews')
+          .insert({
+            user_id: user.id,
+            product_id: reviewProduct.id,
+            rating,
+            comment,
+            image_url: imageUrl,
+            video_url: videoUrl,
+            purchase_item_id: reviewProduct.purchaseId
+          });
+
+        if (error) {
+          console.error("Error submitting review:", error);
+          if (error.code === '23505') {
+            setErrorMessage({
+              title: "Already Reviewed",
+              message: "You have already reviewed this product. You can only review a product once."
+            });
+            setErrorModalOpen(true);
+          } else {
+            toast("Failed to submit review: " + error.message);
+          }
+          return;
+        }
+
+        toast("Review submitted successfully!");
+      }
+      
+      // Invalidate relevant queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
@@ -116,15 +245,20 @@ export default function Products() {
       
       // Close the dialog and reset state
       setReviewDialogOpen(false);
-      setReviewProduct(null);
-      setRating(0);
-      setComment("");
+      resetReviewState();
     } catch (error) {
       console.error('Error submitting review:', error);
       toast("Failed to submit review");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetReviewState = () => {
+    setReviewProduct(null);
+    setRating(0);
+    setComment("");
+    resetMediaFiles();
   };
 
   return (
@@ -162,23 +296,28 @@ export default function Products() {
           products={products}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={handleAddToCart}
-          onBuyNow={(productId) => handleBuyNow(productId)}
+          onBuyNow={(productId) => handleBuyNow(productId, quantity)}
           inventory={selectedProduct ? inventoryData?.find(item => item.product_id === selectedProduct.id) : undefined}
           productRatings={productRatings}
         />
 
-        {/* Review Dialog */}
-        <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        {/* Review Dialog with Media Upload */}
+        <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
+          setReviewDialogOpen(open);
+          if (!open) resetReviewState();
+        }}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Rate & Review {reviewProduct?.name}</DialogTitle>
+              <DialogTitle>
+                {reviewProduct?.isEditing ? "Edit Review" : "Rate & Review"} {reviewProduct?.product_name}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {reviewProduct?.image && (
                 <div className="flex justify-center">
                   <img 
                     src={reviewProduct.image} 
-                    alt={reviewProduct.name}
+                    alt={reviewProduct.product_name}
                     className="w-32 h-32 object-cover rounded-md"
                   />
                 </div>
@@ -187,6 +326,7 @@ export default function Products() {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
+                    type="button"
                     onClick={() => setRating(star)}
                     className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}
                   >
@@ -207,12 +347,104 @@ export default function Products() {
                 onChange={(e) => setComment(e.target.value)}
                 className="min-h-[100px]"
               />
+              
+              {/* Media Upload Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="review-image">Add Image (optional)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={imageInputRef}
+                      id="review-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {previewImage && (
+                    <div className="mt-2">
+                      <img
+                        src={previewImage}
+                        alt="Preview"
+                        className="h-32 object-cover rounded-md"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 text-red-500"
+                        onClick={() => {
+                          URL.revokeObjectURL(previewImage);
+                          setPreviewImage(null);
+                          setReviewImage(null);
+                          if (imageInputRef.current) imageInputRef.current.value = "";
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="review-video">Add Video (optional)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={videoInputRef}
+                      id="review-video"
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => videoInputRef.current?.click()}
+                    >
+                      <Video className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {previewVideo && (
+                    <div className="mt-2">
+                      <video
+                        src={previewVideo}
+                        controls
+                        className="h-32 w-full rounded-md"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 text-red-500"
+                        onClick={() => {
+                          URL.revokeObjectURL(previewVideo);
+                          setPreviewVideo(null);
+                          setReviewVideo(null);
+                          if (videoInputRef.current) videoInputRef.current.value = "";
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               <Button 
-                onClick={handleSubmitReview} 
+                onClick={handleSubmitReviewWithMedia} 
                 disabled={rating === 0 || isSubmitting} 
                 className="w-full"
               >
-                {isSubmitting ? "Submitting..." : "Submit Review"}
+                {isSubmitting ? "Submitting..." : reviewProduct?.isEditing ? "Update Review" : "Submit Review"}
               </Button>
             </div>
           </DialogContent>

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/services/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 export interface CustomUser extends User {
   isAdmin: boolean;
@@ -12,6 +13,7 @@ interface AuthContextType {
   user: CustomUser | null;
   login: (user: CustomUser) => void;
   signOut: () => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,12 +78,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resendConfirmationEmail = async (email: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      
+      if (error) {
+        console.error('Error resending confirmation email:', error);
+        toast.error("Failed to resend confirmation email");
+        return false;
+      }
+      
+      toast.success("Confirmation email resent. Please check your inbox.");
+      return true;
+    } catch (error) {
+      console.error('Error resending confirmation email:', error);
+      toast.error("Failed to resend confirmation email");
+      return false;
+    }
+  };
+
   if (!isInitialized) {
     return <div>Loading...</div>;
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, signOut }}>
+    <AuthContext.Provider value={{ user, login, signOut, resendConfirmationEmail }}>
       {children}
     </AuthContext.Provider>
   );

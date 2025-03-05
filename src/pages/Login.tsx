@@ -9,6 +9,9 @@ import LoginForm from "@/components/auth/LoginForm";
 import { handleAdminAuth, handleUserAuth } from "@/services/authService";
 import { getAuthErrorMessage } from "@/utils/authErrors";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,11 +21,14 @@ const Login = () => {
   const { toast: uiToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { resendConfirmationEmail } = useAuth();
 
   const redirectPath = location.state?.redirectAfterLogin || "/";
   const message = location.state?.message || null;
 
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isConfirmationAlertOpen, setIsConfirmationAlertOpen] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
   const [errorModalContent, setErrorModalContent] = useState({
     title: "",
     message: "",
@@ -47,6 +53,13 @@ const Login = () => {
   const showError = (title: string, message: string) => {
     setErrorModalContent({ title, message });
     setIsErrorModalOpen(true);
+  };
+
+  const handleResendConfirmation = async () => {
+    const success = await resendConfirmationEmail(confirmationEmail);
+    if (success) {
+      setIsConfirmationAlertOpen(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,6 +91,12 @@ const Login = () => {
       
       if (error) {
         console.error('User auth error:', error);
+        if (error.message?.includes("Email not confirmed")) {
+          setConfirmationEmail(email);
+          setIsConfirmationAlertOpen(true);
+          return;
+        }
+        
         const errorInfo = getAuthErrorMessage(error);
         showError(errorInfo.title, errorInfo.message);
         return;
@@ -93,13 +112,19 @@ const Login = () => {
         } else {
           uiToast({
             title: "Sign Up Successful",
-            description: "You can now log in with your credentials.",
+            description: "Please check your email to confirm your account.",
           });
           setIsLogin(true);
         }
       }
     } catch (error: any) {
       console.error('Unexpected error:', error);
+      if (error.message?.includes("Email not confirmed")) {
+        setConfirmationEmail(email);
+        setIsConfirmationAlertOpen(true);
+        return;
+      }
+      
       const errorInfo = getAuthErrorMessage(error);
       showError(errorInfo.title, errorInfo.message);
     }
@@ -128,6 +153,23 @@ const Login = () => {
         title={errorModalContent.title}
         message={errorModalContent.message}
       />
+
+      <AlertDialog open={isConfirmationAlertOpen} onOpenChange={setIsConfirmationAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Email Not Confirmed</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your email address has not been confirmed yet. Please check your inbox for the confirmation email or click below to resend the confirmation email.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResendConfirmation}>
+              Resend Confirmation Email
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
