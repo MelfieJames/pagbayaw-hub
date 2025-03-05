@@ -33,7 +33,7 @@ export function ReviewsModal({
         <DialogHeader>
           <DialogTitle className="text-xl">All Reviews</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="h-full pr-4">
+        <ScrollArea className="h-full max-h-[calc(80vh-100px)] pr-4 overflow-y-auto">
           <div className="space-y-4">
             {reviews.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-2">No reviews yet</p>

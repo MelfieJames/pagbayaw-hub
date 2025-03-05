@@ -21,6 +21,7 @@ import ErrorModal from "@/components/ErrorModal";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Products() {
   const { user } = useAuth();
@@ -29,7 +30,7 @@ export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1); // Add this line to define the quantity state
+  const [quantity, setQuantity] = useState(1);
   
   // Review dialog state
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -207,18 +208,24 @@ export default function Products() {
 
         toast("Review updated successfully!");
       } else {
-        // Create new review
+        // Create new review - make purchase_item_id optional
+        const reviewData: any = {
+          user_id: user.id,
+          product_id: reviewProduct.id,
+          rating,
+          comment,
+          image_url: imageUrl,
+          video_url: videoUrl
+        };
+        
+        // Only add purchase_item_id if it exists to avoid foreign key constraint
+        if (reviewProduct.purchaseId) {
+          reviewData.purchase_item_id = reviewProduct.purchaseId;
+        }
+
         const { error } = await supabase
           .from('reviews')
-          .insert({
-            user_id: user.id,
-            product_id: reviewProduct.id,
-            rating,
-            comment,
-            image_url: imageUrl,
-            video_url: videoUrl,
-            purchase_item_id: reviewProduct.purchaseId
-          });
+          .insert(reviewData);
 
         if (error) {
           console.error("Error submitting review:", error);
@@ -296,13 +303,13 @@ export default function Products() {
           product={selectedProduct}
           products={products}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={handleAddToCart}
-          onBuyNow={(productId) => handleBuyNow(productId, quantity)}
+          onAddToCart={(productId, qty) => handleAddToCart(productId, qty)}
+          onBuyNow={(productId, qty) => handleBuyNow(productId, qty)}
           inventory={selectedProduct ? inventoryData?.find(item => item.product_id === selectedProduct.id) : undefined}
           productRatings={productRatings}
         />
 
-        {/* Review Dialog with Media Upload */}
+        {/* Review Dialog with Media Upload and Scrollbar */}
         <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
           setReviewDialogOpen(open);
           if (!open) resetReviewState();
@@ -313,141 +320,142 @@ export default function Products() {
                 {reviewProduct?.isEditing ? "Edit Review" : "Rate & Review"} {reviewProduct?.product_name}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              {reviewProduct?.image && (
-                <div className="flex justify-center">
-                  <img 
-                    src={reviewProduct.image} 
-                    alt={reviewProduct.product_name}
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
-                </div>
-              )}
-              <div className="flex gap-1 justify-center">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}
-                  >
-                    <Star className="h-8 w-8" fill={rating >= star ? "currentColor" : "none"} />
-                  </button>
-                ))}
-              </div>
-              <p className="text-center text-sm text-muted-foreground">
-                {rating === 1 && "Poor"}
-                {rating === 2 && "Fair"}
-                {rating === 3 && "Good"}
-                {rating === 4 && "Very Good"}
-                {rating === 5 && "Excellent"}
-              </p>
-              <Textarea
-                placeholder="Share your experience with this product..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="min-h-[100px]"
-              />
-              
-              {/* Media Upload Section */}
+            <ScrollArea className="max-h-[70vh] pr-4 overflow-y-auto">
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="review-image">Add Image (optional)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      ref={imageInputRef}
-                      id="review-image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="flex-1"
+                {reviewProduct?.image && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={reviewProduct.image} 
+                      alt={reviewProduct.product_name}
+                      className="w-32 h-32 object-cover rounded-md"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                    </Button>
                   </div>
-                  {previewImage && (
-                    <div className="mt-2">
-                      <img
-                        src={previewImage}
-                        alt="Preview"
-                        className="h-32 object-cover rounded-md"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-1 text-red-500"
-                        onClick={() => {
-                          URL.revokeObjectURL(previewImage);
-                          setPreviewImage(null);
-                          setReviewImage(null);
-                          if (imageInputRef.current) imageInputRef.current.value = "";
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  )}
+                )}
+                <div className="flex gap-1 justify-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}
+                    >
+                      <Star className="h-8 w-8" fill={rating >= star ? "currentColor" : "none"} />
+                    </button>
+                  ))}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="review-video">Add Video (optional)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      ref={videoInputRef}
-                      id="review-video"
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoUpload}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => videoInputRef.current?.click()}
-                    >
-                      <Video className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {previewVideo && (
-                    <div className="mt-2">
-                      <video
-                        src={previewVideo}
-                        controls
-                        className="h-32 w-full rounded-md"
+                <p className="text-center text-sm text-muted-foreground">
+                  {rating === 1 && "Poor"}
+                  {rating === 2 && "Fair"}
+                  {rating === 3 && "Good"}
+                  {rating === 4 && "Very Good"}
+                  {rating === 5 && "Excellent"}
+                </p>
+                <Textarea
+                  placeholder="Share your experience with this product..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="min-h-[100px]"
+                />
+                
+                {/* Media Upload Section */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="review-image">Add Image (optional)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        ref={imageInputRef}
+                        id="review-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="flex-1"
                       />
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-1 text-red-500"
-                        onClick={() => {
-                          URL.revokeObjectURL(previewVideo);
-                          setPreviewVideo(null);
-                          setReviewVideo(null);
-                          if (videoInputRef.current) videoInputRef.current.value = "";
-                        }}
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => imageInputRef.current?.click()}
                       >
-                        Remove
+                        <ImageIcon className="h-4 w-4" />
                       </Button>
                     </div>
-                  )}
+                    {previewImage && (
+                      <div className="mt-2">
+                        <img
+                          src={previewImage}
+                          alt="Preview"
+                          className="h-32 object-cover rounded-md"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 text-red-500"
+                          onClick={() => {
+                            URL.revokeObjectURL(previewImage);
+                            setPreviewImage(null);
+                            setReviewImage(null);
+                            if (imageInputRef.current) imageInputRef.current.value = "";
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="review-video">Add Video (optional)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        ref={videoInputRef}
+                        id="review-video"
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoUpload}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => videoInputRef.current?.click()}
+                      >
+                        <Video className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {previewVideo && (
+                      <div className="mt-2">
+                        <video
+                          src={previewVideo}
+                          controls
+                          className="h-32 w-full rounded-md"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 text-red-500"
+                          onClick={() => {
+                            URL.revokeObjectURL(previewVideo);
+                            setPreviewVideo(null);
+                            setReviewVideo(null);
+                            if (videoInputRef.current) videoInputRef.current.value = "";
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              
-              <Button 
-                onClick={handleSubmitReviewWithMedia} 
-                disabled={rating === 0 || isSubmitting} 
-                className="w-full"
-              >
-                {isSubmitting ? "Submitting..." : reviewProduct?.isEditing ? "Update Review" : "Submit Review"}
-              </Button>
-            </div>
+            </ScrollArea>
+            <Button 
+              onClick={handleSubmitReviewWithMedia} 
+              disabled={rating === 0 || isSubmitting} 
+              className="w-full mt-4"
+            >
+              {isSubmitting ? "Submitting..." : reviewProduct?.isEditing ? "Update Review" : "Submit Review"}
+            </Button>
           </DialogContent>
         </Dialog>
 

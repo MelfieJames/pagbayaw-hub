@@ -30,7 +30,7 @@ interface ProductDetailsModalProps {
   products: Product[];
   onClose: () => void;
   onAddToCart: (productId: number, quantity: number) => void;
-  onBuyNow: (productId: number) => void;
+  onBuyNow: (productId: number, quantity: number) => void;
   inventory: { quantity: number } | undefined;
   productRatings: Record<number, { total: number; count: number }>;
 }
@@ -204,7 +204,7 @@ export function ProductDetailsModal({
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between border-t pt-4">
-                      <p className="text-sm font-medium">Product Ratings ({rating?.count || 0})</p>
+                      <p className="text-sm font-medium">Product Ratings ({productRatings[product.id]?.count || 0})</p>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
@@ -317,7 +317,7 @@ export function ProductDetailsModal({
                 <Button
                   variant="outline"
                   className="w-full sm:w-auto"
-                  onClick={() => onBuyNow(product.id)}
+                  onClick={() => onBuyNow(product.id, quantity)}
                   disabled={stockQuantity === 0}
                 >
                   Buy Now
