@@ -7,6 +7,7 @@ import { getProductReviews } from "@/services/productService";
 export function useProductQueries() {
   const { user } = useAuth();
 
+  // Fetch products regardless of auth status
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
@@ -19,6 +20,7 @@ export function useProductQueries() {
     }
   });
 
+  // Fetch inventory data regardless of auth status
   const { data: inventoryData } = useQuery({
     queryKey: ['inventory'],
     queryFn: async () => {
@@ -28,6 +30,7 @@ export function useProductQueries() {
     }
   });
 
+  // Fetch all reviews regardless of auth status
   const { data: productReviews = [], refetch: refetchProductReviews } = useQuery({
     queryKey: ['all-reviews'],
     queryFn: async () => {
@@ -48,7 +51,7 @@ export function useProductQueries() {
     }
   });
   
-  // Get reviews for the current user to check if they've already reviewed products
+  // Get reviews for the current user only if logged in
   const { data: userReviews = [] } = useQuery({
     queryKey: ['user-reviews', user?.id],
     queryFn: async () => {

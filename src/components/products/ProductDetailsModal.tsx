@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -103,6 +102,22 @@ export function ProductDetailsModal({
     enabled: !!product?.id,
   });
 
+  const calculateProductRating = () => {
+    if (!reviews || reviews.length === 0) {
+      return { average: 0, count: 0 };
+    }
+    
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return {
+      average: total / reviews.length,
+      count: reviews.length
+    };
+  };
+
+  const productRating = calculateProductRating();
+  const averageRating = productRating.average;
+  const ratingCount = productRating.count;
+
   const handleEditReview = (review: any) => {
     navigate(`/products`, { 
       state: { 
@@ -135,8 +150,6 @@ export function ProductDetailsModal({
 
   if (!product) return null;
 
-  const rating = productRatings[product.id];
-  const averageRating = rating ? rating.total / rating.count : 0;
   const visibleReviews = reviews.slice(0, reviewsToShow);
   const hasMoreReviews = reviews.length > reviewsToShow;
 
@@ -204,7 +217,7 @@ export function ProductDetailsModal({
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between border-t pt-4">
-                      <p className="text-sm font-medium">Product Ratings ({productRatings[product.id]?.count || 0})</p>
+                      <p className="text-sm font-medium">Product Ratings ({ratingCount})</p>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star

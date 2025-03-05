@@ -13,7 +13,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, inventory, rating, onProductClick }: ProductCardProps) {
   const isOutOfStock = inventory?.quantity === 0;
-  const averageRating = rating ? rating.total / rating.count : 0;
+  const averageRating = rating && rating.count > 0 ? rating.total / rating.count : 0;
 
   return (
     <Card
@@ -51,8 +51,8 @@ export function ProductCard({ product, inventory, rating, onProductClick }: Prod
           <div className="flex flex-col items-end gap-1">
             {rating && (
               <span className="text-xs flex items-center gap-1">
-                {averageRating.toFixed(1)}
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                {rating.count > 0 ? averageRating.toFixed(1) : "0.0"}
+                <Star className={`h-3 w-3 ${rating.count > 0 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
                 ({rating.count})
               </span>
             )}
