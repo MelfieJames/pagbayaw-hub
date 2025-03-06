@@ -73,22 +73,6 @@ const Routes = () => {
         }
       />
       <Route
-        path="/admin/products"
-        element={
-          <ProtectedRoute requireAdmin>
-            <ProductManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/achievements"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AchievementManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/admin/users"
         element={
           <ProtectedRoute requireAdmin>
@@ -101,6 +85,30 @@ const Routes = () => {
         element={
           <ProtectedRoute requireAdmin>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/purchases"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/products"
+        element={
+          <ProtectedRoute requireAdmin>
+            <ProductManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/achievements"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AchievementManagement />
           </ProtectedRoute>
         }
       />
