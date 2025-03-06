@@ -8,41 +8,53 @@ export function useProductQueries() {
   const { user } = useAuth();
 
   // Fetch products regardless of auth status
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Products fetch error:", error);
+        throw error;
+      }
       return data || [];
     }
   });
 
   // Fetch inventory data regardless of auth status
-  const { data: inventoryData } = useQuery({
+  const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
     queryKey: ['inventory'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('inventory').select('*');
-      if (error) throw error;
-      return data;
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*');
+      
+      if (error) {
+        console.error("Inventory fetch error:", error);
+        throw error;
+      }
+      return data || [];
     }
   });
 
   // Fetch all reviews regardless of auth status
-  const { data: productReviews = [], refetch: refetchProductReviews } = useQuery({
+  const { data: productReviews = [], refetch: refetchProductReviews, isLoading: reviewsLoading } = useQuery({
     queryKey: ['all-reviews'],
     queryFn: async () => {
       try {
         const { data, error } = await supabase
           .from('reviews')
-          .select(`
-            *,
-            profiles(email, id)
-          `)
+          .select('*')
           .order('created_at', { ascending: false });
-        if (error) throw error;
+        
+        if (error) {
+          console.error("Reviews fetch error:", error);
+          throw error;
+        }
+        
         return data || [];
       } catch (error) {
         console.error('Error fetching product reviews:', error);
@@ -52,7 +64,7 @@ export function useProductQueries() {
   });
   
   // Get reviews for the current user only if logged in
-  const { data: userReviews = [] } = useQuery({
+  const { data: userReviews = [], isLoading: userReviewsLoading } = useQuery({
     queryKey: ['user-reviews', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -83,6 +95,8 @@ export function useProductQueries() {
     return userReviews.find(review => review.product_id === productId);
   };
 
+  const isLoading = productsLoading || inventoryLoading || reviewsLoading;
+
   return {
     products,
     inventoryData,
@@ -90,6 +104,8 @@ export function useProductQueries() {
     refetchProductReviews,
     userReviews,
     hasUserReviewedProduct,
-    getUserReviewForProduct
+    getUserReviewForProduct,
+    isLoading,
+    userReviewsLoading
   };
 }

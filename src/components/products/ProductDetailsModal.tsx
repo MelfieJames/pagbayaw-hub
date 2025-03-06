@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ReviewsModal } from "./ReviewsModal";
 import { useProductActions } from "@/hooks/products/useProductActions";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -55,7 +56,7 @@ export function ProductDetailsModal({
     setQuantity(1);
   }, [product?.id]);
 
-  const { data: reviews = [], refetch: refetchReviews } = useQuery({
+  const { data: reviews = [], refetch: refetchReviews, isLoading: reviewsLoading } = useQuery({
     queryKey: ['product-reviews', product?.id],
     queryFn: async () => {
       if (!product?.id) return [];
@@ -234,7 +235,11 @@ export function ProductDetailsModal({
                     </div>
                     
                     <div className="space-y-4">
-                      {reviews.length === 0 ? (
+                      {reviewsLoading ? (
+                        <div className="flex justify-center py-4">
+                          <LoadingSpinner />
+                        </div>
+                      ) : reviews.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-2">No reviews yet</p>
                       ) : (
                         visibleReviews.map((review) => (

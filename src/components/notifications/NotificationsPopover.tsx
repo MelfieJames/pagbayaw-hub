@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -10,14 +11,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Star } from "lucide-react";
+import { Star, Image, Video } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ErrorModal from "@/components/ErrorModal";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 export function NotificationsPopover() {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [reviewProduct, setReviewProduct] = useState<{
     id: number;
@@ -33,7 +35,18 @@ export function NotificationsPopover() {
     title: "",
     message: ""
   });
+  
+  // Media upload state
+  const [reviewImage, setReviewImage] = useState<File | null>(null);
+  const [reviewVideo, setReviewVideo] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  
   const queryClient = useQueryClient();
+  
+  // Rest of existing code for fetching notifications
   const {
     data: notifications = [],
     refetch: refetchNotifications
@@ -99,7 +112,9 @@ export function NotificationsPopover() {
     },
     enabled: !!user
   });
+  
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  
   const markAsRead = async (notificationId: number) => {
     if (!user?.id) return;
     try {
@@ -113,6 +128,7 @@ export function NotificationsPopover() {
       console.error('Error marking notification as read:', error);
     }
   };
+  
   const handleNotificationClick = async (notification: any) => {
     // Mark notification as read when clicked
     if (!notification.is_read) {
@@ -139,9 +155,95 @@ export function NotificationsPopover() {
       });
     }
   };
+  
   const navigateToMyRatings = () => {
     navigate('/my-ratings');
   };
+  
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReviewImage(file);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewImage(objectUrl);
+    }
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReviewVideo(file);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewVideo(objectUrl);
+    }
+  };
+
+  const resetMediaFiles = () => {
+    if (previewImage) {
+      URL.revokeObjectURL(previewImage);
+    }
+    if (previewVideo) {
+      URL.revokeObjectURL(previewVideo);
+    }
+    setReviewImage(null);
+    setReviewVideo(null);
+    setPreviewImage(null);
+    setPreviewVideo(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
+  };
+  
+  const uploadMedia = async () => {
+    let imageUrl = null;
+    let videoUrl = null;
+
+    if (reviewImage) {
+      const fileExt = reviewImage.name.split('.').pop();
+      const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, reviewImage);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        throw new Error('Error uploading image');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      imageUrl = publicUrl;
+    }
+
+    if (reviewVideo) {
+      const fileExt = reviewVideo.name.split('.').pop();
+      const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, reviewVideo);
+
+      if (uploadError) {
+        console.error('Error uploading video:', uploadError);
+        throw new Error('Error uploading video');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      videoUrl = publicUrl;
+    }
+
+    return { imageUrl, videoUrl };
+  };
+  
   const handleSubmitReview = async () => {
     if (!user?.id || !reviewProduct || rating === 0) {
       toast("Please select a rating before submitting");
@@ -161,8 +263,13 @@ export function NotificationsPopover() {
         setReviewProduct(null);
         setRating(0);
         setComment("");
+        resetMediaFiles();
         return;
       }
+      
+      // Upload media files if any
+      const { imageUrl, videoUrl } = await uploadMedia();
+      
       const {
         error
       } = await supabase.from('reviews').insert({
@@ -170,8 +277,11 @@ export function NotificationsPopover() {
         product_id: reviewProduct.id,
         rating,
         comment,
-        purchase_item_id: reviewProduct.purchaseId
+        purchase_item_id: reviewProduct.purchaseId,
+        image_url: imageUrl,
+        video_url: videoUrl
       });
+      
       if (error) {
         console.error("Error submitting review:", error);
         if (error.code === '23505') {
@@ -185,6 +295,7 @@ export function NotificationsPopover() {
         }
         return;
       }
+      
       toast("Review submitted successfully!");
       queryClient.invalidateQueries({
         queryKey: ['product-reviews']
@@ -201,9 +312,11 @@ export function NotificationsPopover() {
       queryClient.invalidateQueries({
         queryKey: ['notifications', user.id]
       });
+      
       setReviewProduct(null);
       setRating(0);
       setComment("");
+      resetMediaFiles();
     } catch (error) {
       console.error('Error submitting review:', error);
       toast("Failed to submit review");
@@ -211,6 +324,7 @@ export function NotificationsPopover() {
       setIsSubmitting(false);
     }
   };
+  
   return <>
       <Popover>
         <PopoverTrigger asChild>
@@ -276,32 +390,128 @@ export function NotificationsPopover() {
         </PopoverContent>
       </Popover>
 
-      <Dialog open={!!reviewProduct} onOpenChange={() => setReviewProduct(null)}>
+      <Dialog open={!!reviewProduct} onOpenChange={() => {
+        setReviewProduct(null);
+        resetMediaFiles();
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rate & Review {reviewProduct?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {reviewProduct?.image && <div className="flex justify-center">
-                <img src={reviewProduct.image} alt={reviewProduct.name} className="w-32 h-32 object-cover rounded-md" />
-              </div>}
-            <div className="flex gap-1 justify-center">
-              {[1, 2, 3, 4, 5].map(star => <button key={star} onClick={() => setRating(star)} className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}>
-                  <Star className="h-8 w-8" fill={rating >= star ? "currentColor" : "none"} />
-                </button>)}
+          <ScrollArea className="max-h-[70vh] pr-4">
+            <div className="space-y-4">
+              {reviewProduct?.image && <div className="flex justify-center">
+                  <img src={reviewProduct.image} alt={reviewProduct.name} className="w-32 h-32 object-cover rounded-md" />
+                </div>}
+              <div className="flex gap-1 justify-center">
+                {[1, 2, 3, 4, 5].map(star => <button key={star} onClick={() => setRating(star)} className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}>
+                    <Star className="h-8 w-8" fill={rating >= star ? "currentColor" : "none"} />
+                  </button>)}
+              </div>
+              <p className="text-center text-sm text-muted-foreground">
+                {rating === 1 && "Poor"}
+                {rating === 2 && "Fair"}
+                {rating === 3 && "Good"}
+                {rating === 4 && "Very Good"}
+                {rating === 5 && "Excellent"}
+              </p>
+              <Textarea placeholder="Share your experience with this product..." value={comment} onChange={e => setComment(e.target.value)} className="min-h-[100px]" />
+              
+              {/* Media Upload Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="review-image">Add Image (optional)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={imageInputRef}
+                      id="review-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <Image className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {previewImage && (
+                    <div className="mt-2">
+                      <img
+                        src={previewImage}
+                        alt="Preview"
+                        className="h-32 object-cover rounded-md"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 text-red-500"
+                        onClick={() => {
+                          URL.revokeObjectURL(previewImage);
+                          setPreviewImage(null);
+                          setReviewImage(null);
+                          if (imageInputRef.current) imageInputRef.current.value = "";
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="review-video">Add Video (optional)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={videoInputRef}
+                      id="review-video"
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => videoInputRef.current?.click()}
+                    >
+                      <Video className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {previewVideo && (
+                    <div className="mt-2">
+                      <video
+                        src={previewVideo}
+                        controls
+                        className="h-32 w-full rounded-md"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 text-red-500"
+                        onClick={() => {
+                          URL.revokeObjectURL(previewVideo);
+                          setPreviewVideo(null);
+                          setReviewVideo(null);
+                          if (videoInputRef.current) videoInputRef.current.value = "";
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-center text-sm text-muted-foreground">
-              {rating === 1 && "Poor"}
-              {rating === 2 && "Fair"}
-              {rating === 3 && "Good"}
-              {rating === 4 && "Very Good"}
-              {rating === 5 && "Excellent"}
-            </p>
-            <Textarea placeholder="Share your experience with this product..." value={comment} onChange={e => setComment(e.target.value)} className="min-h-[100px]" />
-            <Button onClick={handleSubmitReview} disabled={rating === 0 || isSubmitting} className="w-full">
-              {isSubmitting ? "Submitting..." : "Submit Review"}
-            </Button>
-          </div>
+          </ScrollArea>
+          <Button onClick={handleSubmitReview} disabled={rating === 0 || isSubmitting} className="w-full">
+            {isSubmitting ? "Submitting..." : "Submit Review"}
+          </Button>
         </DialogContent>
       </Dialog>
 

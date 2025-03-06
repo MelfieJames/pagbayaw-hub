@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Footer from "@/components/Footer";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function MyRatings() {
   const { user } = useAuth();
@@ -87,7 +87,7 @@ export default function MyRatings() {
     enabled: !!user?.id,
   });
 
-  const { data: userReviews = [] } = useQuery({
+  const { data: userReviews = [], isLoading: reviewsLoading } = useQuery({
     queryKey: ['my-reviews', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -184,8 +184,8 @@ export default function MyRatings() {
           <TabsContent value="pending" className="space-y-4">
             {notificationsLoading ? (
               <Card>
-                <CardContent className="pt-6 text-center">
-                  <p className="text-muted-foreground">Loading pending reviews...</p>
+                <CardContent className="pt-6 text-center py-8">
+                  <LoadingSpinner size="lg" />
                 </CardContent>
               </Card>
             ) : pendingReviews.length === 0 ? (
@@ -226,7 +226,13 @@ export default function MyRatings() {
           </TabsContent>
           
           <TabsContent value="completed" className="space-y-4">
-            {userReviews.length === 0 ? (
+            {reviewsLoading ? (
+              <Card>
+                <CardContent className="pt-6 text-center py-8">
+                  <LoadingSpinner size="lg" />
+                </CardContent>
+              </Card>
+            ) : userReviews.length === 0 ? (
               <Card>
                 <CardContent className="pt-6 text-center">
                   <p className="text-muted-foreground">You haven't submitted any reviews yet.</p>

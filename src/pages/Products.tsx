@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
@@ -32,7 +31,6 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   
-  // Review dialog state
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewProduct, setReviewProduct] = useState<any>(null);
   const [rating, setRating] = useState(0);
@@ -41,7 +39,6 @@ export default function Products() {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState({ title: "", message: "" });
   
-  // Media upload state
   const [reviewImage, setReviewImage] = useState<File | null>(null);
   const [reviewVideo, setReviewVideo] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -49,23 +46,20 @@ export default function Products() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  const { products, inventoryData, productReviews, hasUserReviewedProduct } = useProductQueries();
+  const { products, inventoryData, productReviews, hasUserReviewedProduct, isLoading } = useProductQueries();
   const { handleBuyNow, handleAddToCart, handleSubmitReview } = useProductActions();
 
-  // Check if we need to open the review dialog from navigation state
   useEffect(() => {
     if (location.state?.openReview && location.state?.reviewProduct) {
       const product = location.state.reviewProduct;
       setReviewProduct(product);
       
-      // If editing an existing review, set the initial values
       if (product.isEditing) {
         setRating(product.existingRating || 0);
         setComment(product.existingComment || "");
       }
       
       setReviewDialogOpen(true);
-      // Clear the location state to prevent dialog from reopening on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -172,7 +166,6 @@ export default function Products() {
     try {
       setIsSubmitting(true);
       
-      // Check if user has already reviewed this product when not editing
       if (!reviewProduct.isEditing && hasUserReviewedProduct(reviewProduct.id)) {
         setErrorMessage({
           title: "Already Reviewed",
@@ -184,11 +177,9 @@ export default function Products() {
         return;
       }
 
-      // Upload media files if any
       const { imageUrl, videoUrl } = await uploadMedia();
 
       if (reviewProduct.isEditing && reviewProduct.reviewId) {
-        // Update existing review
         const { error } = await supabase
           .from('reviews')
           .update({
@@ -208,7 +199,6 @@ export default function Products() {
 
         toast("Review updated successfully!");
       } else {
-        // Create new review - make purchase_item_id optional
         const reviewData: any = {
           user_id: user.id,
           product_id: reviewProduct.id,
@@ -218,7 +208,6 @@ export default function Products() {
           video_url: videoUrl
         };
         
-        // Only add purchase_item_id if it exists to avoid foreign key constraint
         if (reviewProduct.purchaseId) {
           reviewData.purchase_item_id = reviewProduct.purchaseId;
         }
@@ -244,14 +233,12 @@ export default function Products() {
         toast("Review submitted successfully!");
       }
       
-      // Invalidate relevant queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
       queryClient.invalidateQueries({ queryKey: ['user-reviews', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       
-      // Close the dialog and reset state
       setReviewDialogOpen(false);
       resetReviewState();
     } catch (error) {
@@ -294,6 +281,7 @@ export default function Products() {
                 inventoryData={inventoryData || []}
                 productRatings={productRatings}
                 onProductClick={setSelectedProduct}
+                isLoading={isLoading}
               />
             </div>
           </div>
@@ -309,7 +297,6 @@ export default function Products() {
           productRatings={productRatings}
         />
 
-        {/* Review Dialog with Media Upload and Scrollbar */}
         <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
           setReviewDialogOpen(open);
           if (!open) resetReviewState();
@@ -357,7 +344,6 @@ export default function Products() {
                   className="min-h-[100px]"
                 />
                 
-                {/* Media Upload Section */}
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="review-image">Add Image (optional)</Label>
@@ -459,7 +445,6 @@ export default function Products() {
           </DialogContent>
         </Dialog>
 
-        {/* Error Modal */}
         <ErrorModal
           isOpen={errorModalOpen}
           onClose={() => setErrorModalOpen(false)}
