@@ -23,12 +23,14 @@ export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) 
           "animate-spin text-[#8B7355]"
         )} 
       />
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   );
 }
