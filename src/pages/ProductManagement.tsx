@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const queryClient = new QueryClient();
 
@@ -144,7 +144,6 @@ const ProductManagementContent = () => {
     }
   };
 
-  // Custom ProductList with edit/delete buttons
   const AdminProductList = ({ products }: { products: Product[] }) => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {products.map(product => (
@@ -227,7 +226,9 @@ const ProductManagementContent = () => {
             </TabsList>
             <TabsContent value="products">
               {isLoading ? (
-                <div className="text-center py-8">Loading products...</div>
+                <div className="text-center py-8">
+                  <LoadingSpinner size="lg" />
+                </div>
               ) : (
                 <AdminProductList products={products} />
               )}
@@ -239,7 +240,6 @@ const ProductManagementContent = () => {
         </div>
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -254,7 +254,6 @@ const ProductManagementContent = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

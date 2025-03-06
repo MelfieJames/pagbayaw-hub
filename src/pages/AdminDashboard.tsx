@@ -378,10 +378,12 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[#8B7355]">Sales Analytics</CardTitle>
                 <div className="flex items-center gap-2">
-                  <TabsList>
-                    <TabsTrigger value="line" onClick={() => setChartType("line")}>Line</TabsTrigger>
-                    <TabsTrigger value="pie" onClick={() => setChartType("pie")}>Pie</TabsTrigger>
-                  </TabsList>
+                  <Tabs defaultValue="line" value={chartType} onValueChange={setChartType}>
+                    <TabsList>
+                      <TabsTrigger value="line">Line</TabsTrigger>
+                      <TabsTrigger value="pie">Pie</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-4 mt-4">
