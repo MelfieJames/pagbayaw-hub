@@ -11,8 +11,8 @@ interface LoadingSpinnerProps {
 export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) {
   const sizeClasses = {
     sm: "h-4 w-4",
-    md: "h-6 w-6",
-    lg: "h-8 w-8"
+    md: "h-8 w-8",
+    lg: "h-12 w-12"
   };
 
   return (
@@ -20,9 +20,15 @@ export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) 
       <Loader 
         className={cn(
           sizeClasses[size], 
-          "animate-spin text-transparent bg-gradient-to-r from-green-500 via-amber-500 to-brown-500 bg-clip-text"
+          "animate-spin text-[#8B7355]"
         )} 
       />
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
