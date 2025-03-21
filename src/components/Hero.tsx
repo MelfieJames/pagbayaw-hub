@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import GradientButton from "@/components/ui/GradientButton";ht
+import GradientButton from "@/components/ui/GradientButton";
 
 const images = [
   "https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-6/461570622_558172736903282_5599733805105509082_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFncftE4VvhujOAyF7tIBSUBMT_jFIeqikExP-MUh6qKaJnIm53lAsrz6ktTkaMwKQjRqx4UKVqNTwiNBBpIz4n&_nc_ohc=-zJ-zwE7t-wQ7kNvgGgLsJz&_nc_oc=Adli7-ZhEjWURQULiJMv0M_KgQenQlRephyh9U972n-AeHdFb7BZNFmlG8Lyy_uKyf4xFCECCk5_LvMQU466eQye&_nc_zt=23&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=oUJOd5Ebf0AGTKSlAc6fhA&oh=00_AYHDDzWVqqwQXptvpbe64KrQvPueipIBy1v7w362apmAlA&oe=67E31572",
