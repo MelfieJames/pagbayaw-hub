@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { User, MapPin, Phone, AtSign, Save, UserCircle } from "lucide-react";
 
 interface UserProfileData {
   first_name: string;
@@ -112,53 +114,74 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="container mx-auto px-4 pt-20">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Your Profile</CardTitle>
-            <CardDescription>
-              Update your personal information. This information will be used for order processing.
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name *</Label>
-                  <Input
-                    id="first_name"
-                    name="first_name"
-                    value={profileData.first_name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter your first name"
-                  />
+        <div className="max-w-2xl mx-auto">
+          <div className="flex justify-center mb-6">
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+              <UserCircle className="h-16 w-16 text-primary" />
+            </div>
+          </div>
+          <Card className="shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-gray-100 to-gray-50 border-b">
+              <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                <User className="h-5 w-5" /> Your Profile
+              </CardTitle>
+              <CardDescription>
+                Update your personal information. This information will be used for order processing.
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-6 pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name" className="flex items-center gap-1">
+                      <User className="h-4 w-4" /> First Name *
+                    </Label>
+                    <Input
+                      id="first_name"
+                      name="first_name"
+                      value={profileData.first_name}
+                      onChange={handleChange}
+                      required
+                      placeholder="Enter your first name"
+                      className="border-gray-300 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="middle_name" className="flex items-center gap-1">
+                      <User className="h-4 w-4" /> Middle Name
+                    </Label>
+                    <Input
+                      id="middle_name"
+                      name="middle_name"
+                      value={profileData.middle_name}
+                      onChange={handleChange}
+                      placeholder="Enter your middle name"
+                      className="border-gray-300 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name" className="flex items-center gap-1">
+                      <User className="h-4 w-4" /> Last Name *
+                    </Label>
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      value={profileData.last_name}
+                      onChange={handleChange}
+                      required
+                      placeholder="Enter your last name"
+                      className="border-gray-300 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="middle_name">Middle Name</Label>
-                  <Input
-                    id="middle_name"
-                    name="middle_name"
-                    value={profileData.middle_name}
-                    onChange={handleChange}
-                    placeholder="Enter your middle name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name *</Label>
-                  <Input
-                    id="last_name"
-                    name="last_name"
-                    value={profileData.last_name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter your last name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone_number">Phone Number *</Label>
+                  <Label htmlFor="phone_number" className="flex items-center gap-1">
+                    <Phone className="h-4 w-4" /> Phone Number *
+                  </Label>
                   <Input
                     id="phone_number"
                     name="phone_number"
@@ -166,10 +189,14 @@ export default function UserProfile() {
                     onChange={handleChange}
                     required
                     placeholder="Enter your phone number"
+                    className="border-gray-300 focus:ring-primary focus:border-primary"
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="location">Location/Address *</Label>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" /> Location/Address *
+                  </Label>
                   <Input
                     id="location"
                     name="location"
@@ -177,17 +204,32 @@ export default function UserProfile() {
                     onChange={handleChange}
                     required
                     placeholder="Enter your full address"
+                    className="border-gray-300 focus:ring-primary focus:border-primary"
                   />
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+                
+                {user && (
+                  <div className="pt-2 border-t">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <AtSign className="h-4 w-4" />
+                      <span>{user.email}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="bg-gray-50 border-t">
+                <Button 
+                  type="submit" 
+                  disabled={isSaving}
+                  className="ml-auto flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
       </div>
     </div>
   );
