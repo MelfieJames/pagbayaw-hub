@@ -25,9 +25,19 @@ interface ProductData {
   color: string;
 }
 
+interface PurchaseItem {
+  product_id: number;
+  quantity: number;
+  price_at_time: number;
+  products: {
+    product_name: string;
+  } | null;
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#8dd1e1'];
 
 export function SalesCharts() {
+  
   const [topProducts, setTopProducts] = useState<ProductData[]>([]);
   const [salesByDay, setSalesByDay] = useState<DailySales[]>([]);
   const [profileCompletion, setProfileCompletion] = useState<ProductData[]>([]);
@@ -152,9 +162,9 @@ export function SalesCharts() {
     
     const productSales: Record<number, ProductSale> = {};
     
-    purchaseItems.forEach(item => {
+    purchaseItems.forEach((item: PurchaseItem) => {
       const productId = item.product_id;
-      // Fix the type issue by accessing the products object correctly
+      // Fix for the TypeScript error - correctly accessing the product_name
       const productName = item.products?.product_name || `Product ${productId}`;
       const quantity = item.quantity || 0;
       const price = item.price_at_time || 0;
