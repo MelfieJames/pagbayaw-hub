@@ -5,7 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,7 +25,7 @@ export function AdminSidebar() {
   };
 
   return (
-    <div className="w-64 bg-[#8B7355] text-white h-screen flex flex-col">
+    <div className={`w-64 bg-[#8B7355] text-white h-screen flex flex-col transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-10`}>
       <div className="p-4 flex items-center gap-2">
         <img 
           src="/lovable-uploads/5c03a00c-16fb-4305-bb33-b3a748c95b67.png" 

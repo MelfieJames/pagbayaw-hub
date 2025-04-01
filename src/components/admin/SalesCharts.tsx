@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase/client';
@@ -110,8 +111,8 @@ export default function SalesCharts() {
       
       data.forEach(item => {
         const productId = item.product_id;
-        const productObj = item.products as ProductData;
-        const productName = productObj?.product_name || `Product ${productId}`;
+        // Fix the type issue by accessing the products object correctly
+        const productName = item.products?.product_name || `Product ${productId}`;
         const quantity = item.quantity || 0;
         const price = item.price_at_time || 0;
         
