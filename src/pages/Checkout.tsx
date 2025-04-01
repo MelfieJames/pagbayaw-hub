@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +32,8 @@ export default function Checkout() {
   const selectedQuantities = location.state?.quantities || {};
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [hasCompletedProfile, setHasCompletedProfile] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -40,7 +43,38 @@ export default function Checkout() {
           message: "Please log in to access checkout"
         }
       });
+      return;
     }
+
+    // Check if user has completed their profile
+    const checkProfileCompletion = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, phone_number, location')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        const isProfileComplete = !!(
+          data.first_name && 
+          data.last_name && 
+          data.phone_number && 
+          data.location
+        );
+        
+        setHasCompletedProfile(isProfileComplete);
+        
+        if (!isProfileComplete) {
+          setShowProfileDialog(true);
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+      }
+    };
+
+    checkProfileCompletion();
   }, [user, navigate]);
 
   const { data: cartItems = [], refetch } = useQuery({
@@ -174,6 +208,11 @@ export default function Checkout() {
       return;
     }
 
+    if (!hasCompletedProfile) {
+      setShowProfileDialog(true);
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -289,6 +328,10 @@ export default function Checkout() {
       setIsProcessing(false);
     }
   };
+
+  const total = cartItems.reduce((sum, item) => {
+    return sum + (item.quantity * (item.products?.product_price || 0));
+  }, 0);
 
   if (!user) {
     return null;
@@ -414,6 +457,34 @@ export default function Checkout() {
               }}
             >
               Continue Shopping
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showProfileDialog} onOpenChange={(open) => {
+        // Only allow closing if they're going to the profile page
+        if (!open) {
+          navigate('/profile');
+        }
+        setShowProfileDialog(open);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete Your Profile</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please complete your profile information before proceeding with checkout. 
+              We need your name, location, and contact details for order processing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowProfileDialog(false);
+                navigate('/profile');
+              }}
+            >
+              Complete Profile
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

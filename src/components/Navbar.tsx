@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -5,9 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsPopover } from "./notifications/NotificationsPopover";
 import { CartPopover } from "./products/CartPopover";
 import { useMediaQuery } from "@/hooks/use-mobile";
-import { Award, Package, MessageSquare, Menu, Home, Info, Star } from "lucide-react";
+import { Award, Package, MessageSquare, Menu, Home, Info, Star, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
 export default function Navbar() {
   const {
     user,
@@ -66,13 +68,19 @@ export default function Navbar() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate("/admin")}>
-                      Dashboard
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/my-ratings")}>
                       <Star className="h-4 w-4 mr-2" />
                       My Ratings
                     </DropdownMenuItem>
+                    {user.isAdmin && (
+                      <DropdownMenuItem onClick={() => navigate("/admin")}>
+                        Dashboard
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => signOut()}>
                       Logout
                     </DropdownMenuItem>
@@ -93,10 +101,18 @@ export default function Navbar() {
                 <SheetContent>
                   <div className="flex flex-col space-y-4 mt-8">
                     <NavItems />
-                    {user && <Link to="/my-ratings" className="flex items-center gap-2 hover:text-primary transition-colors">
-                        <Star className="h-4 w-4" />
-                        <span>My Ratings</span>
-                      </Link>}
+                    {user && (
+                      <>
+                        <Link to="/profile" className="flex items-center gap-2 hover:text-primary transition-colors">
+                          <User className="h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                        <Link to="/my-ratings" className="flex items-center gap-2 hover:text-primary transition-colors">
+                          <Star className="h-4 w-4" />
+                          <span>My Ratings</span>
+                        </Link>
+                      </>
+                    )}
                     {!user && <div className="flex flex-col gap-2 mt-4">
                         <Button onClick={() => navigate("/login")}>
                           Login
