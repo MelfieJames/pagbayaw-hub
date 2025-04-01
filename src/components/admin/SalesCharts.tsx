@@ -25,6 +25,7 @@ interface ProductData {
   color: string;
 }
 
+// Updated interface to correctly match the shape of the data
 interface PurchaseItem {
   product_id: number;
   quantity: number;
@@ -83,7 +84,7 @@ export function SalesCharts() {
         throw error;
       }
       
-      return data || [];
+      return data as PurchaseItem[] || [];
     },
   });
   
