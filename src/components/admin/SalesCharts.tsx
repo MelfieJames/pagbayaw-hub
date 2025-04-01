@@ -103,6 +103,7 @@ export function SalesCharts() {
     },
   });
 
+  
   useEffect(() => {
     if (purchaseData) {
       processDailySalesData();
