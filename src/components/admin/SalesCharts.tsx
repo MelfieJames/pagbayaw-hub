@@ -25,7 +25,7 @@ interface ProductData {
   color: string;
 }
 
-// Updated interface to correctly match the shape of the data
+// Updated interface to correctly match the shape of the data from Supabase
 interface PurchaseItem {
   product_id: number;
   quantity: number;
@@ -84,7 +84,8 @@ export function SalesCharts() {
         throw error;
       }
       
-      return data as PurchaseItem[] || [];
+      // Use a double type assertion to correctly cast the data
+      return (data as unknown) as PurchaseItem[] || [];
     },
   });
   
@@ -164,9 +165,9 @@ export function SalesCharts() {
     
     const productSales: Record<number, ProductSale> = {};
     
-    purchaseItems.forEach((item: PurchaseItem) => {
+    purchaseItems.forEach((item) => {
       const productId = item.product_id;
-      // Fix for the TypeScript error - correctly accessing the product_name
+      // Safely access the product_name with nullish coalescing
       const productName = item.products?.product_name || `Product ${productId}`;
       const quantity = item.quantity || 0;
       const price = item.price_at_time || 0;
