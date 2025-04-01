@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase/client';
@@ -180,7 +179,7 @@ export function SalesCharts() {
       .slice(0, 5); // Get top 5
     
     // Format for the pie chart
-    const topProductsData = sortedProducts.map((product, index) => ({
+    const topProductsData: ProductData[] = sortedProducts.map((product, index) => ({
       product_name: product.product_name,
       value: product.total,
       color: COLORS[index % COLORS.length]
