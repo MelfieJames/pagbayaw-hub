@@ -178,7 +178,7 @@ export function SalesCharts() {
       .sort((a, b) => b.total - a.total)
       .slice(0, 5); // Get top 5
     
-    // Format for the pie chart
+    // Format for the pie chart - Fix the type issue
     const topProductsData: ProductData[] = sortedProducts.map((product, index) => ({
       product_name: product.product_name,
       value: product.total,
