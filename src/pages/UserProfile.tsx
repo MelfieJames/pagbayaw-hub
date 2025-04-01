@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { User, MapPin, Phone, AtSign, Save, UserCircle } from "lucide-react";
+import { User, MapPin, Phone, AtSign, Save, UserCircle, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface UserProfileData {
   first_name: string;
@@ -25,6 +26,7 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData>({
     first_name: "",
     middle_name: "",
@@ -96,7 +98,7 @@ export default function UserProfile() {
 
       if (error) throw error;
 
-      toast.success("Profile updated successfully");
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -231,6 +233,26 @@ export default function UserProfile() {
           </Card>
         </div>
       </div>
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-500" />
+              Profile Updated
+            </DialogTitle>
+            <DialogDescription>
+              Your profile information has been successfully updated.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowSuccessModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

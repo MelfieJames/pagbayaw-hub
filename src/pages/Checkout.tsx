@@ -1,15 +1,19 @@
+
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { CartItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MinusCircle, PlusCircle, Trash2 } from "lucide-react";
+import { MinusCircle, PlusCircle, Trash2, CreditCard, User, MapPin, Phone } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -22,6 +26,13 @@ type SupabaseCartResponse = {
   };
 }
 
+interface ProfileData {
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  location: string;
+}
+
 export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -32,7 +43,9 @@ export default function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showOrderConfirmDialog, setShowOrderConfirmDialog] = useState(false);
   const [hasCompletedProfile, setHasCompletedProfile] = useState(false);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -65,7 +78,14 @@ export default function Checkout() {
         
         setHasCompletedProfile(isProfileComplete);
         
-        if (!isProfileComplete) {
+        if (isProfileComplete) {
+          setProfileData({
+            first_name: data.first_name,
+            last_name: data.last_name,
+            phone_number: data.phone_number,
+            location: data.location
+          });
+        } else {
           setShowProfileDialog(true);
         }
       } catch (error) {
@@ -202,7 +222,7 @@ export default function Checkout() {
     return sum + (item.quantity * (item.products?.product_price || 0));
   }, 0);
 
-  const handleCheckout = async () => {
+  const handleCheckoutInitiate = () => {
     if (!user || cartItems.length === 0) {
       toast.error("No items to checkout");
       return;
@@ -213,6 +233,12 @@ export default function Checkout() {
       return;
     }
 
+    // Show order confirmation dialog with profile data and items
+    setShowOrderConfirmDialog(true);
+  };
+
+  const handleCheckout = async () => {
+    setShowOrderConfirmDialog(false);
     setIsProcessing(true);
 
     try {
@@ -425,7 +451,7 @@ export default function Checkout() {
                   </div>
                   <Button 
                     className="w-full"
-                    onClick={handleCheckout}
+                    onClick={handleCheckoutInitiate}
                     disabled={cartItems.length === 0 || isProcessing}
                   >
                     {isProcessing ? "Processing..." : "Proceed to Payment"}
@@ -437,6 +463,7 @@ export default function Checkout() {
         )}
       </div>
 
+      {/* Success Dialog */}
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -458,6 +485,7 @@ export default function Checkout() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Profile Completion Dialog */}
       <AlertDialog open={showProfileDialog} onOpenChange={(open) => {
         // Only allow closing if they're going to the profile page
         if (!open) {
@@ -485,6 +513,96 @@ export default function Checkout() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Order Confirmation Dialog */}
+      <Dialog open={showOrderConfirmDialog} onOpenChange={setShowOrderConfirmDialog}>
+        <DialogContent className="max-w-md md:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Confirm Your Order
+            </DialogTitle>
+            <DialogDescription>
+              Please review your order details before completing the purchase.
+            </DialogDescription>
+          </DialogHeader>
+
+          {profileData && (
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <h3 className="font-medium text-lg mb-2">Shipping Details</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span>{profileData.first_name} {profileData.last_name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{profileData.location}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{profileData.phone_number}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <h3 className="font-medium text-lg">Order Items</h3>
+            <div className="max-h-60 overflow-y-auto pr-2">
+              {cartItems.map((item) => (
+                <div 
+                  key={item.product_id}
+                  className="flex items-center gap-3 py-3 border-b"
+                >
+                  <img
+                    src={item.products?.image || "/placeholder.svg"}
+                    alt={item.products?.product_name}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">{item.products?.product_name}</div>
+                    <div className="text-sm text-muted-foreground">₱{item.products?.product_price.toFixed(2)} x {item.quantity}</div>
+                  </div>
+                  <div className="font-medium">₱{(item.products?.product_price * item.quantity).toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>₱{total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Shipping</span>
+                <span>Free</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-medium text-lg">
+                <span>Total</span>
+                <span>₱{total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-0 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowOrderConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCheckout}
+              className="flex items-center gap-1"
+            >
+              <CreditCard className="h-4 w-4" />
+              Confirm and Pay
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
