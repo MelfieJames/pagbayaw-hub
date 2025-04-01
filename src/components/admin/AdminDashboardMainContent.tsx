@@ -1,8 +1,8 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import UserManagement from "./UserManagement";
-import AdminManagement from "./AdminManagement";
-import RecentPurchases from "./RecentPurchases";
+import { UserManagement } from "./UserManagement";
+import { AdminManagement } from "./AdminManagement";
+import { RecentPurchases } from "./RecentPurchases";
 import SalesCharts from "./SalesCharts";
 
 export default function AdminDashboardMainContent() {

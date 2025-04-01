@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import { useQuery, useMutation, QueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { 
   Table, 
@@ -12,14 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { 
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { User, UserX, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -43,15 +34,12 @@ interface UserProfile {
   updated_at: string;
 }
 
-interface UserManagementProps {
-  queryClient: QueryClient;
-}
-
-export function UserManagement({ queryClient }: UserManagementProps) {
+export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],

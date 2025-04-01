@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import AdminSidebar from "@/components/products/AdminSidebar";
+import { AdminSidebar } from "@/components/products/AdminSidebar";
 import AdminDashboardMainContent from "@/components/admin/AdminDashboardMainContent";
 
 export default function AdminDashboard() {
