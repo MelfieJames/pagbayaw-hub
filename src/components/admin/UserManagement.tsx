@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -44,13 +45,37 @@ export function UserManagement() {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // First get all auth users
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
       
-      if (error) throw error;
-      return data || [];
+      if (authError) {
+        console.error("Error fetching auth users:", authError);
+        throw authError;
+      }
+      
+      // Merge with profiles data to get additional info if needed
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (profileError) {
+        console.error("Profiles fetch error:", profileError);
+      }
+      
+      // Map auth users to include profile data
+      const userProfiles = authUsers.users.map(user => {
+        const profile = profiles?.find(p => p.id === user.id) || {};
+        return {
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at,
+          updated_at: profile.updated_at,
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || ''
+        };
+      });
+      
+      return userProfiles || [];
     }
   });
 
@@ -94,8 +119,8 @@ export function UserManagement() {
     }
   };
 
-  const filteredUsers = users.filter((user: UserProfile) => 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter((user: any) => 
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -142,13 +167,13 @@ export function UserManagement() {
                         <div className="flex items-center gap-2">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-[#8B7355] text-white">
-                              {user.email.substring(0, 2).toUpperCase()}
+                              {user.email?.substring(0, 2).toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
                         </div>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell className="text-right">
                         <Button 
                           variant="destructive" 

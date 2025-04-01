@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -235,6 +234,14 @@ export default function Checkout() {
 
     // Show order confirmation dialog with profile data and items
     setShowOrderConfirmDialog(true);
+  };
+
+  const handleProfileDialogClose = () => {
+    // Navigate to profile page with checkout as redirect
+    navigate('/profile', {
+      state: { redirectAfterUpdate: '/checkout' }
+    });
+    setShowProfileDialog(false);
   };
 
   const handleCheckout = async () => {
@@ -486,13 +493,7 @@ export default function Checkout() {
       </AlertDialog>
 
       {/* Profile Completion Dialog */}
-      <AlertDialog open={showProfileDialog} onOpenChange={(open) => {
-        // Only allow closing if they're going to the profile page
-        if (!open) {
-          navigate('/profile');
-        }
-        setShowProfileDialog(open);
-      }}>
+      <AlertDialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Complete Your Profile</AlertDialogTitle>
@@ -503,10 +504,7 @@ export default function Checkout() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction 
-              onClick={() => {
-                setShowProfileDialog(false);
-                navigate('/profile');
-              }}
+              onClick={handleProfileDialogClose}
             >
               Complete Profile
             </AlertDialogAction>

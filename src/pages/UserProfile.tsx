@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ interface UserProfileData {
 export default function UserProfile() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -34,6 +35,9 @@ export default function UserProfile() {
     location: "",
     phone_number: ""
   });
+
+  // Get the redirect path from location state
+  const redirectAfterUpdate = location.state?.redirectAfterUpdate || "/products";
 
   useEffect(() => {
     if (!user) {
@@ -105,6 +109,11 @@ export default function UserProfile() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    navigate(redirectAfterUpdate);
   };
 
   if (isLoading) {
@@ -247,8 +256,8 @@ export default function UserProfile() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={() => setShowSuccessModal(false)}>
-              Close
+            <Button onClick={handleSuccessModalClose}>
+              Continue
             </Button>
           </DialogFooter>
         </DialogContent>
