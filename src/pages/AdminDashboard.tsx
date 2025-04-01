@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, QueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,6 +29,9 @@ import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { AdminManagement } from "@/components/admin/AdminManagement";
 import { RecentPurchases } from "@/components/admin/RecentPurchases";
+
+// Create a QueryClient instance to pass to the components
+const queryClient = new QueryClient();
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
@@ -614,10 +616,10 @@ const AdminDashboard = () => {
         )}
 
         {/* User Management Tab */}
-        {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'users' && <UserManagement queryClient={queryClient} />}
 
         {/* Admin Management Tab */}
-        {activeTab === 'admins' && <AdminManagement />}
+        {activeTab === 'admins' && <AdminManagement queryClient={queryClient} />}
 
         {/* For Recent Purchases */}
         {activeTab === 'purchases' && <RecentPurchases />}
