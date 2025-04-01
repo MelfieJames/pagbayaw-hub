@@ -1,9 +1,10 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Star, Award, ShoppingBag, LogOut, Users, Shield, DollarSign } from "lucide-react";
+import { Star, Award, ShoppingBag, LogOut, Users, Shield, DollarSign, Layers, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -25,44 +26,69 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   };
 
   return (
-    <div className={`w-64 bg-[#8B7355] text-white h-screen flex flex-col transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-10`}>
-      <div className="p-4 flex items-center gap-2">
+    <div className={`w-64 bg-white shadow-md text-gray-800 h-screen flex flex-col transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-10`}>
+      <div className="p-4 flex items-center gap-2 border-b">
         <img 
           src="/lovable-uploads/5c03a00c-16fb-4305-bb33-b3a748c95b67.png" 
           alt="Logo" 
           className="w-10 h-10 rounded-full"
         />
-        <h1 className="text-xl font-bold">ADMIN</h1>
+        <h1 className="text-xl font-bold text-[#8B7355]">ADMIN PANEL</h1>
       </div>
       
-      <nav className="mt-8 flex-1 overflow-y-auto">
-        <Link to="/admin" className={`flex items-center gap-3 px-4 py-3 ${isActive('/admin') && !isActive('/admin/users') && !isActive('/admin/admins') && !isActive('/admin/purchases') && !isActive('/admin/products') && !isActive('/admin/achievements') ? 'bg-[#9b815f]' : 'hover:bg-[#9b815f]'} text-white`}>
-          <Star className="w-6 h-6" />
-          <span>Dashboard</span>
+      <nav className="mt-6 flex-1 overflow-y-auto px-3">
+        <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">Dashboard</div>
+        <Link to="/admin" className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-700 transition-colors",
+          isActive('/admin') && !isActive('/admin/users') && !isActive('/admin/admins') && !isActive('/admin/purchases') && !isActive('/admin/products') && !isActive('/admin/achievements') ? 
+            'bg-[#F5F5DC] text-[#8B7355] font-medium' : 
+            'hover:bg-gray-100'
+        )}>
+          <LayoutDashboard className="w-5 h-5" />
+          <span>Overview</span>
         </Link>
-        <Link to="/admin/users" className={`flex items-center gap-3 px-4 py-3 ${isActive('/admin/users') ? 'bg-[#9b815f]' : 'hover:bg-[#9b815f]'} text-white`}>
-          <Users className="w-6 h-6" />
+        
+        <div className="text-xs uppercase text-gray-500 font-semibold mt-6 mb-2 pl-2">Management</div>
+        <Link to="/admin/users" className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-700 transition-colors",
+          isActive('/admin/users') ? 'bg-[#F5F5DC] text-[#8B7355] font-medium' : 'hover:bg-gray-100'
+        )}>
+          <Users className="w-5 h-5" />
           <span>User Management</span>
         </Link>
-        <Link to="/admin/admins" className={`flex items-center gap-3 px-4 py-3 ${isActive('/admin/admins') ? 'bg-[#9b815f]' : 'hover:bg-[#9b815f]'} text-white`}>
-          <Shield className="w-6 h-6" />
+        <Link to="/admin/admins" className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-700 transition-colors", 
+          isActive('/admin/admins') ? 'bg-[#F5F5DC] text-[#8B7355] font-medium' : 'hover:bg-gray-100'
+        )}>
+          <Shield className="w-5 h-5" />
           <span>Admin Management</span>
         </Link>
-        <Link to="/admin/purchases" className={`flex items-center gap-3 px-4 py-3 ${isActive('/admin/purchases') ? 'bg-[#9b815f]' : 'hover:bg-[#9b815f]'} text-white`}>
-          <DollarSign className="w-6 h-6" />
+        <Link to="/admin/purchases" className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-700 transition-colors",
+          isActive('/admin/purchases') ? 'bg-[#F5F5DC] text-[#8B7355] font-medium' : 'hover:bg-gray-100'
+        )}>
+          <DollarSign className="w-5 h-5" />
           <span>Recent Purchases</span>
         </Link>
-        <Link to="/admin/achievements" className={`flex items-center gap-3 px-4 py-3 ${isActive('/admin/achievements') ? 'bg-[#9b815f]' : 'hover:bg-[#9b815f]'} text-white`}>
-          <Award className="w-6 h-6" />
+        
+        <div className="text-xs uppercase text-gray-500 font-semibold mt-6 mb-2 pl-2">Content</div>
+        <Link to="/admin/achievements" className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-700 transition-colors",
+          isActive('/admin/achievements') ? 'bg-[#F5F5DC] text-[#8B7355] font-medium' : 'hover:bg-gray-100'
+        )}>
+          <Award className="w-5 h-5" />
           <span>Add Achievements</span>
         </Link>
-        <Link to="/admin/products" className={`flex items-center gap-3 px-4 py-3 ${isActive('/admin/products') ? 'bg-[#9b815f]' : 'hover:bg-[#9b815f]'} text-white`}>
-          <ShoppingBag className="w-6 h-6" />
+        <Link to="/admin/products" className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-700 transition-colors",
+          isActive('/admin/products') ? 'bg-[#F5F5DC] text-[#8B7355] font-medium' : 'hover:bg-gray-100'
+        )}>
+          <ShoppingBag className="w-5 h-5" />
           <span>Add Products</span>
         </Link>
       </nav>
 
-      <div className="p-4 mt-auto border-t border-[#9b815f]">
+      <div className="p-4 mt-auto border-t">
         <Button 
           onClick={handleLogout}
           variant="destructive" 

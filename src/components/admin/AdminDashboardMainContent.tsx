@@ -4,21 +4,34 @@ import { UserManagement } from "./UserManagement";
 import { AdminManagement } from "./AdminManagement";
 import { RecentPurchases } from "./RecentPurchases";
 import { SalesCharts } from "./SalesCharts";
+import { DashboardIcon, Users, Shield, ShoppingBag } from "lucide-react";
 
 export default function AdminDashboardMainContent() {
   return (
     <div className="p-4 md:p-6">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2 text-[#8B7355]">
+        <DashboardIcon className="h-7 w-7" />
+        Dashboard
+      </h1>
       
       <div className="mb-8">
         <SalesCharts />
       </div>
 
-      <Tabs defaultValue="users">
-        <TabsList className="mb-4 grid grid-cols-3 md:w-[400px]">
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="admins">Admins</TabsTrigger>
-          <TabsTrigger value="purchases">Purchases</TabsTrigger>
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="mb-4 grid grid-cols-3 md:w-[400px] bg-[#f0e8d9]">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="admins" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Admins
+          </TabsTrigger>
+          <TabsTrigger value="purchases" className="flex items-center gap-2">
+            <ShoppingBag className="h-4 w-4" />
+            Purchases
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users">
           <UserManagement />

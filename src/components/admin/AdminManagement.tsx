@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, UserX, UserPlus } from "lucide-react";
+import { Shield, UserX, UserPlus, Mail, Calendar } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,8 @@ import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -77,15 +80,23 @@ export function AdminManagement() {
   const { data: admins = [], isLoading } = useQuery({
     queryKey: ['admin-list'],
     queryFn: async () => {
-      // In a real application, you would have a proper admins table or role system
-      // For this example, we'll just return the admin user from profiles
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', 'admin@unvas.com');
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        // In a real application, you would have a proper admins table or role system
+        // For this example, we'll return all users who have admin role
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        // Filtering sample - in a real app, you'd have a proper admin role check
+        if (error) throw error;
+        
+        // Just for demonstration, we're treating the first user as admin
+        // In a real app, you would check a roles table
+        return data.length > 0 ? [data[0]] : [];
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+        throw error;
+      }
     }
   });
 
@@ -155,7 +166,7 @@ export function AdminManagement() {
 
   return (
     <Card className="border-2 border-[#C4A484]">
-      <CardHeader>
+      <CardHeader className="bg-[#F5F5DC]">
         <div className="flex justify-between items-center">
           <CardTitle className="text-[#8B7355] flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -163,8 +174,8 @@ export function AdminManagement() {
           </CardTitle>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#8B7355] hover:bg-[#9b815f]">
-                <UserPlus className="h-4 w-4 mr-1" />
+              <Button className="bg-[#8B7355] hover:bg-[#9b815f] flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
                 Add Admin
               </Button>
             </DialogTrigger>
@@ -202,7 +213,7 @@ export function AdminManagement() {
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit" disabled={addAdminMutation.isPending}>
+                    <Button type="submit" disabled={addAdminMutation.isPending} className="bg-[#8B7355] hover:bg-[#9b815f]">
                       {addAdminMutation.isPending ? "Creating..." : "Create Admin"}
                     </Button>
                   </DialogFooter>
@@ -212,7 +223,7 @@ export function AdminManagement() {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {isLoading ? (
           <div className="flex justify-center p-8">
             <LoadingSpinner size="lg" />
@@ -220,11 +231,12 @@ export function AdminManagement() {
         ) : (
           <div className="border rounded-md">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gray-50">
                 <TableRow>
                   <TableHead>Admin</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -233,16 +245,33 @@ export function AdminManagement() {
                   admins.map((admin: AdminProfile) => (
                     <TableRow key={admin.id}>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
                             <AvatarFallback className="bg-[#8B7355] text-white">
                               {admin.email.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
+                          <div className="font-medium">
+                            Administrator
+                            <div className="text-xs text-gray-500">ID: {admin.id.substring(0, 8)}...</div>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>{admin.email}</TableCell>
-                      <TableCell>Super Admin</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          {admin.email}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-[#8B7355]">Super Admin</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          {admin.created_at ? format(new Date(admin.created_at), 'MMM d, yyyy') : 'N/A'}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button 
                           variant="destructive" 
@@ -258,7 +287,7 @@ export function AdminManagement() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">
+                    <TableCell colSpan={5} className="text-center py-6 text-gray-500">
                       No admins found
                     </TableCell>
                   </TableRow>

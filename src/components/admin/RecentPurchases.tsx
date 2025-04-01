@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Calendar } from "lucide-react";
+import { Search, Download, Calendar, ShoppingBag, FileText, User } from "lucide-react";
 
 export function RecentPurchases() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,13 +67,13 @@ export function RecentPurchases() {
   const getBadgeColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
-        return 'bg-green-500';
+        return 'bg-green-500 hover:bg-green-600';
       case 'pending':
-        return 'bg-yellow-500';
+        return 'bg-yellow-500 hover:bg-yellow-600';
       case 'cancelled':
-        return 'bg-red-500';
+        return 'bg-red-500 hover:bg-red-600';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-500 hover:bg-gray-600';
     }
   };
 
@@ -86,96 +86,122 @@ export function RecentPurchases() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-2 border-[#C4A484]">
-        <CardHeader className="bg-[#F5F5DC]">
-          <CardTitle className="text-[#8B7355] text-xl font-bold">Recent Purchases</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search by ID, status, or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <div className="relative">
-              <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
+    <Card className="border-2 border-[#C4A484]">
+      <CardHeader className="bg-[#F5F5DC]">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-[#8B7355] flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5" />
+            Recent Purchases
+          </CardTitle>
+          <Badge variant="outline" className="px-3 py-1 bg-white">
+            Total: {purchases.length} orders
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-6">
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search by ID, status, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
           </div>
+          <div className="relative">
+            <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
 
-          {filteredPurchases.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              No purchases found
-            </div>
-          ) : (
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader className="bg-[#F5F5DC]">
-                  <TableRow>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
+        {filteredPurchases.length === 0 ? (
+          <div className="text-center py-10 text-gray-500">
+            No purchases found
+          </div>
+        ) : (
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="w-[80px]">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-4 w-4 text-gray-400" />
+                      ID
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <User className="h-4 w-4 text-gray-400" />
+                      Customer
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <ShoppingBag className="h-4 w-4 text-gray-400" />
+                      Items
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      Date
+                    </div>
+                  </TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPurchases.map((purchase) => (
+                  <TableRow key={purchase.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">#{purchase.id}</TableCell>
+                    <TableCell>
+                      {purchase.profiles?.name || purchase.profiles?.email || "Anonymous"}
+                    </TableCell>
+                    <TableCell>
+                      {purchase.purchase_items?.length || 0} items
+                      <div className="text-xs text-gray-500 mt-1">
+                        {purchase.purchase_items?.map((item: any) => (
+                          <div key={item.id} className="truncate max-w-[200px]">
+                            {item.products?.product_name} x{item.quantity}
+                          </div>
+                        )).slice(0, 2)}
+                        {(purchase.purchase_items?.length || 0) > 2 && (
+                          <div>+ {(purchase.purchase_items?.length || 0) - 2} more</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(purchase.created_at), 'MMM d, yyyy')}
+                      <div className="text-xs text-gray-500">
+                        {format(new Date(purchase.created_at), 'h:mm a')}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatCurrency(parseFloat(purchase.total_amount))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getBadgeColor(purchase.status)}`}>
+                        {purchase.status}
+                      </Badge>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPurchases.map((purchase) => (
-                    <TableRow key={purchase.id}>
-                      <TableCell className="font-medium">{purchase.id}</TableCell>
-                      <TableCell>
-                        {purchase.profiles?.name || purchase.profiles?.email || "Anonymous"}
-                      </TableCell>
-                      <TableCell>
-                        {purchase.purchase_items?.length || 0} items
-                        <div className="text-xs text-gray-500 mt-1">
-                          {purchase.purchase_items?.map((item: any) => (
-                            <div key={item.id} className="truncate max-w-[200px]">
-                              {item.products?.product_name} x{item.quantity}
-                            </div>
-                          )).slice(0, 2)}
-                          {(purchase.purchase_items?.length || 0) > 2 && (
-                            <div>+ {(purchase.purchase_items?.length || 0) - 2} more</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(purchase.created_at), 'PPP')}
-                        <div className="text-xs text-gray-500">
-                          {format(new Date(purchase.created_at), 'p')}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(parseFloat(purchase.total_amount))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${getBadgeColor(purchase.status)}`}>
-                          {purchase.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
