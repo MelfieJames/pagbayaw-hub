@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -198,6 +197,7 @@ export default function Checkout() {
     }
   };
 
+  // Calculate total only once
   const total = cartItems.reduce((sum, item) => {
     return sum + (item.quantity * (item.products?.product_price || 0));
   }, 0);
@@ -328,10 +328,6 @@ export default function Checkout() {
       setIsProcessing(false);
     }
   };
-
-  const total = cartItems.reduce((sum, item) => {
-    return sum + (item.quantity * (item.products?.product_price || 0));
-  }, 0);
 
   if (!user) {
     return null;
