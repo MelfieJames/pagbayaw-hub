@@ -24,7 +24,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { User, UserX, Search, Mail, Calendar, MapPin, UserPlus } from "lucide-react";
+import { User, UserX, Search, Mail, Calendar, MapPin, UserPlus, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +37,9 @@ interface UserProfile {
   updated_at: string;
   first_name?: string;
   last_name?: string;
+  middle_name?: string;
   location?: string;
+  phone_number?: string;
 }
 
 export function UserManagement() {
@@ -61,15 +63,7 @@ export function UserManagement() {
           throw error;
         }
         
-        return profiles.map(profile => ({
-          id: profile.id,
-          email: profile.email,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at,
-          first_name: profile.first_name || '',
-          last_name: profile.last_name || '',
-          location: profile.location || ''
-        }));
+        return profiles || [];
       } catch (error) {
         console.error("Error in user fetching:", error);
         throw error;
@@ -135,7 +129,7 @@ export function UserManagement() {
 
   const getFullName = (user: UserProfile) => {
     if (user.first_name || user.last_name) {
-      return `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      return `${user.first_name || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim();
     }
     return 'Unknown';
   };
@@ -148,10 +142,9 @@ export function UserManagement() {
             <User className="h-5 w-5" />
             User Management
           </CardTitle>
-          <Button variant="outline" className="flex items-center gap-2 border-[#8B7355] text-[#8B7355] hover:bg-[#F5F5DC]">
-            <UserPlus className="h-4 w-4" />
-            <span>Add User</span>
-          </Button>
+          <Badge variant="outline" className="px-3 py-1 bg-white">
+            Total: {users.length} users
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="pt-6">
@@ -165,9 +158,6 @@ export function UserManagement() {
               className="pl-8"
             />
           </div>
-          <Badge variant="outline" className="px-3 py-1 bg-[#F5F5DC] text-[#8B7355]">
-            Total Users: {users.length}
-          </Badge>
         </div>
 
         {isLoading ? (
@@ -181,7 +171,7 @@ export function UserManagement() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead className="hidden md:table-cell">Location</TableHead>
+                  <TableHead className="hidden md:table-cell">Details</TableHead>
                   <TableHead className="hidden md:table-cell">Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -204,9 +194,17 @@ export function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-3 w-3 text-gray-400" />
-                          {user.email}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Mail className="h-3 w-3 text-gray-400" />
+                            {user.email}
+                          </div>
+                          {user.phone_number && (
+                            <div className="flex items-center gap-1 text-sm">
+                              <Phone className="h-3 w-3 text-gray-400" />
+                              {user.phone_number}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -216,7 +214,7 @@ export function UserManagement() {
                             {user.location}
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-sm">Not specified</span>
+                          <span className="text-gray-400 text-sm">No address</span>
                         )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">

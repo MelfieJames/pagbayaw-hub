@@ -85,6 +85,7 @@ export default function Checkout() {
             location: data.location
           });
         } else {
+          // Only show the profile dialog if profile is incomplete
           setShowProfileDialog(true);
         }
       } catch (error) {
@@ -492,8 +493,8 @@ export default function Checkout() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Profile Completion Dialog */}
-      <AlertDialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+      {/* Profile Completion Dialog - Only shown if profile is incomplete */}
+      <AlertDialog open={showProfileDialog && !hasCompletedProfile} onOpenChange={setShowProfileDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Complete Your Profile</AlertDialogTitle>

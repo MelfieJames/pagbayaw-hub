@@ -98,6 +98,14 @@ const Routes = () => {
         }
       />
       <Route
+        path="/admin/purchases"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/products"
         element={
           <ProtectedRoute requireAdmin>
