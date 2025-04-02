@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,11 +69,12 @@ export default function Checkout() {
 
         if (error) throw error;
 
+        // Improved profile completeness check - ensuring all required fields have meaningful values
         const isProfileComplete = !!(
-          data.first_name && 
-          data.last_name && 
-          data.phone_number && 
-          data.location
+          data.first_name?.trim() && 
+          data.last_name?.trim() && 
+          data.phone_number?.trim() && 
+          data.location?.trim()
         );
         
         setHasCompletedProfile(isProfileComplete);
@@ -84,6 +86,7 @@ export default function Checkout() {
             phone_number: data.phone_number,
             location: data.location
           });
+          setShowProfileDialog(false); // Make sure dialog is closed if profile is complete
         } else {
           // Only show the profile dialog if profile is incomplete
           setShowProfileDialog(true);
@@ -494,7 +497,16 @@ export default function Checkout() {
       </AlertDialog>
 
       {/* Profile Completion Dialog - Only shown if profile is incomplete */}
-      <AlertDialog open={showProfileDialog && !hasCompletedProfile} onOpenChange={setShowProfileDialog}>
+      <AlertDialog 
+        open={showProfileDialog && !hasCompletedProfile} 
+        onOpenChange={(isOpen) => {
+          // Only allow closing if we have a complete profile
+          if (!isOpen && !hasCompletedProfile) {
+            return; // Prevent closing if profile is incomplete
+          }
+          setShowProfileDialog(isOpen);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Complete Your Profile</AlertDialogTitle>

@@ -86,16 +86,37 @@ export default function UserProfile() {
     e.preventDefault();
     if (!user) return;
 
+    // Validation for required fields
+    if (!profileData.first_name.trim()) {
+      toast.error("First name is required");
+      return;
+    }
+
+    if (!profileData.last_name.trim()) {
+      toast.error("Last name is required");
+      return;
+    }
+
+    if (!profileData.phone_number.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+
+    if (!profileData.location.trim()) {
+      toast.error("Location/Address is required");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          first_name: profileData.first_name,
-          middle_name: profileData.middle_name,
-          last_name: profileData.last_name,
-          location: profileData.location,
-          phone_number: profileData.phone_number,
+          first_name: profileData.first_name.trim(),
+          middle_name: profileData.middle_name.trim(),
+          last_name: profileData.last_name.trim(),
+          location: profileData.location.trim(),
+          phone_number: profileData.phone_number.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
