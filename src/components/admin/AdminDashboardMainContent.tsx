@@ -4,6 +4,7 @@ import { UserManagement } from "./UserManagement";
 import { AdminManagement } from "./AdminManagement";
 import { SalesCharts } from "./SalesCharts";
 import { LayoutDashboard, Users, Shield, ShoppingBag } from "lucide-react";
+import { PurchasesManagement } from "./PurchasesManagement";
 
 export default function AdminDashboardMainContent() {
   return (
@@ -18,7 +19,7 @@ export default function AdminDashboardMainContent() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="mb-4 grid grid-cols-2 md:w-[300px] bg-[#f0e8d9]">
+        <TabsList className="mb-4 grid grid-cols-3 md:w-[450px] bg-[#f0e8d9]">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Users
@@ -27,12 +28,19 @@ export default function AdminDashboardMainContent() {
             <Shield className="h-4 w-4" />
             Admins
           </TabsTrigger>
+          <TabsTrigger value="purchases" className="flex items-center gap-2">
+            <ShoppingBag className="h-4 w-4" />
+            Purchases
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users">
           <UserManagement />
         </TabsContent>
         <TabsContent value="admins">
           <AdminManagement />
+        </TabsContent>
+        <TabsContent value="purchases">
+          <PurchasesManagement />
         </TabsContent>
       </Tabs>
     </div>
