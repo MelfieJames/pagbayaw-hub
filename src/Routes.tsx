@@ -13,6 +13,7 @@ import Checkout from "@/pages/Checkout";
 import AchievementDetail from "@/pages/AchievementDetail";
 import MyRatings from "@/pages/MyRatings";
 import UserProfile from "@/pages/UserProfile";
+import PurchaseHistory from "@/pages/PurchaseHistory";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -68,6 +69,14 @@ const Routes = () => {
         element={
           <ProtectedRoute>
             <MyRatings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/purchases"
+        element={
+          <ProtectedRoute>
+            <PurchaseHistory />
           </ProtectedRoute>
         }
       />

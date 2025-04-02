@@ -145,6 +145,14 @@ export default function UserProfile() {
     );
   }
 
+  // Check if profile is complete
+  const isProfileComplete = !!(
+    profileData.first_name?.trim() && 
+    profileData.last_name?.trim() && 
+    profileData.phone_number?.trim() && 
+    profileData.location?.trim()
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -163,6 +171,11 @@ export default function UserProfile() {
               <CardDescription>
                 Update your personal information. This information will be used for order processing.
               </CardDescription>
+              {isProfileComplete && (
+                <div className="mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs flex items-center w-fit">
+                  <Check className="h-3 w-3 mr-1" /> Profile Complete
+                </div>
+              )}
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-6 pt-6">
