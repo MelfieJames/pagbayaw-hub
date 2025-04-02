@@ -4,13 +4,13 @@ import { UserManagement } from "./UserManagement";
 import { AdminManagement } from "./AdminManagement";
 import { RecentPurchases } from "./RecentPurchases";
 import { SalesCharts } from "./SalesCharts";
-import { DashboardIcon, Users, Shield, ShoppingBag } from "lucide-react";
+import { LayoutDashboard, Users, Shield, ShoppingBag } from "lucide-react";
 
 export default function AdminDashboardMainContent() {
   return (
     <div className="p-4 md:p-6">
       <h1 className="text-3xl font-bold mb-6 flex items-center gap-2 text-[#8B7355]">
-        <DashboardIcon className="h-7 w-7" />
+        <LayoutDashboard className="h-7 w-7" />
         Dashboard
       </h1>
       
