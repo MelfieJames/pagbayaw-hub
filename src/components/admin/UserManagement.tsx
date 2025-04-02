@@ -24,7 +24,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { User, UserX, Search, Mail, Calendar, MapPin } from "lucide-react";
+import { User, UserX, Search, Mail, Calendar, MapPin, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -51,46 +51,27 @@ export function UserManagement() {
     queryKey: ['admin-users'],
     queryFn: async () => {
       try {
-        // Get all users from the profiles table
-        const { data: profiles, error: profileError } = await supabase
+        // Get profiles from profiles table
+        const { data: profiles, error } = await supabase
           .from('profiles')
           .select('*');
         
-        if (profileError) {
-          console.error("Profiles fetch error:", profileError);
-          throw profileError;
+        if (error) {
+          console.error("Error fetching profiles:", error);
+          throw error;
         }
         
-        if (profiles && profiles.length > 0) {
-          return profiles.map(profile => ({
-            id: profile.id,
-            email: profile.email,
-            created_at: profile.created_at,
-            updated_at: profile.updated_at,
-            first_name: profile.first_name || '',
-            last_name: profile.last_name || '',
-            location: profile.location || ''
-          }));
-        }
-
-        // Fallback to auth.users if profiles doesn't return data
-        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-        
-        if (authError) {
-          console.error("Error fetching auth users:", authError);
-          throw authError;
-        }
-        
-        return authUsers.users.map(user => ({
-          id: user.id,
-          email: user.email,
-          created_at: user.created_at,
-          updated_at: user.updated_at || user.created_at,
-          first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || ''
+        return profiles.map(profile => ({
+          id: profile.id,
+          email: profile.email,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at,
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          location: profile.location || ''
         }));
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error in user fetching:", error);
         throw error;
       }
     }
@@ -98,21 +79,20 @@ export function UserManagement() {
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // First, call our edge function to clean up user reviews
       try {
-        const { error: cleanupError } = await supabase.functions.invoke('cleanup-user-reviews', {
-          body: { userId }
-        });
+        // Delete the user's profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+          
+        if (profileError) throw profileError;
         
-        if (cleanupError) throw cleanupError;
+        return userId;
       } catch (error) {
-        console.error("Error cleaning up user data:", error);
+        console.error("Error deleting user:", error);
+        throw error;
       }
-      
-      // Then delete the user
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      if (error) throw error;
-      return userId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -142,7 +122,7 @@ export function UserManagement() {
 
   const filteredUsers = users.filter((user: UserProfile) => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -155,7 +135,7 @@ export function UserManagement() {
 
   const getFullName = (user: UserProfile) => {
     if (user.first_name || user.last_name) {
-      return `${user.first_name} ${user.last_name}`.trim();
+      return `${user.first_name || ''} ${user.last_name || ''}`.trim();
     }
     return 'Unknown';
   };
@@ -163,14 +143,20 @@ export function UserManagement() {
   return (
     <Card className="border-2 border-[#C4A484]">
       <CardHeader className="bg-[#F5F5DC]">
-        <CardTitle className="text-[#8B7355] flex items-center gap-2">
-          <User className="h-5 w-5" />
-          User Management
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-[#8B7355] flex items-center gap-2">
+            <User className="h-5 w-5" />
+            User Management
+          </CardTitle>
+          <Button variant="outline" className="flex items-center gap-2 border-[#8B7355] text-[#8B7355] hover:bg-[#F5F5DC]">
+            <UserPlus className="h-4 w-4" />
+            <span>Add User</span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="relative w-64">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2 top-3 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search users..."
@@ -189,14 +175,14 @@ export function UserManagement() {
             <LoadingSpinner size="lg" />
           </div>
         ) : (
-          <div className="border rounded-md">
+          <div className="border rounded-md overflow-hidden">
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead className="hidden md:table-cell">Location</TableHead>
+                  <TableHead className="hidden md:table-cell">Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -213,7 +199,7 @@ export function UserManagement() {
                           </Avatar>
                           <div>
                             <div className="font-medium">{getFullName(user)}</div>
-                            <div className="text-xs text-gray-500">ID: {user.id.substring(0, 8)}...</div>
+                            <div className="text-xs text-gray-500">ID: {user.id?.substring(0, 8)}...</div>
                           </div>
                         </div>
                       </TableCell>
@@ -223,7 +209,7 @@ export function UserManagement() {
                           {user.email}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {user.location ? (
                           <div className="flex items-center gap-1 text-sm">
                             <MapPin className="h-3 w-3 text-gray-400" />
@@ -233,7 +219,7 @@ export function UserManagement() {
                           <span className="text-gray-400 text-sm">Not specified</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-1 text-sm">
                           <Calendar className="h-3 w-3 text-gray-400" />
                           {user.created_at ? format(new Date(user.created_at), 'MMM d, yyyy') : 'Unknown'}

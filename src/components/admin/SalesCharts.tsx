@@ -1,10 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 interface ProductSale {
   product_id: number;
@@ -40,9 +43,10 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 export function SalesCharts() {
   
   const [topProducts, setTopProducts] = useState<ProductData[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductData[]>([]);
   const [salesByDay, setSalesByDay] = useState<DailySales[]>([]);
-  const [profileCompletion, setProfileCompletion] = useState<ProductData[]>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>('week');
+  const [searchTerm, setSearchTerm] = useState('');
   
   const { data: purchaseData, isLoading: purchasesLoading } = useQuery({
     queryKey: ['admin-sales-data'],
@@ -89,23 +93,6 @@ export function SalesCharts() {
     },
   });
   
-  const { data: profilesData, isLoading: profilesLoading } = useQuery({
-    queryKey: ['admin-profiles-data'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
-      
-      if (error) {
-        console.error("Profiles fetch error:", error);
-        throw error;
-      }
-      
-      return data || [];
-    },
-  });
-
-  
   useEffect(() => {
     if (purchaseData) {
       processDailySalesData();
@@ -117,12 +104,10 @@ export function SalesCharts() {
       processTopProductsData();
     }
   }, [purchaseItems]);
-  
+
   useEffect(() => {
-    if (profilesData) {
-      processProfileCompletionData();
-    }
-  }, [profilesData]);
+    filterProducts();
+  }, [topProducts, searchTerm]);
 
   const processDailySalesData = () => {
     if (!purchaseData) return;
@@ -188,8 +173,7 @@ export function SalesCharts() {
     
     // Convert to array and sort by total sales
     const sortedProducts = Object.values(productSales)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5); // Get top 5
+      .sort((a, b) => b.total - a.total);
     
     // Create properly typed product data for the chart
     const topProductsData: ProductData[] = sortedProducts.map((product, index) => ({
@@ -199,29 +183,20 @@ export function SalesCharts() {
     }));
     
     setTopProducts(topProductsData);
+    setFilteredProducts(topProductsData.slice(0, 5));
   };
   
-  const processProfileCompletionData = () => {
-    if (!profilesData) return;
+  const filterProducts = () => {
+    if (!topProducts) return;
     
-    let complete = 0;
-    let incomplete = 0;
+    const filtered = topProducts
+      .filter(product => product.product_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      .slice(0, 5);
     
-    profilesData.forEach(profile => {
-      if (profile.first_name && profile.last_name && profile.phone_number && profile.location) {
-        complete++;
-      } else {
-        incomplete++;
-      }
-    });
-    
-    setProfileCompletion([
-      { product_name: 'Complete', value: complete, color: '#82ca9d' },
-      { product_name: 'Incomplete', value: incomplete, color: '#FF8042' }
-    ]);
+    setFilteredProducts(filtered);
   };
 
-  const isLoading = purchasesLoading || itemsLoading || profilesLoading;
+  const isLoading = purchasesLoading || itemsLoading;
 
   if (isLoading) {
     return (
@@ -275,74 +250,53 @@ export function SalesCharts() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Top Products Chart */}
-        <Card className="border-2 border-[#C4A484]">
-          <CardHeader>
-            <CardTitle className="text-[#8B7355]">Top Products</CardTitle>
-            <CardDescription>Top 5 selling products by revenue</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={topProducts}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis 
-                    dataKey="product_name" 
-                    angle={-45} 
-                    textAnchor="end"
-                    height={70}
-                    interval={0}
-                  />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`₱${value}`, 'Revenue']} />
-                  <Bar dataKey="value">
-                    {topProducts.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+      {/* Top Products Chart - Now full width */}
+      <Card className="border-2 border-[#C4A484]">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle className="text-[#8B7355]">Top Products by Revenue</CardTitle>
+              <CardDescription>Top selling products by revenue</CardDescription>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Profile Completion Chart */}
-        <Card className="border-2 border-[#C4A484]">
-          <CardHeader>
-            <CardTitle className="text-[#8B7355]">Profile Completion</CardTitle>
-            <CardDescription>Number of users with completed profiles</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={profileCompletion}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="product_name"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {profileCompletion.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Legend verticalAlign="bottom" height={36} />
-                  <Tooltip formatter={(value) => [value, 'Users']} />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search products..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={filteredProducts}
+                margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis 
+                  dataKey="product_name" 
+                  angle={-45} 
+                  textAnchor="end"
+                  height={70}
+                  interval={0}
+                />
+                <YAxis />
+                <Tooltip formatter={(value) => [`₱${value}`, 'Revenue']} />
+                <Legend />
+                <Bar dataKey="value" name="Revenue">
+                  {filteredProducts.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
