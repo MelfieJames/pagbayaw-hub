@@ -3,8 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "./UserManagement";
 import { AdminManagement } from "./AdminManagement";
 import { SalesCharts } from "./SalesCharts";
-import { LayoutDashboard, Users, Shield, ShoppingBag } from "lucide-react";
 import { PurchasesManagement } from "./PurchasesManagement";
+import { LayoutDashboard, Users, Shield, ShoppingBag } from "lucide-react";
 
 export default function AdminDashboardMainContent() {
   return (

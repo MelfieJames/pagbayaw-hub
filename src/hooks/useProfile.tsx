@@ -13,6 +13,12 @@ export interface ProfileData {
   phone_number: string;
 }
 
+/**
+ * Hook to manage user profile data
+ * @param redirectIfIncomplete If true, will redirect to profile page if profile is incomplete
+ * @param redirectPath Path to redirect to if profile is incomplete
+ * @returns Profile data and functions
+ */
 export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -82,6 +88,11 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     fetchProfile();
   }, [user, navigate, redirectIfIncomplete, redirectPath]);
 
+  /**
+   * Update user profile in the database
+   * @param profileData Profile data to update
+   * @returns Promise resolving to success status
+   */
   const updateProfile = async (profileData: ProfileData) => {
     if (!user) return false;
 
