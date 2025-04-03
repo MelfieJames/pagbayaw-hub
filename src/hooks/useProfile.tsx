@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export interface ProfileData {
   first_name: string;
@@ -22,6 +22,7 @@ export interface ProfileData {
 export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [profileData, setProfileData] = useState<ProfileData>({
     first_name: "",
     middle_name: "",
@@ -121,9 +122,18 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     }
   };
 
+  // Helper to update specific fields
+  const updateProfileField = (field: keyof ProfileData, value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return {
     profileData,
     setProfileData,
+    updateProfileField,
     isLoading,
     isComplete,
     updateProfile

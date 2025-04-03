@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { 
   Table, 
@@ -10,23 +10,10 @@ import {
   TableBody, 
   TableCell 
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { User, UserX, Search, Mail, Calendar, MapPin, UserPlus, Phone } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
+import { User, Mail, Calendar, MapPin, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
@@ -44,10 +31,6 @@ interface UserProfile {
 
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -70,49 +53,6 @@ export function UserManagement() {
       }
     }
   });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      try {
-        // Delete the user's profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userId);
-          
-        if (profileError) throw profileError;
-        
-        return userId;
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({ title: "User deleted successfully" });
-      setIsDeleteDialogOpen(false);
-      setSelectedUserId(null);
-    },
-    onError: (error: Error) => {
-      toast({ 
-        title: "Error deleting user", 
-        description: error.message,
-        variant: "destructive"
-      });
-    },
-  });
-
-  const handleDeleteClick = (userId: string) => {
-    setSelectedUserId(userId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (selectedUserId) {
-      deleteMutation.mutateAsync(selectedUserId);
-    }
-  };
 
   const filteredUsers = users.filter((user: UserProfile) => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -148,18 +88,6 @@ export function UserManagement() {
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-        </div>
-
         {isLoading ? (
           <div className="flex justify-center p-8">
             <LoadingSpinner size="lg" />
@@ -173,7 +101,6 @@ export function UserManagement() {
                   <TableHead>Contact</TableHead>
                   <TableHead className="hidden md:table-cell">Details</TableHead>
                   <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -223,17 +150,6 @@ export function UserManagement() {
                           {user.created_at ? format(new Date(user.created_at), 'MMM d, yyyy') : 'Unknown'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDeleteClick(user.id)}
-                          className="h-8"
-                        >
-                          <UserX className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -248,27 +164,6 @@ export function UserManagement() {
           </div>
         )}
       </CardContent>
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account
-              and all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   );
 }
