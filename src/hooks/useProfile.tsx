@@ -110,7 +110,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     try {
       console.log("Updating profile with data:", profileData);
       
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({
           first_name: profileData.first_name.trim(),
@@ -120,18 +120,42 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
           phone_number: profileData.phone_number.trim(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.id)
-        .select();
+        .eq('id', user.id);
 
       if (error) {
         console.error("Error updating profile:", error);
         throw error;
       }
       
-      console.log("Profile updated successfully:", data);
-      setProfileData(profileData);
-      setIsComplete(true);
-      setIsFetched(true);
+      // Fetch the updated profile to confirm changes
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('first_name, middle_name, last_name, location, phone_number')
+        .eq('id', user.id)
+        .single();
+      
+      console.log("Profile updated successfully:", updatedProfile);
+      
+      if (updatedProfile) {
+        setProfileData({
+          first_name: updatedProfile.first_name || "",
+          middle_name: updatedProfile.middle_name || "",
+          last_name: updatedProfile.last_name || "",
+          location: updatedProfile.location || "",
+          phone_number: updatedProfile.phone_number || ""
+        });
+        
+        const isProfileComplete = !!(
+          updatedProfile.first_name?.trim() && 
+          updatedProfile.last_name?.trim() && 
+          updatedProfile.phone_number?.trim() && 
+          updatedProfile.location?.trim()
+        );
+        
+        setIsComplete(isProfileComplete);
+        setIsFetched(true);
+      }
+      
       return true;
     } catch (error) {
       console.error("Error updating profile:", error);
