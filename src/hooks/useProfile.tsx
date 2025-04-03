@@ -34,6 +34,47 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
   const [isComplete, setIsComplete] = useState(false);
   const [isFetched, setIsFetched] = useState(false);
 
+  // Check if profile exists and create if it doesn't
+  const ensureProfileExists = async () => {
+    if (!user) return;
+    
+    try {
+      // Check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Error checking profile:", checkError);
+        return;
+      }
+      
+      // If profile doesn't exist, create it
+      if (!existingProfile) {
+        console.log("Profile doesn't exist, creating one for user:", user.id);
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert({ 
+            id: user.id,
+            email: user.email,
+            first_name: "",
+            middle_name: "",
+            last_name: "",
+            location: "",
+            phone_number: ""
+          });
+          
+        if (createError) {
+          console.error("Error creating profile:", createError);
+        }
+      }
+    } catch (error) {
+      console.error("Error in ensureProfileExists:", error);
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       return;
@@ -42,6 +83,10 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
+        
+        // Ensure profile exists before fetching
+        await ensureProfileExists();
+        
         console.log("Fetching profile for user:", user.id);
         
         const { data, error } = await supabase
@@ -110,6 +155,10 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     try {
       console.log("Updating profile with data:", profileData);
       
+      // First ensure profile exists
+      await ensureProfileExists();
+      
+      // Update the profile
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -128,11 +177,16 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
       }
       
       // Fetch the updated profile to confirm changes
-      const { data: updatedProfile } = await supabase
+      const { data: updatedProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('first_name, middle_name, last_name, location, phone_number')
         .eq('id', user.id)
         .single();
+      
+      if (fetchError) {
+        console.error("Error fetching updated profile:", fetchError);
+        throw fetchError;
+      }
       
       console.log("Profile updated successfully:", updatedProfile);
       
