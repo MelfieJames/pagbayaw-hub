@@ -27,7 +27,8 @@ export default function UserProfile() {
     profileData, 
     updateProfileField, 
     isLoading, 
-    isComplete, 
+    isComplete,
+    isFetched,
     updateProfile 
   } = useProfile();
 
@@ -72,6 +73,7 @@ export default function UserProfile() {
     try {
       const success = await updateProfile(profileData);
       if (success) {
+        toast.success("Profile updated successfully");
         setShowSuccessModal(true);
       }
     } finally {
@@ -116,7 +118,7 @@ export default function UserProfile() {
           </div>
           
           <Card className="shadow-lg border-t-4 border-t-primary">
-            <ProfileHeader isComplete={isComplete} />
+            <ProfileHeader isComplete={isComplete} isFetched={isFetched} />
             
             <ProfileForm 
               profileData={profileData}

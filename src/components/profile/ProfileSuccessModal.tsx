@@ -30,7 +30,7 @@ export default function ProfileSuccessModal({
             Profile Updated
           </DialogTitle>
           <DialogDescription>
-            Your profile information has been successfully updated.
+            Your profile information has been successfully saved to the database.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

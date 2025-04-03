@@ -32,6 +32,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
+  const [isFetched, setIsFetched] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -41,14 +42,21 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching profile for user:", user.id);
+        
         const { data, error } = await supabase
           .from('profiles')
           .select('first_name, middle_name, last_name, location, phone_number')
           .eq('id', user.id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching profile:", error);
+          throw error;
+        }
 
+        console.log("Profile data fetched:", data);
+        
         if (data) {
           const profileFields = {
             first_name: data.first_name || "",
@@ -59,6 +67,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
           };
           
           setProfileData(profileFields);
+          setIsFetched(true);
           
           // Check if profile is complete
           const isProfileComplete = !!(
@@ -69,6 +78,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
           );
           
           setIsComplete(isProfileComplete);
+          console.log("Profile is complete:", isProfileComplete);
           
           // If redirectIfIncomplete is true and profile is not complete, redirect to profile page
           if (redirectIfIncomplete && !isProfileComplete && redirectPath) {
@@ -98,7 +108,9 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     if (!user) return false;
 
     try {
-      const { error } = await supabase
+      console.log("Updating profile with data:", profileData);
+      
+      const { error, data } = await supabase
         .from('profiles')
         .update({
           first_name: profileData.first_name.trim(),
@@ -108,12 +120,18 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
           phone_number: profileData.phone_number.trim(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+      }
       
+      console.log("Profile updated successfully:", data);
       setProfileData(profileData);
       setIsComplete(true);
+      setIsFetched(true);
       return true;
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -136,6 +154,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     updateProfileField,
     isLoading,
     isComplete,
+    isFetched,
     updateProfile
   };
 };

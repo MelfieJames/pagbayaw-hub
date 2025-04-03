@@ -1,10 +1,8 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserManagement } from "./UserManagement";
-import { AdminManagement } from "./AdminManagement";
 import { SalesCharts } from "./SalesCharts";
 import { PurchasesManagement } from "./PurchasesManagement";
-import { LayoutDashboard, Users, Shield, ShoppingBag } from "lucide-react";
+import { LayoutDashboard, ShoppingBag } from "lucide-react";
 
 export default function AdminDashboardMainContent() {
   return (
@@ -18,27 +16,13 @@ export default function AdminDashboardMainContent() {
         <SalesCharts />
       </div>
 
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="mb-4 grid grid-cols-3 md:w-[450px] bg-[#f0e8d9]">
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Users
-          </TabsTrigger>
-          <TabsTrigger value="admins" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Admins
-          </TabsTrigger>
+      <Tabs defaultValue="purchases" className="w-full">
+        <TabsList className="mb-4 grid md:w-[200px] bg-[#f0e8d9]">
           <TabsTrigger value="purchases" className="flex items-center gap-2">
             <ShoppingBag className="h-4 w-4" />
             Purchases
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="users">
-          <UserManagement />
-        </TabsContent>
-        <TabsContent value="admins">
-          <AdminManagement />
-        </TabsContent>
         <TabsContent value="purchases">
           <PurchasesManagement />
         </TabsContent>
