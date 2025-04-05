@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -111,8 +111,17 @@ serve(async (req) => {
               })
               .select();
               
-            if (error) throw error;
-            profileResult = data?.[0];
+            if (error) {
+              console.error("Error creating profile:", error);
+              throw error;
+            }
+            
+            if (!data || data.length === 0) {
+              console.error("No data returned after profile creation");
+              throw new Error("No data returned after profile creation");
+            }
+            
+            profileResult = data[0];
           } else {
             console.log("Profile exists, updating profile");
             // Update existing profile
@@ -129,12 +138,17 @@ serve(async (req) => {
               .eq('id', user.id)
               .select();
               
-            if (error) throw error;
-            profileResult = data?.[0];
-          }
-          
-          if (!profileResult) {
-            throw new Error("No data returned after profile operation");
+            if (error) {
+              console.error("Error updating profile:", error);
+              throw error;
+            }
+            
+            if (!data || data.length === 0) {
+              console.error("No data returned after profile update");
+              throw new Error("No data returned after profile update");
+            }
+            
+            profileResult = data[0];
           }
           
           console.log("Profile updated successfully:", profileResult);
