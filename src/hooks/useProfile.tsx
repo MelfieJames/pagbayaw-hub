@@ -34,8 +34,9 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
   const [isComplete, setIsComplete] = useState(false);
   const [isFetched, setIsFetched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  // Fetch profile data using Edge Function instead of direct database access
+  // Fetch profile data using Edge Function
   const fetchProfileViaEdgeFunction = async () => {
     if (!user) return null;
     
@@ -75,12 +76,8 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     
     try {
       setError(null);
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) {
-        throw new Error("Failed to get session");
-      }
       
-      // Validate required fields before sending
+      // Validate the data before sending
       if (!profileData.first_name.trim()) {
         throw new Error("First name is required");
       }
@@ -97,6 +94,13 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         throw new Error("Phone number is required");
       }
       
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        throw new Error("Failed to get session");
+      }
+      
+      console.log("Sending profile data:", profileData);
+      
       const response = await fetch(`https://msvlqapipscspxukbhyb.supabase.co/functions/v1/debug-profile`, {
         method: 'POST',
         headers: {
@@ -111,6 +115,10 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
       if (!response.ok) {
         console.error("Error response from edge function:", result);
         throw new Error(result.error || "Failed to update profile");
+      }
+      
+      if (!result.profile) {
+        throw new Error("No profile data returned");
       }
       
       console.log("Profile updated via edge function:", result);
@@ -170,13 +178,19 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         console.error("Error fetching profile:", error);
         setError(error instanceof Error ? error.message : "Failed to load profile data");
         toast.error("Failed to load profile data");
+        
+        // Try again if we've failed less than 3 times
+        if (retryCount < 3) {
+          setRetryCount(prev => prev + 1);
+          setTimeout(fetchProfile, 2000); // Retry after 2 seconds
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProfile();
-  }, [user, navigate, redirectIfIncomplete, redirectPath]);
+  }, [user, navigate, redirectIfIncomplete, redirectPath, retryCount]);
 
   /**
    * Update user profile in the database
