@@ -39,29 +39,57 @@ serve(async (req) => {
       });
     }
     
+    console.log(`Cleaning up data for user: ${userId}`);
+    
     // Delete all reviews for the user to allow user deletion
-    const { error: reviewsDeleteError } = await supabaseClient
-      .from('reviews')
-      .delete()
-      .eq('user_id', userId);
-      
-    if (reviewsDeleteError) {
-      console.error('Error deleting user reviews:', reviewsDeleteError);
-      return new Response(JSON.stringify({ error: reviewsDeleteError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    try {
+      const { error: reviewsDeleteError } = await supabaseClient
+        .from('reviews')
+        .delete()
+        .eq('user_id', userId);
+        
+      if (reviewsDeleteError) {
+        console.error('Error deleting reviews:', reviewsDeleteError);
+      } else {
+        console.log('Successfully deleted reviews');
+      }
+    } catch (error) {
+      console.error('Error in reviews deletion:', error);
     }
     
-    return new Response(JSON.stringify({ success: true, message: 'User reviews deleted successfully' }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Delete cart items
+    try {
+      const { error: cartDeleteError } = await supabaseClient
+        .from('cart')
+        .delete()
+        .eq('user_id', userId);
+        
+      if (cartDeleteError) {
+        console.error('Error deleting cart items:', cartDeleteError);
+      } else {
+        console.log('Successfully deleted cart items');
+      }
+    } catch (error) {
+      console.error('Error in cart deletion:', error);
+    }
+    
+    // We'll continue even if some deletions fail, as we want to clean up as much as possible
+    
+    return new Response(
+      JSON.stringify({ success: true, message: 'User data cleaned up successfully' }), 
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error) {
     console.error('Unexpected error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message || 'Internal server error' }), 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 })

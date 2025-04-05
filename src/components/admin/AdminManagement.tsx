@@ -34,7 +34,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Shield, UserX, UserPlus, Mail, Calendar, AlertTriangle } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +50,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { handleUserAuth } from "@/services/authService";
 
 interface AdminProfile {
   id: string;
@@ -68,7 +69,6 @@ export function AdminManagement() {
   const [selectedAdminId, setSelectedAdminId] = useState<string | null>(null);
   const [isAddingAdmin, setIsAddingAdmin] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof adminFormSchema>>({
@@ -83,24 +83,29 @@ export function AdminManagement() {
     queryKey: ['admin-list'],
     queryFn: async () => {
       try {
-        // In a real application, you would have a proper admins table or role system
-        // For this example, we'll return all users who have admin role
+        // For demo purposes, we'll just fetch all profiles and assume the first one is an admin
+        // In a real app, you'd query a user_roles table to get actual admins
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .limit(1);
+          .limit(10);
         
-        // Filtering sample - in a real app, you'd have a proper admin role check
         if (error) throw error;
         
-        // Just for demonstration, we're treating the first user as admin
-        // In a real app, you would check a roles table
-        return data.length > 0 ? [data[0]] : [];
+        // Map profiles to admin format
+        const adminProfiles = data.map(profile => ({
+          id: profile.id,
+          email: profile.email,
+          created_at: profile.created_at
+        }));
+        
+        return adminProfiles.length > 0 ? [adminProfiles[0]] : [];
       } catch (error) {
         console.error("Error fetching admins:", error);
         throw error;
       }
-    }
+    },
+    refetchInterval: 10000, // Refresh every 10 seconds
   });
 
   const createAdminAccount = async (values: z.infer<typeof adminFormSchema>) => {
@@ -108,38 +113,32 @@ export function AdminManagement() {
     setIsAddingAdmin(true);
     
     try {
-      // Create user through direct API access is restricted
-      // In a real production app, you'd need a function for this
-      // Instead, we'll create a regular user and mark it as admin in profiles
+      // Use the handleUserAuth service to create a regular user account
+      const { user, error } = await handleUserAuth(false, values.email, values.password);
       
-      // Signup the user first
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-      });
+      if (error) {
+        throw new Error(error.message || "Failed to create user account");
+      }
       
-      if (signupError) throw signupError;
-      
-      if (!signupData.user) {
+      if (!user) {
         throw new Error("Failed to create user");
       }
 
-      // This would be where you'd mark the user as admin in your roles system
-      // For this example, we'll just show a success message
-      
-      toast({ 
-        title: "Admin created successfully", 
-        description: "The user has been registered. For full admin privileges, you'll need to grant them in the Supabase dashboard."
+      // We'd typically update a roles table here to grant admin privileges
+      // For this demo, we'll just show a success message
+      toast.success("User account created successfully", {
+        description: "In a production app, you would now grant admin privileges to this user."
       });
       
       queryClient.invalidateQueries({ queryKey: ['admin-list'] });
       form.reset();
       setIsAddDialogOpen(false);
       
-      return signupData.user.id;
+      return user.id;
     } catch (error: any) {
       console.error("Error creating admin:", error);
       setAdminError(error.message || "Failed to create admin account");
+      toast.error(error.message || "Failed to create admin account");
       throw error;
     } finally {
       setIsAddingAdmin(false);
@@ -148,7 +147,25 @@ export function AdminManagement() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // First delete from profiles table
+      // First clean up user records
+      try {
+        const cleanupResponse = await fetch('https://msvlqapipscspxukbhyb.supabase.co/functions/v1/cleanup-user-reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+          body: JSON.stringify({ userId })
+        });
+        
+        if (!cleanupResponse.ok) {
+          console.warn("Warning: Error cleaning up user data but continuing with deletion");
+        }
+      } catch (cleanupError) {
+        console.warn("Warning: Error cleaning up user data but continuing with deletion", cleanupError);
+      }
+      
+      // Delete from profiles table which is what we can directly access
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -156,17 +173,13 @@ export function AdminManagement() {
         
       if (profileError) throw profileError;
         
-      toast({ title: "Admin removed successfully" });
+      toast.success("Admin removed successfully");
       queryClient.invalidateQueries({ queryKey: ['admin-list'] });
       setIsDeleteDialogOpen(false);
       setSelectedAdminId(null);
     } catch (error: any) {
       console.error("Error deleting admin:", error);
-      toast({ 
-        title: "Failed to delete admin", 
-        description: error.message || "An error occurred",
-        variant: "destructive"
-      });
+      toast.error("Failed to delete admin: " + (error.message || "An error occurred"));
     }
   };
 
@@ -249,11 +262,11 @@ export function AdminManagement() {
                     <p className="font-medium flex items-center gap-1 mb-1">
                       <AlertTriangle className="h-4 w-4" /> Important Note
                     </p>
-                    <p>Admin creation through the UI is limited. For full admin rights, create the user here then grant additional permissions through the Supabase dashboard.</p>
+                    <p>This will create a regular user account. In a production app, additional steps would be needed to grant admin privileges.</p>
                   </div>
                   <DialogFooter>
                     <Button type="submit" disabled={isAddingAdmin} className="bg-[#8B7355] hover:bg-[#9b815f]">
-                      {isAddingAdmin ? "Creating..." : "Create Admin"}
+                      {isAddingAdmin ? "Creating..." : "Create User"}
                     </Button>
                   </DialogFooter>
                 </form>
