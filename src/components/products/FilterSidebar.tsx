@@ -7,15 +7,23 @@ interface FilterSidebarProps {
   products: Product[];
   selectedCategory: string | null;
   setSelectedCategory: (category: string | null) => void;
+  selectedRating: number | null;
+  setSelectedRating: (rating: number | null) => void;
 }
 
-export function FilterSidebar({ products, selectedCategory, setSelectedCategory }: FilterSidebarProps) {
+export function FilterSidebar({ 
+  products, 
+  selectedCategory, 
+  setSelectedCategory,
+  selectedRating,
+  setSelectedRating
+}: FilterSidebarProps) {
   const categories = [...new Set(products.map(product => product.category))];
 
   return (
     <div className="space-y-6">
       <div className="sticky top-24">
-        <div>
+        <div className="mb-6">
           <h2 className="text-lg font-semibold mb-3">Category</h2>
           <div className="space-y-2">
             <Button 
@@ -42,12 +50,22 @@ export function FilterSidebar({ products, selectedCategory, setSelectedCategory 
           <h2 className="text-lg font-semibold mb-3">Customer Reviews</h2>
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map((rating) => (
-              <div key={rating} className="flex items-center space-x-1 text-muted-foreground">
-                {Array(rating).fill(0).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-current" />
-                ))}
-                <span>& up</span>
-              </div>
+              <Button
+                key={rating}
+                variant={selectedRating === rating ? "secondary" : "outline"}
+                onClick={() => setSelectedRating(selectedRating === rating ? null : rating)}
+                className="w-full justify-start flex items-center"
+              >
+                <div className="flex items-center space-x-1">
+                  {Array(rating).fill(0).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                  {Array(5 - rating).fill(0).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 text-gray-300" />
+                  ))}
+                  <span className="ml-2">& up</span>
+                </div>
+              </Button>
             ))}
           </div>
         </div>

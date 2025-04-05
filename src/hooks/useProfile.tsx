@@ -34,49 +34,74 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
   const [isComplete, setIsComplete] = useState(false);
   const [isFetched, setIsFetched] = useState(false);
 
-  // Check if profile exists and create if it doesn't
-  const ensureProfileExists = async () => {
-    if (!user) return;
+  // Fetch profile data using Edge Function instead of direct database access
+  const fetchProfileViaEdgeFunction = async () => {
+    if (!user) return null;
     
     try {
-      // Check if profile exists
-      const { data: existingProfile, error: checkError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-        
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error("Error checking profile:", checkError);
-        return;
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        throw new Error("Failed to get session");
       }
       
-      // If profile doesn't exist, create it
-      if (!existingProfile) {
-        console.log("Profile doesn't exist, creating one for user:", user.id);
-        const { error: createError } = await supabase
-          .from('profiles')
-          .insert({ 
-            id: user.id,
-            email: user.email,
-            first_name: "",
-            middle_name: "",
-            last_name: "",
-            location: "",
-            phone_number: ""
-          });
-          
-        if (createError) {
-          console.error("Error creating profile:", createError);
+      const response = await fetch(`https://msvlqapipscspxukbhyb.supabase.co/functions/v1/debug-profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json'
         }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch profile");
       }
+      
+      const result = await response.json();
+      console.log("Profile fetched via edge function:", result);
+      return result.profile;
     } catch (error) {
-      console.error("Error in ensureProfileExists:", error);
+      console.error("Error fetching profile via edge function:", error);
+      return null;
+    }
+  };
+
+  // Update profile data using Edge Function
+  const updateProfileViaEdgeFunction = async (profileData: ProfileData) => {
+    if (!user) return false;
+    
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        throw new Error("Failed to get session");
+      }
+      
+      const response = await fetch(`https://msvlqapipscspxukbhyb.supabase.co/functions/v1/debug-profile`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update profile");
+      }
+      
+      const result = await response.json();
+      console.log("Profile updated via edge function:", result);
+      return result.profile;
+    } catch (error) {
+      console.error("Error updating profile via edge function:", error);
+      return null;
     }
   };
 
   useEffect(() => {
     if (!user) {
+      setIsLoading(false);
       return;
     }
 
@@ -84,31 +109,15 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
       try {
         setIsLoading(true);
         
-        // Ensure profile exists before fetching
-        await ensureProfileExists();
+        const profileData = await fetchProfileViaEdgeFunction();
         
-        console.log("Fetching profile for user:", user.id);
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('first_name, middle_name, last_name, location, phone_number')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error("Error fetching profile:", error);
-          throw error;
-        }
-
-        console.log("Profile data fetched:", data);
-        
-        if (data) {
+        if (profileData) {
           const profileFields = {
-            first_name: data.first_name || "",
-            middle_name: data.middle_name || "",
-            last_name: data.last_name || "",
-            location: data.location || "",
-            phone_number: data.phone_number || ""
+            first_name: profileData.first_name || "",
+            middle_name: profileData.middle_name || "",
+            last_name: profileData.last_name || "",
+            location: profileData.location || "",
+            phone_number: profileData.phone_number || ""
           };
           
           setProfileData(profileFields);
@@ -155,40 +164,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     try {
       console.log("Updating profile with data:", profileData);
       
-      // First ensure profile exists
-      await ensureProfileExists();
-      
-      // Update the profile
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: profileData.first_name.trim(),
-          middle_name: profileData.middle_name.trim(),
-          last_name: profileData.last_name.trim(),
-          location: profileData.location.trim(),
-          phone_number: profileData.phone_number.trim(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (error) {
-        console.error("Error updating profile:", error);
-        throw error;
-      }
-      
-      // Fetch the updated profile to confirm changes
-      const { data: updatedProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('first_name, middle_name, last_name, location, phone_number')
-        .eq('id', user.id)
-        .single();
-      
-      if (fetchError) {
-        console.error("Error fetching updated profile:", fetchError);
-        throw fetchError;
-      }
-      
-      console.log("Profile updated successfully:", updatedProfile);
+      const updatedProfile = await updateProfileViaEdgeFunction(profileData);
       
       if (updatedProfile) {
         setProfileData({
@@ -208,9 +184,10 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         
         setIsComplete(isProfileComplete);
         setIsFetched(true);
+        return true;
+      } else {
+        throw new Error("Failed to update profile");
       }
-      
-      return true;
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");

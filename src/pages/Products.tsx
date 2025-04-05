@@ -29,6 +29,7 @@ export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
   
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -265,6 +266,8 @@ export default function Products() {
             products={products}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
+            selectedRating={selectedRating}
+            setSelectedRating={setSelectedRating}
           />
 
           <div className="md:col-span-3">
@@ -278,6 +281,7 @@ export default function Products() {
                 products={products}
                 searchQuery={searchQuery}
                 selectedCategory={selectedCategory}
+                selectedRating={selectedRating}
                 inventoryData={inventoryData || []}
                 productRatings={productRatings}
                 onProductClick={setSelectedProduct}

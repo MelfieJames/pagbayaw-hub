@@ -7,6 +7,7 @@ interface ProductListProps {
   products: Product[];
   searchQuery: string;
   selectedCategory: string | null;
+  selectedRating: number | null;
   inventoryData: { product_id: number; quantity: number }[];
   productRatings: Record<number, { total: number; count: number }>;
   onProductClick: (product: Product) => void;
@@ -17,12 +18,13 @@ export function ProductList({
   products,
   searchQuery,
   selectedCategory,
+  selectedRating,
   inventoryData,
   productRatings,
   onProductClick,
   isLoading = false,
 }: ProductListProps) {
-  // Filter products based on search query and selected category
+  // Filter products based on search query, selected category, and rating
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       searchQuery === "" ||
@@ -31,8 +33,12 @@ export function ProductList({
 
     const matchesCategory =
       !selectedCategory || product.category === selectedCategory;
+      
+    const matchesRating = !selectedRating || 
+      (productRatings[product.id] && 
+       (productRatings[product.id].total / productRatings[product.id].count) >= selectedRating);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesRating;
   });
 
   if (isLoading) {
