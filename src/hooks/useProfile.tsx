@@ -33,12 +33,14 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
   const [isLoading, setIsLoading] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
   const [isFetched, setIsFetched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch profile data using Edge Function instead of direct database access
   const fetchProfileViaEdgeFunction = async () => {
     if (!user) return null;
     
     try {
+      setError(null);
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         throw new Error("Failed to get session");
@@ -52,28 +54,47 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         }
       });
       
+      const result = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch profile");
+        throw new Error(result.error || "Failed to fetch profile");
       }
       
-      const result = await response.json();
       console.log("Profile fetched via edge function:", result);
       return result.profile;
     } catch (error) {
       console.error("Error fetching profile via edge function:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch profile");
       return null;
     }
   };
 
   // Update profile data using Edge Function
   const updateProfileViaEdgeFunction = async (profileData: ProfileData) => {
-    if (!user) return false;
+    if (!user) return null;
     
     try {
+      setError(null);
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         throw new Error("Failed to get session");
+      }
+      
+      // Validate required fields before sending
+      if (!profileData.first_name.trim()) {
+        throw new Error("First name is required");
+      }
+      
+      if (!profileData.last_name.trim()) {
+        throw new Error("Last name is required");
+      }
+      
+      if (!profileData.location.trim()) {
+        throw new Error("Location is required");
+      }
+      
+      if (!profileData.phone_number.trim()) {
+        throw new Error("Phone number is required");
       }
       
       const response = await fetch(`https://msvlqapipscspxukbhyb.supabase.co/functions/v1/debug-profile`, {
@@ -85,17 +106,19 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         body: JSON.stringify(profileData)
       });
       
+      const result = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update profile");
+        console.error("Error response from edge function:", result);
+        throw new Error(result.error || "Failed to update profile");
       }
       
-      const result = await response.json();
       console.log("Profile updated via edge function:", result);
       return result.profile;
     } catch (error) {
       console.error("Error updating profile via edge function:", error);
-      return null;
+      setError(error instanceof Error ? error.message : "Failed to update profile");
+      throw error; // Rethrow to handle in the calling function
     }
   };
 
@@ -108,6 +131,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         
         const profileData = await fetchProfileViaEdgeFunction();
         
@@ -144,6 +168,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
+        setError(error instanceof Error ? error.message : "Failed to load profile data");
         toast.error("Failed to load profile data");
       } finally {
         setIsLoading(false);
@@ -162,6 +187,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     if (!user) return false;
 
     try {
+      setError(null);
       console.log("Updating profile with data:", profileData);
       
       const updatedProfile = await updateProfileViaEdgeFunction(profileData);
@@ -190,7 +216,8 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      setError(error instanceof Error ? error.message : "Failed to update profile");
+      toast.error(error instanceof Error ? error.message : "Failed to update profile");
       return false;
     }
   };
@@ -210,6 +237,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     isLoading,
     isComplete,
     isFetched,
-    updateProfile
+    updateProfile,
+    error
   };
 };

@@ -29,7 +29,8 @@ export default function UserProfile() {
     isLoading, 
     isComplete,
     isFetched,
-    updateProfile 
+    updateProfile,
+    error
   } = useProfile();
 
   useEffect(() => {
@@ -76,6 +77,8 @@ export default function UserProfile() {
         toast.success("Profile updated successfully");
         setShowSuccessModal(true);
       }
+    } catch (err) {
+      // Error is already handled in the hook and displayed via toast
     } finally {
       setIsSaving(false);
     }
@@ -119,6 +122,12 @@ export default function UserProfile() {
           
           <Card className="shadow-lg border-t-4 border-t-primary">
             <ProfileHeader isComplete={isComplete} isFetched={isFetched} />
+            
+            {error && (
+              <div className="px-6 py-2 bg-red-50 text-red-700 text-sm border-t border-red-200">
+                {error}
+              </div>
+            )}
             
             <ProfileForm 
               profileData={profileData}

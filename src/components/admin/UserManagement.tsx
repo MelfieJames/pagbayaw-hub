@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { 
   Table, 
@@ -10,19 +10,31 @@ import {
   TableBody, 
   TableCell 
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { User, Mail, Calendar, MapPin, Phone, Search } from "lucide-react";
+import { User, Mail, Calendar, MapPin, Phone, Search, UserX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface UserProfile {
   id: string;
   email: string;
   created_at: string;
-  updated_at: string;
+  updated_at: string | null;
   first_name?: string;
   last_name?: string;
   middle_name?: string;
@@ -32,27 +44,18 @@ interface UserProfile {
 
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
       try {
-        // Get all users from auth.users 
-        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+        console.log("Fetching users from profiles table directly...");
         
-        if (authError) {
-          console.error("Error fetching auth users:", authError);
-          throw authError;
-        }
-        
-        if (!authUsers || !authUsers.users) {
-          console.error("No users returned from auth.users");
-          return [];
-        }
-        
-        console.log("Auth users fetched:", authUsers.users.length);
-        
-        // Get profiles from profiles table
+        // Get profiles from the profiles table
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
@@ -62,37 +65,64 @@ export function UserManagement() {
           throw profilesError;
         }
         
-        // Create a map of profiles by user id
-        const profileMap = (profiles || []).reduce((acc, profile) => {
-          acc[profile.id] = profile;
-          return acc;
-        }, {} as Record<string, any>);
+        console.log("Profiles fetched:", profiles?.length);
         
-        // Combine auth users with their profile data
-        const combinedUsers = authUsers.users.map(user => {
-          const profile = profileMap[user.id] || {};
-          return {
-            id: user.id,
-            email: user.email,
-            created_at: user.created_at,
-            updated_at: profile.updated_at || user.updated_at,
-            first_name: profile.first_name || '',
-            last_name: profile.last_name || '',
-            middle_name: profile.middle_name || '',
-            location: profile.location || '',
-            phone_number: profile.phone_number || ''
-          };
-        });
+        // Convert profile data to expected format
+        const userProfiles = profiles?.map(profile => ({
+          id: profile.id,
+          email: profile.email || '',
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          middle_name: profile.middle_name || '',
+          location: profile.location || '',
+          phone_number: profile.phone_number || '',
+          created_at: profile.created_at || new Date().toISOString(),
+          updated_at: profile.updated_at || null
+        })) || [];
         
-        console.log("Combined users:", combinedUsers.length);
-        return combinedUsers;
+        console.log("User profiles prepared:", userProfiles.length);
+        return userProfiles;
       } catch (error) {
         console.error("Error in user fetching:", error);
         throw error;
       }
     },
     retry: 1,
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    staleTime: 1 * 60 * 1000 // 1 minute
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      // First delete from profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (profileError) {
+        console.error("Error deleting profile:", profileError);
+        throw new Error(`Error deleting profile: ${profileError.message}`);
+      }
+      
+      return userId;
+    },
+    onSuccess: (userId) => {
+      toast({ 
+        title: "User deleted successfully",
+        description: "User profile has been removed from the system."
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedUserId(null);
+    },
+    onError: (error: Error) => {
+      console.error("Delete user mutation error:", error);
+      toast({ 
+        title: "Failed to delete user", 
+        description: error.message,
+        variant: "destructive"
+      });
+    },
   });
 
   const filteredUsers = users.filter((user: UserProfile) => 
@@ -113,6 +143,17 @@ export function UserManagement() {
       return `${user.first_name || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim();
     }
     return 'Unknown';
+  };
+
+  const handleDeleteClick = (userId: string) => {
+    setSelectedUserId(userId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedUserId) {
+      deleteUserMutation.mutateAsync(selectedUserId);
+    }
   };
 
   if (error) {
@@ -160,6 +201,7 @@ export function UserManagement() {
                   <TableHead>Contact</TableHead>
                   <TableHead className="hidden md:table-cell">Details</TableHead>
                   <TableHead className="hidden md:table-cell">Joined</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -209,6 +251,17 @@ export function UserManagement() {
                           {user.created_at ? format(new Date(user.created_at), 'MMM d, yyyy') : 'Unknown'}
                         </div>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClick(user.id)}
+                          className="h-8 flex items-center gap-1"
+                        >
+                          <UserX className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -223,6 +276,27 @@ export function UserManagement() {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground"
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

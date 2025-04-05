@@ -47,6 +47,35 @@ serve(async (req) => {
         const profileData = await req.json();
         console.log("Received profile data:", profileData);
         
+        // Validate required fields
+        if (!profileData.first_name || !profileData.first_name.trim()) {
+          return new Response(
+            JSON.stringify({ error: 'First name is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        if (!profileData.last_name || !profileData.last_name.trim()) {
+          return new Response(
+            JSON.stringify({ error: 'Last name is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        if (!profileData.location || !profileData.location.trim()) {
+          return new Response(
+            JSON.stringify({ error: 'Location is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        if (!profileData.phone_number || !profileData.phone_number.trim()) {
+          return new Response(
+            JSON.stringify({ error: 'Phone number is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         // First check if profile exists
         const { data: existingProfile, error: checkError } = await supabase
           .from('profiles')
@@ -71,27 +100,29 @@ serve(async (req) => {
             .insert({
               id: user.id,
               email: user.email,
-              first_name: profileData.first_name || '',
+              first_name: profileData.first_name,
               middle_name: profileData.middle_name || '',
-              last_name: profileData.last_name || '',
-              location: profileData.location || '',
-              phone_number: profileData.phone_number || '',
+              last_name: profileData.last_name,
+              location: profileData.location,
+              phone_number: profileData.phone_number,
               updated_at: new Date().toISOString()
-            });
+            })
+            .select();
         } else {
           console.log("Profile exists, updating profile");
           // Update existing profile
           profileOp = await supabase
             .from('profiles')
             .update({
-              first_name: profileData.first_name || '',
+              first_name: profileData.first_name,
               middle_name: profileData.middle_name || '',
-              last_name: profileData.last_name || '',
-              location: profileData.location || '',
-              phone_number: profileData.phone_number || '',
+              last_name: profileData.last_name,
+              location: profileData.location,
+              phone_number: profileData.phone_number,
               updated_at: new Date().toISOString()
             })
-            .eq('id', user.id);
+            .eq('id', user.id)
+            .select();
         }
         
         if (profileOp.error) {
@@ -102,24 +133,17 @@ serve(async (req) => {
           );
         }
         
-        // Fetch the updated profile to return
-        const { data: updatedProfile, error: fetchError } = await supabase
-          .from('profiles')
-          .select('first_name, middle_name, last_name, location, phone_number')
-          .eq('id', user.id)
-          .single();
-          
-        if (fetchError) {
-          console.error("Error fetching updated profile:", fetchError);
+        if (!profileOp.data || profileOp.data.length === 0) {
+          console.error("No data returned after profile operation");
           return new Response(
-            JSON.stringify({ error: 'Failed to fetch updated profile', details: fetchError }),
+            JSON.stringify({ error: 'No data returned after profile operation' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         
-        console.log("Profile updated successfully:", updatedProfile);
+        console.log("Profile updated successfully:", profileOp.data[0]);
         return new Response(
-          JSON.stringify({ message: 'Profile updated', profile: updatedProfile }),
+          JSON.stringify({ message: 'Profile updated', profile: profileOp.data[0] }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (error) {
