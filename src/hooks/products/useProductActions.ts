@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -334,6 +333,26 @@ export function useProductActions() {
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
     } catch (error) {
       console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // Add the deleteReview function since it was removed from imports
+  const deleteReview = async (reviewId: number) => {
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId);
+        
+      if (error) {
+        console.error('Error deleting review:', error);
+        throw error;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in deleteReview:', error);
+      throw error;
     }
   };
 
