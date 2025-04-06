@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -225,6 +224,38 @@ export interface Database {
           product_id?: number
           quantity?: number
           price_at_time?: number
+          created_at?: string
+        }
+      }
+      transaction_details: {
+        Row: {
+          id: number
+          purchase_id: number
+          first_name: string
+          last_name: string
+          email: string
+          phone_number: string
+          address: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          purchase_id: number
+          first_name: string
+          last_name: string
+          email: string
+          phone_number: string
+          address: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          purchase_id?: number
+          first_name?: string
+          last_name?: string
+          email?: string
+          phone_number?: string
+          address?: string
           created_at?: string
         }
       }

@@ -23,7 +23,6 @@ export function RecentPurchases() {
         .from('purchases')
         .select(`
           *,
-          profiles:user_id(*),
           purchase_items(
             *,
             products(*)
@@ -36,7 +35,46 @@ export function RecentPurchases() {
         throw error;
       }
       
-      return data || [];
+      // Get transaction details for each purchase
+      const purchasesWithDetails = await Promise.all(
+        data.map(async (purchase) => {
+          const { data: transactionData, error: transactionError } = await supabase
+            .from("transaction_details")
+            .select("*")
+            .eq("purchase_id", purchase.id)
+            .maybeSingle();
+            
+          if (transactionError) {
+            console.error("Error fetching transaction details:", transactionError);
+          }
+          
+          // If no transaction details, try to get user data
+          if (!transactionData) {
+            try {
+              const { data: userData } = await supabase.auth.admin.getUserById(purchase.user_id);
+              if (userData) {
+                return {
+                  ...purchase,
+                  customer_name: null,
+                  customer_email: userData.user.email
+                };
+              }
+            } catch (error) {
+              console.error("Error fetching user data:", error);
+            }
+            
+            return purchase;
+          }
+          
+          return {
+            ...purchase,
+            customer_name: `${transactionData.first_name} ${transactionData.last_name}`,
+            customer_email: transactionData.email
+          };
+        })
+      );
+      
+      return purchasesWithDetails || [];
     }
   });
 
@@ -46,8 +84,8 @@ export function RecentPurchases() {
       searchTerm === "" || 
       purchase.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
       purchase.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      purchase.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      purchase.profiles?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      (purchase.customer_email && purchase.customer_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (purchase.customer_name && purchase.customer_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesDate = 
       dateFilter === "" || 
@@ -166,7 +204,7 @@ export function RecentPurchases() {
                   <TableRow key={purchase.id} className="hover:bg-gray-50">
                     <TableCell className="font-medium">#{purchase.id}</TableCell>
                     <TableCell>
-                      {purchase.profiles?.name || purchase.profiles?.email || "Anonymous"}
+                      {purchase.customer_name || purchase.customer_email || "Anonymous"}
                     </TableCell>
                     <TableCell>
                       {purchase.purchase_items?.length || 0} items
