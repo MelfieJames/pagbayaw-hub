@@ -421,6 +421,47 @@ export type Database = {
           },
         ]
       }
+      transaction_details: {
+        Row: {
+          address: string
+          created_at: string
+          email: string
+          first_name: string
+          id: number
+          last_name: string
+          phone_number: string
+          purchase_id: number | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: number
+          last_name: string
+          phone_number: string
+          purchase_id?: number | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: number
+          last_name?: string
+          phone_number?: string
+          purchase_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_details_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
