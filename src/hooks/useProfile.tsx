@@ -114,15 +114,14 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
             phone_number: profileData.phone_number,
             updated_at: new Date().toISOString()
           })
-          .select()
-          .single();
+          .select('*');
           
         if (insertError) {
           console.error("Error creating profile:", insertError);
           throw new Error(`Failed to create profile: ${insertError.message}`);
         }
         
-        profileResult = data;
+        profileResult = data[0]; // Fix: Get the first item from the array
         console.log("New profile created:", profileResult);
       } else {
         console.log("Profile exists, updating profile");
@@ -138,15 +137,14 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)
-          .select()
-          .single();
+          .select('*');
           
         if (updateError) {
           console.error("Error updating profile:", updateError);
           throw new Error(`Failed to update profile: ${updateError.message}`);
         }
         
-        profileResult = data;
+        profileResult = data[0]; // Fix: Get the first item from the array
         console.log("Profile updated successfully:", profileResult);
       }
       
@@ -279,6 +277,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         
         setIsComplete(isProfileComplete);
         setIsFetched(true);
+        toast.success("Profile updated successfully");
         return true;
       } else {
         throw new Error("Failed to update profile");

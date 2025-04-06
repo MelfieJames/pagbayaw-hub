@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
-import { createReview, updateReview, deleteReview } from "@/services/productService";
 import { useState } from "react";
 
 export function useProductActions() {
@@ -140,19 +139,35 @@ export function useProductActions() {
         return;
       }
 
-      // Attempt to insert/update cart item
-      console.log("Upserting cart with quantity:", newQuantity);
-      const { error } = await supabase
-        .from('cart')
-        .upsert({
-          user_id: user.id,
-          product_id: productId,
-          quantity: newQuantity
-        });
+      // FIX: For the cart upsert issue - first delete if exists, then insert
+      if (existingItem) {
+        // Update existing cart item
+        const { error: updateError } = await supabase
+          .from('cart')
+          .update({
+            quantity: newQuantity
+          })
+          .eq('user_id', user.id)
+          .eq('product_id', productId);
 
-      if (error) {
-        console.error("Cart upsert error:", error);
-        throw error;
+        if (updateError) {
+          console.error("Cart update error:", updateError);
+          throw updateError;
+        }
+      } else {
+        // Insert new cart item
+        const { error: insertError } = await supabase
+          .from('cart')
+          .insert({
+            user_id: user.id,
+            product_id: productId,
+            quantity: newQuantity
+          });
+
+        if (insertError) {
+          console.error("Cart insert error:", insertError);
+          throw insertError;
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
