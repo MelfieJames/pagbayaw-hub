@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
 import { Search, Download, Calendar, ShoppingBag, FileText, User } from "lucide-react";
+import { TransactionDetailsRow } from "@/types/supabase";
 
 export function RecentPurchases() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,62 +19,53 @@ export function RecentPurchases() {
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['admin-purchases-detailed'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('purchases')
-        .select(`
-          *,
-          purchase_items(
+      try {
+        // Get all purchases with their related items and products
+        const { data, error } = await supabase
+          .from('purchases')
+          .select(`
             *,
-            products(*)
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error("Error fetching purchases:", error);
+            purchase_items(
+              *,
+              products(*)
+            ),
+            transaction_details(*)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error("Error fetching purchases:", error);
+          throw error;
+        }
+        
+        console.log("Fetched purchases with transaction details:", data);
+        
+        // Process purchases to include customer details
+        const purchasesWithDetails = data.map(purchase => {
+          const transactionDetails: TransactionDetailsRow = purchase.transaction_details?.length > 0 
+            ? purchase.transaction_details[0]
+            : null;
+            
+          // If we have transaction details, use those
+          if (transactionDetails) {
+            return {
+              ...purchase,
+              customer_name: `${transactionDetails.first_name} ${transactionDetails.last_name}`,
+              customer_email: transactionDetails.email,
+              customer_phone: transactionDetails.phone_number,
+              customer_address: transactionDetails.address
+            };
+          }
+          
+          // Otherwise, return purchase as is
+          return purchase;
+        });
+        
+        return purchasesWithDetails || [];
+      } catch (error) {
+        console.error("Error in admin purchases query:", error);
         throw error;
       }
-      
-      // Get transaction details for each purchase
-      const purchasesWithDetails = await Promise.all(
-        data.map(async (purchase) => {
-          const { data: transactionData, error: transactionError } = await supabase
-            .from("transaction_details")
-            .select("*")
-            .eq("purchase_id", purchase.id)
-            .maybeSingle();
-            
-          if (transactionError) {
-            console.error("Error fetching transaction details:", transactionError);
-          }
-          
-          // If no transaction details, try to get user data
-          if (!transactionData) {
-            try {
-              const { data: userData } = await supabase.auth.admin.getUserById(purchase.user_id);
-              if (userData) {
-                return {
-                  ...purchase,
-                  customer_name: null,
-                  customer_email: userData.user.email
-                };
-              }
-            } catch (error) {
-              console.error("Error fetching user data:", error);
-            }
-            
-            return purchase;
-          }
-          
-          return {
-            ...purchase,
-            customer_name: `${transactionData.first_name} ${transactionData.last_name}`,
-            customer_email: transactionData.email
-          };
-        })
-      );
-      
-      return purchasesWithDetails || [];
     }
   });
 
@@ -83,7 +74,7 @@ export function RecentPurchases() {
     const matchesSearch = 
       searchTerm === "" || 
       purchase.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-      purchase.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      purchase.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (purchase.customer_email && purchase.customer_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (purchase.customer_name && purchase.customer_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -103,7 +94,7 @@ export function RecentPurchases() {
   };
 
   const getBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase() || 'pending') {
       case 'completed':
         return 'bg-green-500 hover:bg-green-600';
       case 'pending':
@@ -204,12 +195,18 @@ export function RecentPurchases() {
                   <TableRow key={purchase.id} className="hover:bg-gray-50">
                     <TableCell className="font-medium">#{purchase.id}</TableCell>
                     <TableCell>
-                      {purchase.customer_name || purchase.customer_email || "Anonymous"}
+                      {purchase.customer_name || "Anonymous"}
+                      {purchase.customer_email && (
+                        <div className="text-xs text-gray-500 mt-1">{purchase.customer_email}</div>
+                      )}
+                      {purchase.customer_phone && (
+                        <div className="text-xs text-gray-500">{purchase.customer_phone}</div>
+                      )}
                     </TableCell>
                     <TableCell>
                       {purchase.purchase_items?.length || 0} items
                       <div className="text-xs text-gray-500 mt-1">
-                        {purchase.purchase_items?.map((item: any) => (
+                        {purchase.purchase_items?.map((item) => (
                           <div key={item.id} className="truncate max-w-[200px]">
                             {item.products?.product_name} x{item.quantity}
                           </div>
@@ -230,7 +227,7 @@ export function RecentPurchases() {
                     </TableCell>
                     <TableCell>
                       <Badge className={`${getBadgeColor(purchase.status)}`}>
-                        {purchase.status}
+                        {purchase.status || 'pending'}
                       </Badge>
                     </TableCell>
                   </TableRow>
