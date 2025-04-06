@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,7 +32,7 @@ export function useProductActions() {
         .from('inventory')
         .select('quantity')
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (inventoryError) {
         console.error("Inventory check error:", inventoryError);
@@ -48,7 +49,7 @@ export function useProductActions() {
         .from('products')
         .select('*')
         .eq('id', productId)
-        .single();
+        .maybeSingle();
         
       if (productError) {
         console.error("Product fetch error:", productError);
@@ -105,7 +106,7 @@ export function useProductActions() {
         .from('inventory')
         .select('quantity')
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (inventoryError) {
         console.error("Inventory check error:", inventoryError);
@@ -120,7 +121,7 @@ export function useProductActions() {
       // Check existing cart quantity
       const { data: existingItem, error: checkError } = await supabase
         .from('cart')
-        .select('quantity')
+        .select('quantity, id')
         .eq('user_id', user.id)
         .eq('product_id', productId)
         .maybeSingle();
@@ -138,16 +139,14 @@ export function useProductActions() {
         return;
       }
 
-      // FIX: For the cart upsert issue - first delete if exists, then insert
+      // Fixed approach: separate insert and update operations
       if (existingItem) {
         // Update existing cart item
+        console.log("Updating existing cart item with quantity:", newQuantity);
         const { error: updateError } = await supabase
           .from('cart')
-          .update({
-            quantity: newQuantity
-          })
-          .eq('user_id', user.id)
-          .eq('product_id', productId);
+          .update({ quantity: newQuantity })
+          .eq('id', existingItem.id);
 
         if (updateError) {
           console.error("Cart update error:", updateError);
@@ -155,6 +154,7 @@ export function useProductActions() {
         }
       } else {
         // Insert new cart item
+        console.log("Inserting new cart item with quantity:", newQuantity);
         const { error: insertError } = await supabase
           .from('cart')
           .insert({

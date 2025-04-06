@@ -94,19 +94,17 @@ export function UserManagement() {
     mutationFn: async (userId: string) => {
       try {
         // First, clean up user reviews to prevent foreign key constraints issues
-        const cleanupResponse = await fetch('https://msvlqapipscspxukbhyb.supabase.co/functions/v1/cleanup-user-reviews', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-          },
-          body: JSON.stringify({ userId })
-        });
-        
-        if (!cleanupResponse.ok) {
-          const errorData = await cleanupResponse.json();
-          console.error("Error cleaning up user reviews:", errorData);
-          // Continue with deletion attempt even if cleanup failed
+        try {
+          const { error: reviewsError } = await supabase
+            .from('reviews')
+            .delete()
+            .eq('user_id', userId);
+            
+          if (reviewsError) {
+            console.warn("Error cleaning up user reviews:", reviewsError);
+          }
+        } catch (cleanupError) {
+          console.warn("Error during review cleanup:", cleanupError);
         }
       
         // Delete profile from database

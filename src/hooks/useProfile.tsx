@@ -90,14 +90,14 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         .from('profiles')
         .select('id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
       if (checkError && checkError.code !== 'PGRST116') {
         console.error("Error checking profile:", checkError);
         throw new Error(`Failed to check profile: ${checkError.message}`);
       }
       
-      let profileResult;
+      let result;
       
       if (!existingProfile) {
         console.log("Profile doesn't exist, creating new profile");
@@ -114,15 +114,20 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
             phone_number: profileData.phone_number,
             updated_at: new Date().toISOString()
           })
-          .select('*');
+          .select();
           
         if (insertError) {
           console.error("Error creating profile:", insertError);
           throw new Error(`Failed to create profile: ${insertError.message}`);
         }
         
-        profileResult = data[0]; // Fix: Get the first item from the array
-        console.log("New profile created:", profileResult);
+        if (!data || data.length === 0) {
+          console.error("No data returned after profile creation");
+          throw new Error("No data returned after profile creation");
+        }
+        
+        result = data[0];
+        console.log("New profile created:", result);
       } else {
         console.log("Profile exists, updating profile");
         // Update existing profile
@@ -137,19 +142,24 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)
-          .select('*');
+          .select();
           
         if (updateError) {
           console.error("Error updating profile:", updateError);
           throw new Error(`Failed to update profile: ${updateError.message}`);
         }
         
-        profileResult = data[0]; // Fix: Get the first item from the array
-        console.log("Profile updated successfully:", profileResult);
+        if (!data || data.length === 0) {
+          console.error("No data returned after profile update");
+          throw new Error("No data returned after profile update");
+        }
+        
+        result = data[0];
+        console.log("Profile updated successfully:", result);
       }
       
-      return profileResult;
-    } catch (error: any) {
+      return result;
+    } catch (error) {
       console.error("Error updating profile to Supabase:", error);
       throw error;
     }
@@ -284,8 +294,9 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      setError(error instanceof Error ? error.message : "Failed to update profile");
-      toast.error(error instanceof Error ? error.message : "Failed to update profile");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update profile";
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     }
   };

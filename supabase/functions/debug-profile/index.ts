@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,9 +24,12 @@ serve(async (req) => {
     }
 
     // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://msvlqapipscspxukbhyb.supabase.co';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdmxxYXBpcHNjc3B4dWtiaHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU5MDMwODUsImV4cCI6MjA1MTQ3OTA4NX0.-n2HKDfTo-57F8vY0f03-2KUUzxegVYsZ6qOn5RSIe4';
+    
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl,
+      supabaseAnonKey,
       { global: { headers: { Authorization: authHeader } } }
     )
 
