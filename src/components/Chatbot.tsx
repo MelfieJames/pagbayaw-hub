@@ -1,8 +1,10 @@
 
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, ChevronDown } from "lucide-react";
+import { MessageSquare, X, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
-// Define FAQ data that will be used by the chatbot
+// FAQ data for the chatbot
 const faqData = [
   {
     question: "What is UNVAS?",
@@ -42,182 +44,205 @@ const faqData = [
   }
 ];
 
-export default function Chatbot() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      sender: "bot",
-      text: "Hello! I'm your UNVAS assistant. How can I help you today?"
-    }
-  ]);
-  const [inputText, setInputText] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(true);
-  const messagesEndRef = useRef(null);
+// Initial messages that the chatbot will display
+const initialMessages = [
+  {
+    id: 1,
+    content: "Hello! Welcome to UNVAS. How can I help you today?",
+    sender: "bot"
+  },
+  {
+    id: 2,
+    content: "You can ask me about our products, the UNVAS material, or how to place an order!",
+    sender: "bot"
+  }
+];
 
-  // Auto-scroll to the bottom of the messages
+// This function will find the closest FAQ match based on user input
+const findFAQMatch = (userInput: string) => {
+  const userInputLower = userInput.toLowerCase();
+  
+  // Check for direct matches first
+  for (const faq of faqData) {
+    if (userInputLower.includes(faq.question.toLowerCase())) {
+      return faq.answer;
+    }
+  }
+  
+  // If no direct match, look for keyword matches
+  const keywords = {
+    "what is": faqData[0].answer,
+    "unvas": faqData[0].answer,
+    "made": faqData[1].answer,
+    "how is": faqData[1].answer,
+    "create": faqData[1].answer,
+    "eco": faqData[2].answer,
+    "environment": faqData[2].answer,
+    "sustainable": faqData[2].answer,
+    "friendly": faqData[2].answer,
+    "different": faqData[3].answer,
+    "unique": faqData[3].answer,
+    "special": faqData[3].answer,
+    "paint": faqData[4].answer,
+    "craft": faqData[4].answer,
+    "use": faqData[4].answer,
+    "product": faqData[5].answer,
+    "sell": faqData[5].answer,
+    "offer": faqData[5].answer,
+    "handmade": faqData[6].answer,
+    "custom": faqData[7].answer,
+    "request": faqData[7].answer,
+    "specific": faqData[7].answer,
+    "gift": faqData[8].answer,
+    "bundle": faqData[8].answer,
+    "set": faqData[8].answer
+  };
+  
+  for (const [keyword, answer] of Object.entries(keywords)) {
+    if (userInputLower.includes(keyword)) {
+      return answer;
+    }
+  }
+  
+  // Default response if no match is found
+  return "I'm not sure about that. Would you like to know about our products, what UNVAS is, or how it's made? You can also check our FAQ section on the About Us page.";
+};
+
+// Chatbot component
+const Chatbot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState(initialMessages);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of messages
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen]);
+  }, [messages]);
 
-  const handleSend = () => {
-    if (inputText.trim() === "") return;
-
-    // Add user message
-    setMessages((prev) => [
-      ...prev,
-      { sender: "user", text: inputText }
-    ]);
-
-    // Find an FAQ match or respond with a default message
-    const userInput = inputText.toLowerCase();
-    const matchedFaq = faqData.find(faq => 
-      faq.question.toLowerCase().includes(userInput) || 
-      userInput.includes(faq.question.toLowerCase().replace(/[?]/g, ""))
-    );
-
-    setTimeout(() => {
-      if (matchedFaq) {
-        setMessages((prev) => [
-          ...prev,
-          { sender: "bot", text: matchedFaq.answer }
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { 
-            sender: "bot", 
-            text: "I don't have that information at the moment. For specific inquiries, please contact us at projectuplift21@gmail.com or visit our contact page." 
-          }
-        ]);
-      }
-    }, 500);
-
-    setInputText("");
-    setShowSuggestions(false);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSend();
-    }
-  };
-
-  const handleSuggestionClick = (question) => {
-    setMessages((prev) => [
-      ...prev,
-      { sender: "user", text: question }
-    ]);
-
-    // Find the answer for this question
-    const faq = faqData.find(faq => faq.question === question);
+  const handleSendMessage = () => {
+    if (!input.trim()) return;
     
+    // Add user message
+    const userMessageId = messages.length + 1;
+    setMessages((prev) => [
+      ...prev,
+      { id: userMessageId, content: input, sender: "user" }
+    ]);
+    
+    // Clear input and show typing indicator
+    setInput("");
+    setIsTyping(true);
+    
+    // Simulate bot thinking and respond after a delay
     setTimeout(() => {
+      const botResponse = findFAQMatch(input);
+      
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: faq.answer }
+        { id: userMessageId + 1, content: botResponse, sender: "bot" }
       ]);
-    }, 500);
-
-    setShowSuggestions(false);
+      
+      setIsTyping(false);
+    }, 1000);
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      {/* Chat Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="bg-[#6b8e68] text-white p-3 rounded-full shadow-lg hover:bg-[#5b7a58] transition-colors"
-        aria-label={isOpen ? "Close chat" : "Open chat"}
-      >
-        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-      </button>
-
-      {/* Chat Window */}
+    <div className="fixed bottom-4 right-4 z-50">
+      {/* Closed state - just the icon button */}
+      {!isOpen && (
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="h-14 w-14 rounded-full bg-[#6b8e68] hover:bg-[#5a7b58] shadow-lg"
+        >
+          <MessageSquare className="h-6 w-6 text-white" />
+        </Button>
+      )}
+      
+      {/* Open state - the chat window */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col max-h-[500px]">
-          {/* Header */}
-          <div className="bg-[#6b8e68] text-white px-4 py-3 rounded-t-lg flex justify-between items-center">
-            <h3 className="font-medium">UNVAS® Chat Support</h3>
-            <button
+        <div className="w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col h-[450px] overflow-hidden">
+          {/* Chat header */}
+          <div className="bg-[#6b8e68] text-white p-3 flex justify-between items-center">
+            <h3 className="font-semibold">UNVAS Support</h3>
+            <Button 
+              variant="ghost" 
+              size="icon" 
               onClick={() => setIsOpen(false)}
-              className="text-white/80 hover:text-white"
-              aria-label="Close chat"
+              className="text-white hover:bg-[#5a7b58] h-8 w-8"
             >
-              <X size={18} />
-            </button>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 max-h-80">
-            {messages.map((message, index) => (
+          
+          {/* Chat messages area */}
+          <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+            {messages.map((message) => (
               <div
-                key={index}
-                className={`flex ${
-                  message.sender === "user" ? "justify-end" : "justify-start"
+                key={message.id}
+                className={`mb-3 ${
+                  message.sender === "user"
+                    ? "flex justify-end"
+                    : "flex justify-start"
                 }`}
               >
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
                     message.sender === "user"
-                      ? "bg-[#6b8e68] text-white rounded-tr-none"
-                      : "bg-white border border-gray-200 rounded-tl-none"
+                      ? "bg-[#A8D0B9] text-[#3c4d35]"
+                      : "bg-white text-gray-800 border border-gray-200"
                   }`}
                 >
-                  {message.text}
+                  {message.content}
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef} />
-
-            {/* Suggestions */}
-            {showSuggestions && messages.length <= 2 && (
-              <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-2 mt-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-medium text-gray-700">Frequently Asked Questions</h4>
-                  <button 
-                    onClick={() => setShowSuggestions(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <ChevronDown size={16} />
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {faqData.slice(0, 5).map((faq, index) => (
-                    <button
-                      key={index}
-                      className="w-full text-left text-sm p-2 hover:bg-gray-100 rounded-md transition-colors duration-150"
-                      onClick={() => handleSuggestionClick(faq.question)}
-                    >
-                      {faq.question}
-                    </button>
-                  ))}
+            
+            {isTyping && (
+              <div className="flex justify-start mb-3">
+                <div className="bg-white text-gray-800 border border-gray-200 p-3 rounded-lg">
+                  <div className="flex space-x-1">
+                    <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                    <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                    <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                  </div>
                 </div>
               </div>
             )}
+            
+            <div ref={messagesEndRef} />
           </div>
-
-          {/* Input */}
-          <div className="p-3 border-t border-gray-200 flex">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#6b8e68]"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!inputText.trim()}
-              className="bg-[#6b8e68] text-white px-3 py-2 rounded-r-md hover:bg-[#5b7a58] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send size={18} />
-            </button>
+          
+          {/* Chat input area */}
+          <div className="border-t border-gray-200 p-3 bg-white">
+            <div className="flex items-center gap-2">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                className="min-h-[50px] resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleSendMessage}
+                className="h-10 w-10 rounded-full bg-[#6b8e68] hover:bg-[#5a7b58] p-0 flex items-center justify-center"
+              >
+                <Send className="h-4 w-4 text-white" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default Chatbot;
