@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
@@ -8,7 +9,10 @@ import { ShoppingBag, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useProfile } from "@/hooks/useProfile";
+import ShippingInfo from "@/components/checkout/ShippingInfo";
 import OrderItems from "@/components/checkout/OrderItems";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import OrderSuccessDialog from "@/components/checkout/OrderSuccessDialog";
@@ -35,21 +39,15 @@ export default function Checkout() {
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
 
-  // Get cached Buy Now items if they exist
-  const cachedBuyNowItems = queryClient.getQueryData<CartItem[]>(['checkout-items']) || [];
+  // Use the profile hook with redirect if incomplete
+  const { profileData, isLoading: isLoadingProfile, isComplete } = 
+    useProfile(true, "/profile");
 
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items'],
     queryFn: async () => {
-      // If we have Buy Now items in the cache, return those instead of fetching from cart
-      if (cachedBuyNowItems && cachedBuyNowItems.length > 0) {
-        console.log("Using Buy Now items:", cachedBuyNowItems);
-        return cachedBuyNowItems;
-      }
-      
       if (!user?.id) return [];
       
-      // Otherwise fetch normal cart items
       const { data: responseData, error } = await supabase
         .from('cart')
         .select(`
@@ -72,17 +70,8 @@ export default function Checkout() {
       
       return responseData as CartItem[];
     },
-    enabled: !!user?.id || cachedBuyNowItems.length > 0,
+    enabled: !!user?.id,
   });
-
-  // Clear the Buy Now items from cache when leaving the checkout page
-  useEffect(() => {
-    return () => {
-      if (cachedBuyNowItems.length > 0) {
-        queryClient.removeQueries({ queryKey: ['checkout-items'] });
-      }
-    };
-  }, [cachedBuyNowItems.length, queryClient]);
 
   const { data: inventoryData = [] } = useQuery({
     queryKey: ['inventory-data'],
@@ -153,6 +142,14 @@ export default function Checkout() {
   const handleCheckout = async () => {
     if (!user || cartItems.length === 0) {
       toast.error("No items to checkout");
+      return;
+    }
+
+    // If profile is not complete, redirect to profile page
+    if (!isComplete) {
+      navigate('/profile', { 
+        state: { redirectAfterUpdate: '/checkout' }
+      });
       return;
     }
     
@@ -241,22 +238,19 @@ export default function Checkout() {
         }
       }
       
-      // Clear cart only if this was a cart purchase (not Buy Now)
-      if (cachedBuyNowItems.length === 0) {
-        const { error: cartError } = await supabase
-          .from('cart')
-          .delete()
-          .eq('user_id', user.id)
-          .in('product_id', cartItems.map(item => item.product_id));
+      // Clear cart
+      const { error: cartError } = await supabase
+        .from('cart')
+        .delete()
+        .eq('user_id', user.id)
+        .in('product_id', cartItems.map(item => item.product_id));
 
-        if (cartError) {
-          console.error("Cart clearing error:", cartError);
-          throw cartError;
-        }
+      if (cartError) {
+        console.error("Cart clearing error:", cartError);
+        throw cartError;
       }
 
-      // Invalidate and remove relevant queries
-      queryClient.removeQueries({ queryKey: ['checkout-items'] });
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-data'] });
@@ -275,7 +269,7 @@ export default function Checkout() {
     }
   };
 
-  const handleDetailsSubmitted = () => {
+  const handleOrderSummaryClose = () => {
     setShowOrderSummaryDialog(false);
     setShowSuccessDialog(true);
   };
@@ -285,6 +279,20 @@ export default function Checkout() {
       state: { redirectAfterLogin: '/checkout', message: "Please log in to access checkout" }
     });
     return null;
+  }
+
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 pt-20 flex justify-center items-center h-[50vh]">
+          <div className="text-center">
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-gray-600">Loading your profile...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -315,6 +323,7 @@ export default function Checkout() {
         ) : (
           <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-4">
+              <ShippingInfo profileData={profileData} isComplete={isComplete} />
               <OrderItems 
                 cartItems={cartItems} 
                 inventoryData={inventoryData}
@@ -326,7 +335,7 @@ export default function Checkout() {
             <div className="md:col-span-1">
               <OrderSummary 
                 total={total}
-                isComplete={true} // No longer requiring complete profile
+                isComplete={isComplete}
                 cartItems={cartItems}
                 isProcessing={isProcessing}
                 handleCheckout={handleCheckout}
@@ -353,12 +362,11 @@ export default function Checkout() {
       {/* Order Summary Dialog - Shown after successful checkout */}
       <OrderSummaryDialog
         open={showOrderSummaryDialog}
-        onOpenChange={setShowOrderSummaryDialog}
+        onOpenChange={handleOrderSummaryClose}
         purchaseId={purchaseId}
-        userEmail={user?.email}
+        profileData={profileData}
         cartItems={cartItems}
         total={total}
-        onDetailsSubmitted={handleDetailsSubmitted}
       />
     </div>
   );

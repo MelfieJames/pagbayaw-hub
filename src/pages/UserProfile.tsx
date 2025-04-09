@@ -74,11 +74,11 @@ export default function UserProfile() {
     try {
       const success = await updateProfile(profileData);
       if (success) {
+        toast.success("Profile updated successfully");
         setShowSuccessModal(true);
       }
     } catch (err) {
       // Error is already handled in the hook and displayed via toast
-      console.error("Error during profile update:", err);
     } finally {
       setIsSaving(false);
     }

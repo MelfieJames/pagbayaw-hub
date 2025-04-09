@@ -18,7 +18,7 @@ import { User, Mail, Calendar, MapPin, Phone, Search, UserX } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +46,7 @@ export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading, error } = useQuery({
@@ -86,53 +87,41 @@ export function UserManagement() {
         throw error;
       }
     },
-    refetchInterval: 15000, // Refresh every 15 seconds
-    staleTime: 10 * 1000 // Consider data stale after 10 seconds
+    retry: 1,
+    staleTime: 1 * 60 * 1000 // 1 minute
   });
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      try {
-        // First, clean up user reviews to prevent foreign key constraints issues
-        try {
-          const { error: reviewsError } = await supabase
-            .from('reviews')
-            .delete()
-            .eq('user_id', userId);
-            
-          if (reviewsError) {
-            console.warn("Error cleaning up user reviews:", reviewsError);
-          }
-        } catch (cleanupError) {
-          console.warn("Error during review cleanup:", cleanupError);
-        }
+      // First delete from profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
       
-        // Delete profile from database
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userId);
-        
-        if (profileError) {
-          console.error("Error deleting profile:", profileError);
-          throw new Error(`Error deleting profile: ${profileError.message}`);
-        }
-        
-        return userId;
-      } catch (error) {
-        console.error("Error in delete process:", error);
-        throw error;
+      if (profileError) {
+        console.error("Error deleting profile:", profileError);
+        throw new Error(`Error deleting profile: ${profileError.message}`);
       }
+      
+      return userId;
     },
     onSuccess: (userId) => {
-      toast.success("User deleted successfully");
+      toast({ 
+        title: "User deleted successfully",
+        description: "User profile has been removed from the system."
+      });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setIsDeleteDialogOpen(false);
       setSelectedUserId(null);
     },
     onError: (error: Error) => {
       console.error("Delete user mutation error:", error);
-      toast.error("Failed to delete user: " + error.message);
+      toast({ 
+        title: "Failed to delete user", 
+        description: error.message,
+        variant: "destructive"
+      });
     },
   });
 
@@ -163,7 +152,7 @@ export function UserManagement() {
 
   const confirmDelete = () => {
     if (selectedUserId) {
-      deleteUserMutation.mutate(selectedUserId);
+      deleteUserMutation.mutateAsync(selectedUserId);
     }
   };
 
