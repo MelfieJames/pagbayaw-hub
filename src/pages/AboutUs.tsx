@@ -218,7 +218,8 @@ export default function AboutUs() {
                       <img 
                         src="https://scontent.fmnl8-3.fna.fbcdn.net/v/t39.30808-6/461570622_558172736903282_5599733805105509082_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFncftE4VvhujOAyF7tIBSUBMT_jFIeqikExP-MUh6qKaJnIm53lAsrz6ktTkaMwKQjRqx4UKVqNTwiNBBpIz4n&_nc_ohc=TcS-oH-yfa8Q7kNvwFWW16g&_nc_oc=AdlhEKDCrBniyfo6YUEB9YR9v-Tf1KuOVqfRaTDCPoF-yw_1aUQJQXb2IJLhG7kc_y4&_nc_zt=23&_nc_ht=scontent.fmnl8-3.fna&_nc_gid=UTi9qiAIx021UJIij4qAMA&oh=00_AfGs0A7vmcDUxmMSxECqtZY3Ivz_TstcxOjjpGAEzLdg5A&oe=67FC21F2" 
                         alt="PAGBAYAW Logo" 
-                        className="w-32 h-32 object-contain"
+  className="w-32 h-32 object-contain mx-auto" 
+/>
                       />
                     </div>
                   </div>
