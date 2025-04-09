@@ -1,6 +1,8 @@
 
-import { Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
+import { Routes as RouterRoutes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+import { supabase } from "@/services/supabase/client";
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import Products from "@/pages/Products";
@@ -21,6 +23,45 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
 }
 
+// Component to check if user is admin and redirect accordingly
+const AdminRedirect = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error checking admin status:", error);
+          return;
+        }
+
+        const isAdmin = !!data;
+        
+        // Only redirect to admin if we're on the index page and user is admin
+        if (isAdmin && location.pathname === '/') {
+          navigate('/admin');
+        }
+      } catch (err) {
+        console.error("Exception checking admin status:", err);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user, navigate, location.pathname]);
+
+  return null;
+};
+
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { user } = useAuth();
 
@@ -29,9 +70,13 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && !user.isAdmin) {
-    console.log("User is not admin, redirecting to home");
-    return <Navigate to="/" replace />;
+  if (requireAdmin) {
+    // For admin routes, we'll check directly here
+    const isAdmin = user.isAdmin;
+    if (!isAdmin) {
+      console.log("User is not admin, redirecting to home");
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -39,79 +84,82 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
 const Routes = () => {
   return (
-    <RouterRoutes>
-      {/* Public Routes */}
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/products" element={<Products />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/achievements" element={<Achievements />} />
-      <Route path="/achievements/:id" element={<AchievementDetail />} />
-      <Route path="/about" element={<AboutUs />} />
+    <>
+      <AdminRedirect />
+      <RouterRoutes>
+        {/* Public Routes */}
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/achievements" element={<Achievements />} />
+        <Route path="/achievements/:id" element={<AchievementDetail />} />
+        <Route path="/about" element={<AboutUs />} />
 
-      {/* Protected Routes */}
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <UserProfile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/checkout"
-        element={
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-ratings"
-        element={
-          <ProtectedRoute>
-            <MyRatings />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/purchases"
-        element={
-          <ProtectedRoute>
-            <PurchaseHistory />
-          </ProtectedRoute>
-        }
-      />
+        {/* Protected Routes */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <UserProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-ratings"
+          element={
+            <ProtectedRoute>
+              <MyRatings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/purchases"
+          element={
+            <ProtectedRoute>
+              <PurchaseHistory />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Admin Routes */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/products"
-        element={
-          <ProtectedRoute requireAdmin>
-            <ProductManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/achievements"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AchievementManagement />
-          </ProtectedRoute>
-        }
-      />
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/products"
+          element={
+            <ProtectedRoute requireAdmin>
+              <ProductManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/achievements"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AchievementManagement />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </RouterRoutes>
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </RouterRoutes>
+    </>
   );
 };
 

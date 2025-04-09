@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -15,7 +16,7 @@ export function RecentPurchases() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
-  // Fetch all purchases with related data
+  // Fetch all purchases with related data, using admin RLS policies
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['admin-purchases-detailed'],
     queryFn: async () => {
@@ -66,7 +67,8 @@ export function RecentPurchases() {
         console.error("Error in admin purchases query:", error);
         throw error;
       }
-    }
+    },
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
 
   // Filter purchases based on search term and date

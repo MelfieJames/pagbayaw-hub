@@ -2,7 +2,8 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface FileInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface FileInputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
   onChange?: (file: File | null) => void;
 }
 
