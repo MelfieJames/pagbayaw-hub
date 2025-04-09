@@ -216,7 +216,7 @@ export default function AboutUs() {
                     />
                     <div className="relative z-10">
                       <img 
-                        src="https://scontent.fmnl8-3.fna.fbcdn.net/v/t39.30808-6/461570622_558172736903282_5599733805105509082_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFncftE4VvhujOAyF7tIBSUBMT_jFIeqikExP-MUh6qKaJnIm53lAsrz6ktTkaMwKQjRqx4UKVqNTwiNBBpIz4n&_nc_ohc=TcS-oH-yfa8Q7kNvwFWW16g&_nc_oc=AdlhEKDCrBniyfo6YUEB9YR9v-Tf1KuOVqfRaTDCPoF-yw_1aUQJQXb2IJLhG7kc_y4&_nc_zt=23&_nc_ht=scontent.fmnl8-3.fna&_nc_gid=UTi9qiAIx021UJIij4qAMA&oh=00_AfGs0A7vmcDUxmMSxECqtZY3Ivz_TstcxOjjpGAEzLdg5A&oe=67FC21F2" 
+                        src="https://scontent.fmnl8-3.fna.fbcdn.net/v/t39.30808-6/488889120_718177130902841_2468001341179812153_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeFikBOxb7Oa3amthWZEKo5kzOub-b3jAAHM65v5veMAAXFjxAd8PA6WEVzybPVd1iWFSW-u1IsNUGxY6_xHYix4&_nc_ohc=I2M6tJY9wPAQ7kNvwFswse-&_nc_oc=AdkX_TIdQoMprlXDWPRxHg8lS83tJwU6MEG_9tKifuG7JmvUmqqIZUix-eiJr0TOjXw&_nc_zt=23&_nc_ht=scontent.fmnl8-3.fna&_nc_gid=6D-Hwz4KN8Qjc1v8qkFBfg&oh=00_AfFHzzJGNAjnyKy8Jh7hUli2JH_Vn4yYMSTucSlUM1ISCw&oe=67FC286F" 
                         alt="PAGBAYAW Logo" 
   className="w-32 h-32 object-contain mx-auto" 
 />
