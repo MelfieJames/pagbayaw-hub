@@ -9,7 +9,10 @@ import { ShoppingBag, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useProfile } from "@/hooks/useProfile";
+import ShippingInfo from "@/components/checkout/ShippingInfo";
 import OrderItems from "@/components/checkout/OrderItems";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import OrderSuccessDialog from "@/components/checkout/OrderSuccessDialog";
@@ -35,6 +38,10 @@ export default function Checkout() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
+
+  // Use the profile hook with redirect if incomplete
+  const { profileData, isLoading: isLoadingProfile, isComplete } = 
+    useProfile(true, "/profile");
 
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items'],
@@ -135,6 +142,14 @@ export default function Checkout() {
   const handleCheckout = async () => {
     if (!user || cartItems.length === 0) {
       toast.error("No items to checkout");
+      return;
+    }
+
+    // If profile is not complete, redirect to profile page
+    if (!isComplete) {
+      navigate('/profile', { 
+        state: { redirectAfterUpdate: '/checkout' }
+      });
       return;
     }
     
@@ -254,7 +269,7 @@ export default function Checkout() {
     }
   };
 
-  const handleDetailsSubmitted = () => {
+  const handleOrderSummaryClose = () => {
     setShowOrderSummaryDialog(false);
     setShowSuccessDialog(true);
   };
@@ -264,6 +279,20 @@ export default function Checkout() {
       state: { redirectAfterLogin: '/checkout', message: "Please log in to access checkout" }
     });
     return null;
+  }
+
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 pt-20 flex justify-center items-center h-[50vh]">
+          <div className="text-center">
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-gray-600">Loading your profile...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -294,6 +323,7 @@ export default function Checkout() {
         ) : (
           <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-4">
+              <ShippingInfo profileData={profileData} isComplete={isComplete} />
               <OrderItems 
                 cartItems={cartItems} 
                 inventoryData={inventoryData}
@@ -305,7 +335,7 @@ export default function Checkout() {
             <div className="md:col-span-1">
               <OrderSummary 
                 total={total}
-                isComplete={true} // No longer requiring complete profile
+                isComplete={isComplete}
                 cartItems={cartItems}
                 isProcessing={isProcessing}
                 handleCheckout={handleCheckout}
@@ -332,12 +362,11 @@ export default function Checkout() {
       {/* Order Summary Dialog - Shown after successful checkout */}
       <OrderSummaryDialog
         open={showOrderSummaryDialog}
-        onOpenChange={setShowOrderSummaryDialog}
+        onOpenChange={handleOrderSummaryClose}
         purchaseId={purchaseId}
-        userEmail={user?.email}
+        profileData={profileData}
         cartItems={cartItems}
         total={total}
-        onDetailsSubmitted={handleDetailsSubmitted}
       />
     </div>
   );

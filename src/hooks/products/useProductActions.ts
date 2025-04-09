@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
+import { createReview, updateReview, deleteReview } from "@/services/productService";
 import { useState } from "react";
 
 export function useProductActions() {
@@ -32,7 +33,7 @@ export function useProductActions() {
         .from('inventory')
         .select('quantity')
         .eq('product_id', productId)
-        .maybeSingle();
+        .single();
 
       if (inventoryError) {
         console.error("Inventory check error:", inventoryError);
@@ -49,7 +50,7 @@ export function useProductActions() {
         .from('products')
         .select('*')
         .eq('id', productId)
-        .maybeSingle();
+        .single();
         
       if (productError) {
         console.error("Product fetch error:", productError);
@@ -106,7 +107,7 @@ export function useProductActions() {
         .from('inventory')
         .select('quantity')
         .eq('product_id', productId)
-        .maybeSingle();
+        .single();
 
       if (inventoryError) {
         console.error("Inventory check error:", inventoryError);
@@ -121,7 +122,7 @@ export function useProductActions() {
       // Check existing cart quantity
       const { data: existingItem, error: checkError } = await supabase
         .from('cart')
-        .select('quantity, id')
+        .select('quantity')
         .eq('user_id', user.id)
         .eq('product_id', productId)
         .maybeSingle();
@@ -139,34 +140,19 @@ export function useProductActions() {
         return;
       }
 
-      // Fixed approach: separate insert and update operations
-      if (existingItem) {
-        // Update existing cart item
-        console.log("Updating existing cart item with quantity:", newQuantity);
-        const { error: updateError } = await supabase
-          .from('cart')
-          .update({ quantity: newQuantity })
-          .eq('id', existingItem.id);
+      // Attempt to insert/update cart item
+      console.log("Upserting cart with quantity:", newQuantity);
+      const { error } = await supabase
+        .from('cart')
+        .upsert({
+          user_id: user.id,
+          product_id: productId,
+          quantity: newQuantity
+        });
 
-        if (updateError) {
-          console.error("Cart update error:", updateError);
-          throw updateError;
-        }
-      } else {
-        // Insert new cart item
-        console.log("Inserting new cart item with quantity:", newQuantity);
-        const { error: insertError } = await supabase
-          .from('cart')
-          .insert({
-            user_id: user.id,
-            product_id: productId,
-            quantity: newQuantity
-          });
-
-        if (insertError) {
-          console.error("Cart insert error:", insertError);
-          throw insertError;
-        }
+      if (error) {
+        console.error("Cart upsert error:", error);
+        throw error;
       }
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
@@ -333,26 +319,6 @@ export function useProductActions() {
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
     } catch (error) {
       console.error('Error marking notification as read:', error);
-    }
-  };
-
-  // Add the deleteReview function since it was removed from imports
-  const deleteReview = async (reviewId: number) => {
-    try {
-      const { error } = await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', reviewId);
-        
-      if (error) {
-        console.error('Error deleting review:', error);
-        throw error;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error in deleteReview:', error);
-      throw error;
     }
   };
 

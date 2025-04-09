@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,37 +87,6 @@ export default function MyRatings() {
     enabled: !!user?.id,
   });
 
-  // Fetch all purchases with their transaction details
-  const { data: purchases = [], isLoading: purchasesLoading } = useQuery({
-    queryKey: ['user-purchases', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      try {
-        const { data, error } = await supabase
-          .from('purchases')
-          .select(`
-            *,
-            transaction_details(*),
-            purchase_items(*, products(*))
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Purchases fetch error:', error);
-          return [];
-        }
-        
-        return data || [];
-      } catch (error) {
-        console.error('Error fetching purchases:', error);
-        return [];
-      }
-    },
-    enabled: !!user?.id,
-  });
-
   const { data: userReviews = [], isLoading: reviewsLoading } = useQuery({
     queryKey: ['my-reviews', user?.id],
     queryFn: async () => {
@@ -156,29 +124,28 @@ export default function MyRatings() {
     enabled: !!user?.id,
   });
 
-  // Create a unique list of all purchased products that need reviews
-  const allPurchasedProducts = purchases.flatMap(purchase => 
-    purchase.purchase_items?.map(item => ({
-      ...item,
-      purchaseId: purchase.id,
-      transactionDetails: purchase.transaction_details
-    })) || []
-  );
-  
   // Create a unique list of products that need reviews
-  // Group by product ID to avoid duplicates and filter out already reviewed products
+  // Group by product ID to avoid duplicates
   const pendingProductMap = new Map();
   
-  allPurchasedProducts.forEach(item => {
-    // Skip products that have already been reviewed
-    if (userReviews.some(review => review.product_id === item.product_id)) {
-      return;
-    }
+  notifications.forEach(notification => {
+    if (!notification.products) return;
     
-    // Only add if not already in the map
-    if (!pendingProductMap.has(item.product_id)) {
-      pendingProductMap.set(item.product_id, item);
-    }
+    notification.products.forEach(item => {
+      // Skip products that have already been reviewed
+      if (userReviews.some(review => review.product_id === item.product_id)) {
+        return;
+      }
+      
+      // Only add if not already in the map
+      if (!pendingProductMap.has(item.product_id)) {
+        pendingProductMap.set(item.product_id, {
+          ...item,
+          notificationId: notification.id,
+          purchaseId: notification.purchase_id
+        });
+      }
+    });
   });
   
   // Convert map to array
@@ -192,7 +159,7 @@ export default function MyRatings() {
           id: productItem.product_id,
           name: productItem.products?.product_name,
           image: productItem.products?.image,
-          purchaseId: productItem.purchase_id
+          purchaseId: productItem.purchaseId
         }
       } 
     });
@@ -201,8 +168,6 @@ export default function MyRatings() {
   if (!user) {
     return null; // Will redirect in useEffect
   }
-
-  const isLoading = notificationsLoading || reviewsLoading || purchasesLoading;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -217,7 +182,7 @@ export default function MyRatings() {
           </TabsList>
           
           <TabsContent value="pending" className="space-y-4">
-            {isLoading ? (
+            {notificationsLoading ? (
               <Card>
                 <CardContent className="pt-6 text-center py-8">
                   <LoadingSpinner size="lg" />
@@ -261,7 +226,7 @@ export default function MyRatings() {
           </TabsContent>
           
           <TabsContent value="completed" className="space-y-4">
-            {isLoading ? (
+            {reviewsLoading ? (
               <Card>
                 <CardContent className="pt-6 text-center py-8">
                   <LoadingSpinner size="lg" />
