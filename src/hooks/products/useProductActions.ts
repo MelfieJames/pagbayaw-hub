@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -180,6 +179,12 @@ export function useProductActions() {
   const handleSubmitReview = async (productId: number, rating: number, comment: string, reviewId?: number, mediaFiles?: { image?: File, video?: File }) => {
     if (!user) {
       toast("Please log in to submit a review");
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: `/products`,
+          message: "Please log in to submit a review."
+        } 
+      });
       return false;
     }
 
@@ -293,6 +298,12 @@ export function useProductActions() {
   const handleDeleteReview = async (reviewId: number) => {
     if (!user) {
       toast("Please log in to delete a review");
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: `/my-ratings`,
+          message: "Please log in to manage your reviews."
+        } 
+      });
       return false;
     }
 
@@ -319,7 +330,15 @@ export function useProductActions() {
   };
 
   const markNotificationAsRead = async (notificationId: number) => {
-    if (!user) return;
+    if (!user) {
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: "/",
+          message: "Please log in to view notifications."
+        } 
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase

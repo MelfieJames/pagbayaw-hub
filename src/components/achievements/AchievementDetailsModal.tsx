@@ -50,9 +50,16 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
               />
               <h2 className="text-xl font-bold text-center">{achievement.achievement_name}</h2>
             </div>
-            <AchievementDetailsContent 
-              achievement={achievement}
-            />
+            <div className="achievement-details-wrapper">
+              <style jsx>{`
+                .achievement-details-wrapper :global(.description-section) {
+                  display: none !important;
+                }
+              `}</style>
+              <AchievementDetailsContent 
+                achievement={achievement}
+              />
+            </div>
           </div>
           <div className="mt-4 flex justify-center">
             <Link to={`/achievements/${achievement.id}`}>
