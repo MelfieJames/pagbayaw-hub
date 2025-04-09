@@ -11,7 +11,7 @@ const storySlides = [
     title: "Our Story",
     subtitle: "Highlights of Trials and Triumphs",
     content: null,
-    image: "/lovable-uploads/0de7d5e0-b8b3-4056-9556-efc664e83dd0.png"
+    image: "https://scontent.fmnl8-3.fna.fbcdn.net/v/t39.30808-6/488889120_718177130902841_2468001341179812153_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeFikBOxb7Oa3amthWZEKo5kzOub-b3jAAHM65v5veMAAXFjxAd8PA6WEVzybPVd1iWFSW-u1IsNUGxY6_xHYix4&_nc_ohc=I2M6tJY9wPAQ7kNvwFswse-&_nc_oc=AdkX_TIdQoMprlXDWPRxHg8lS83tJwU6MEG_9tKifuG7JmvUmqqIZUix-eiJr0TOjXw&_nc_zt=23&_nc_ht=scontent.fmnl8-3.fna&_nc_gid=6D-Hwz4KN8Qjc1v8qkFBfg&oh=00_AfFHzzJGNAjnyKy8Jh7hUli2JH_Vn4yYMSTucSlUM1ISCw&oe=67FC286F"
   },
   {
     id: 2,
