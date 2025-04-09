@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Search, Calendar, User, MapPin, Phone } from "lucide-react";
+import { Search, Calendar, User, MapPin, Phone, Mail } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,19 +32,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface TransactionDetails {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  address: string;
+  created_at: string;
+}
+
 interface PurchaseData {
   id: number;
   created_at: string;
   total_amount: number;
   status: string;
   user_id: string;
-  profiles: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone_number: string;
-    location: string;
-  };
+  transaction_details?: TransactionDetails | null;
+  user_email?: string;
   purchase_items: {
     id: number;
     quantity: number;
@@ -65,12 +70,12 @@ export function PurchasesManagement() {
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ["admin-purchases"],
     queryFn: async () => {
+      // First get purchases with user email and purchase items
       const { data, error } = await supabase
         .from("purchases")
         .select(
           `
           *,
-          profiles (first_name, last_name, email, phone_number, location),
           purchase_items (
             id,
             quantity,
@@ -83,7 +88,41 @@ export function PurchasesManagement() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as PurchaseData[];
+      
+      // Now get user emails associated with purchases
+      const purchasesWithEmail = await Promise.all(
+        data.map(async (purchase) => {
+          // Fetch transaction details for this purchase
+          const { data: transactionData, error: transactionError } = await supabase
+            .from("transaction_details")
+            .select("*")
+            .eq("purchase_id", purchase.id)
+            .maybeSingle();
+            
+          if (transactionError) {
+            console.error("Error fetching transaction details:", transactionError);
+          }
+          
+          // If no transaction details, try to get email from auth users
+          let userEmail = null;
+          if (!transactionData) {
+            const { data: userData, error: userError } = await supabase.auth.admin
+              .getUserById(purchase.user_id);
+              
+            if (!userError && userData) {
+              userEmail = userData.user.email;
+            }
+          }
+          
+          return {
+            ...purchase,
+            transaction_details: transactionData || null,
+            user_email: userEmail
+          };
+        })
+      );
+
+      return purchasesWithEmail as PurchaseData[];
     },
   });
 
@@ -99,19 +138,21 @@ export function PurchasesManagement() {
     // Search by purchase ID
     if (purchase.id.toString().includes(searchTerm)) return true;
 
-    // Search by customer name
+    // Search by customer name from transaction details
     if (
-      purchase.profiles &&
-      `${purchase.profiles.first_name} ${purchase.profiles.last_name}`
+      purchase.transaction_details &&
+      `${purchase.transaction_details.first_name} ${purchase.transaction_details.last_name}`
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     )
       return true;
 
-    // Search by email
+    // Search by email from transaction details or user email
     if (
-      purchase.profiles &&
-      purchase.profiles.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (purchase.transaction_details && 
+        purchase.transaction_details.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (purchase.user_email && 
+        purchase.user_email.toLowerCase().includes(searchTerm.toLowerCase()))
     )
       return true;
 
@@ -201,12 +242,12 @@ export function PurchasesManagement() {
                       {format(new Date(purchase.created_at), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell>
-                      {purchase.profiles ? (
+                      {purchase.transaction_details ? (
                         <div className="max-w-[200px] truncate">
-                          {purchase.profiles.first_name} {purchase.profiles.last_name}
+                          {purchase.transaction_details.first_name} {purchase.transaction_details.last_name}
                         </div>
                       ) : (
-                        <span className="text-gray-400">Unknown</span>
+                        <span className="text-gray-400">{purchase.user_email || "Unknown"}</span>
                       )}
                     </TableCell>
                     <TableCell>{calculateTotalItems(purchase)}</TableCell>
@@ -271,26 +312,41 @@ export function PurchasesManagement() {
                 <h3 className="font-medium mb-2 flex items-center gap-2">
                   <User className="h-4 w-4 text-gray-600" /> Customer Information
                 </h3>
-                {selectedPurchase.profiles ? (
+                {selectedPurchase.transaction_details ? (
                   <div className="space-y-2 text-sm">
                     <div>
                       <div className="text-gray-500">Name:</div>
                       <div>
-                        {selectedPurchase.profiles.first_name}{" "}
-                        {selectedPurchase.profiles.last_name}
+                        {selectedPurchase.transaction_details.first_name}{" "}
+                        {selectedPurchase.transaction_details.last_name}
                       </div>
                     </div>
                     <div>
                       <div className="text-gray-500">Email:</div>
-                      <div>{selectedPurchase.profiles.email}</div>
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-gray-500" />
+                        {selectedPurchase.transaction_details.email}
+                      </div>
                     </div>
                     <div>
                       <div className="text-gray-500">Phone:</div>
-                      <div>{selectedPurchase.profiles.phone_number}</div>
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-gray-500" />
+                        {selectedPurchase.transaction_details.phone_number}
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500">No customer information</div>
+                  <div className="text-gray-500">
+                    {selectedPurchase.user_email ? (
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-gray-500" />
+                        {selectedPurchase.user_email}
+                      </div>
+                    ) : (
+                      "No customer information available"
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -299,18 +355,18 @@ export function PurchasesManagement() {
                 <h3 className="font-medium mb-2 flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-600" /> Delivery Address
                 </h3>
-                {selectedPurchase.profiles?.location ? (
+                {selectedPurchase.transaction_details?.address ? (
                   <div>
                     <div className="text-sm break-words">
-                      {selectedPurchase.profiles.location}
+                      {selectedPurchase.transaction_details.address}
                     </div>
                     <div className="mt-2 text-sm">
                       <span className="text-gray-500">Contact: </span>
-                      {selectedPurchase.profiles.phone_number}
+                      {selectedPurchase.transaction_details.phone_number}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500">No address information</div>
+                  <div className="text-gray-500">No address information available</div>
                 )}
               </div>
             </div>

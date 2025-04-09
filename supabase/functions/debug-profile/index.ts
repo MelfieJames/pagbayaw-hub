@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,9 +24,12 @@ serve(async (req) => {
     }
 
     // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://msvlqapipscspxukbhyb.supabase.co';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdmxxYXBpcHNjc3B4dWtiaHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU5MDMwODUsImV4cCI6MjA1MTQ3OTA4NX0.-n2HKDfTo-57F8vY0f03-2KUUzxegVYsZ6qOn5RSIe4';
+    
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl,
+      supabaseAnonKey,
       { global: { headers: { Authorization: authHeader } } }
     )
 
@@ -76,76 +79,94 @@ serve(async (req) => {
           );
         }
         
-        // First check if profile exists
-        const { data: existingProfile, error: checkError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .maybeSingle();
-          
-        if (checkError) {
-          console.error("Error checking profile:", checkError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to check profile', details: checkError }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        let profileOp;
-        if (!existingProfile) {
-          console.log("Profile doesn't exist, creating new profile");
-          // Insert new profile
-          profileOp = await supabase
+        try {
+          // First check if profile exists
+          const { data: existingProfile, error: checkError } = await supabase
             .from('profiles')
-            .insert({
-              id: user.id,
-              email: user.email,
-              first_name: profileData.first_name,
-              middle_name: profileData.middle_name || '',
-              last_name: profileData.last_name,
-              location: profileData.location,
-              phone_number: profileData.phone_number,
-              updated_at: new Date().toISOString()
-            })
-            .select();
-        } else {
-          console.log("Profile exists, updating profile");
-          // Update existing profile
-          profileOp = await supabase
-            .from('profiles')
-            .update({
-              first_name: profileData.first_name,
-              middle_name: profileData.middle_name || '',
-              last_name: profileData.last_name,
-              location: profileData.location,
-              phone_number: profileData.phone_number,
-              updated_at: new Date().toISOString()
-            })
+            .select('id')
             .eq('id', user.id)
-            .select();
-        }
-        
-        if (profileOp.error) {
-          console.error("Error updating profile:", profileOp.error);
+            .maybeSingle();
+            
+          if (checkError) {
+            console.error("Error checking profile:", checkError);
+            return new Response(
+              JSON.stringify({ error: 'Failed to check profile', details: checkError }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          
+          let profileResult;
+          
+          if (!existingProfile) {
+            console.log("Profile doesn't exist, creating new profile");
+            // Insert new profile
+            const { data, error } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email,
+                first_name: profileData.first_name,
+                middle_name: profileData.middle_name || '',
+                last_name: profileData.last_name,
+                location: profileData.location,
+                phone_number: profileData.phone_number,
+                updated_at: new Date().toISOString()
+              })
+              .select();
+              
+            if (error) {
+              console.error("Error creating profile:", error);
+              throw error;
+            }
+            
+            if (!data || data.length === 0) {
+              console.error("No data returned after profile creation");
+              throw new Error("No data returned after profile creation");
+            }
+            
+            profileResult = data[0];
+          } else {
+            console.log("Profile exists, updating profile");
+            // Update existing profile
+            const { data, error } = await supabase
+              .from('profiles')
+              .update({
+                first_name: profileData.first_name,
+                middle_name: profileData.middle_name || '',
+                last_name: profileData.last_name,
+                location: profileData.location,
+                phone_number: profileData.phone_number,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', user.id)
+              .select();
+              
+            if (error) {
+              console.error("Error updating profile:", error);
+              throw error;
+            }
+            
+            if (!data || data.length === 0) {
+              console.error("No data returned after profile update");
+              throw new Error("No data returned after profile update");
+            }
+            
+            profileResult = data[0];
+          }
+          
+          console.log("Profile updated successfully:", profileResult);
+          
           return new Response(
-            JSON.stringify({ error: 'Failed to update profile', details: profileOp.error }),
+            JSON.stringify({ message: 'Profile updated', profile: profileResult }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (dbError) {
+          console.error("Database error:", dbError);
+          return new Response(
+            JSON.stringify({ error: dbError.message || 'Database error' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
-        if (!profileOp.data || profileOp.data.length === 0) {
-          console.error("No data returned after profile operation");
-          return new Response(
-            JSON.stringify({ error: 'No data returned after profile operation' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        console.log("Profile updated successfully:", profileOp.data[0]);
-        return new Response(
-          JSON.stringify({ message: 'Profile updated', profile: profileOp.data[0] }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
       } catch (error) {
         console.error("Error processing profile data:", error);
         return new Response(
@@ -158,57 +179,57 @@ serve(async (req) => {
     // For GET requests - fetch the profile
     console.log("Fetching profile for user ID:", user.id);
     
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('first_name, middle_name, last_name, location, phone_number')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error("Error fetching profile:", profileError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to get profile', details: profileError }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // If profile doesn't exist, create it
-    if (!profile) {
-      console.log("Profile doesn't exist, creating new profile");
-      const { data: newProfile, error: createError } = await supabase
+    try {
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .insert({ 
-          id: user.id,
-          email: user.email,
-          first_name: "",
-          middle_name: "",
-          last_name: "",
-          location: "",
-          phone_number: ""
-        })
         .select('first_name, middle_name, last_name, location, phone_number')
-        .single();
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (createError) {
-        console.error("Error creating profile:", createError);
+      if (profileError) {
+        throw profileError;
+      }
+
+      // If profile doesn't exist, create it
+      if (!profile) {
+        console.log("Profile doesn't exist, creating new profile");
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({ 
+            id: user.id,
+            email: user.email,
+            first_name: "",
+            middle_name: "",
+            last_name: "",
+            location: "",
+            phone_number: ""
+          })
+          .select('first_name, middle_name, last_name, location, phone_number')
+          .single();
+
+        if (createError) {
+          throw createError;
+        }
+
+        console.log("New profile created:", newProfile);
         return new Response(
-          JSON.stringify({ error: 'Failed to create profile', details: createError }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ message: 'Profile created', profile: newProfile }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.log("New profile created:", newProfile);
+      console.log("Profile found:", profile);
       return new Response(
-        JSON.stringify({ message: 'Profile created', profile: newProfile }),
+        JSON.stringify({ message: 'Profile exists', profile }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } catch (dbError) {
+      console.error("Database error:", dbError);
+      return new Response(
+        JSON.stringify({ error: dbError.message || 'Database error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    console.log("Profile found:", profile);
-    return new Response(
-      JSON.stringify({ message: 'Profile exists', profile }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error("Server error:", error);
     return new Response(
