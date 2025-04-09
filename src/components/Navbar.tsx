@@ -1,11 +1,8 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { NotificationsPopover } from "./notifications/NotificationsPopover";
-import { CartPopover } from "./products/CartPopover";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Award, Package, MessageSquare, Menu, Home, Info, Star, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -16,7 +13,7 @@ export default function Navbar() {
     signOut
   } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useIsMobile();
   const getInitials = (email: string) => {
     return email ? email[0].toUpperCase() : "U";
   };
@@ -55,8 +52,6 @@ export default function Navbar() {
 
           <div className="flex items-center space-x-3 pr-8 mx-[60px]">
             {user ? <>
-                <CartPopover />
-                <NotificationsPopover />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="p-0 h-8 w-8">
@@ -76,11 +71,7 @@ export default function Navbar() {
                       <Star className="h-4 w-4 mr-2" />
                       My Ratings
                     </DropdownMenuItem>
-                    {user.isAdmin && (
-                      <DropdownMenuItem onClick={() => navigate("/admin")}>
-                        Dashboard
-                      </DropdownMenuItem>
-                    )}
+                    {/* Remove isAdmin check since it doesn't exist on User type */}
                     <DropdownMenuItem onClick={() => signOut()}>
                       Logout
                     </DropdownMenuItem>
