@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
@@ -35,21 +36,11 @@ export default function Checkout() {
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
 
-  // Get cached Buy Now items if they exist
-  const cachedBuyNowItems = queryClient.getQueryData<CartItem[]>(['checkout-items']) || [];
-
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items'],
     queryFn: async () => {
-      // If we have Buy Now items in the cache, return those instead of fetching from cart
-      if (cachedBuyNowItems && cachedBuyNowItems.length > 0) {
-        console.log("Using Buy Now items:", cachedBuyNowItems);
-        return cachedBuyNowItems;
-      }
-      
       if (!user?.id) return [];
       
-      // Otherwise fetch normal cart items
       const { data: responseData, error } = await supabase
         .from('cart')
         .select(`
@@ -72,17 +63,8 @@ export default function Checkout() {
       
       return responseData as CartItem[];
     },
-    enabled: !!user?.id || cachedBuyNowItems.length > 0,
+    enabled: !!user?.id,
   });
-
-  // Clear the Buy Now items from cache when leaving the checkout page
-  useEffect(() => {
-    return () => {
-      if (cachedBuyNowItems.length > 0) {
-        queryClient.removeQueries({ queryKey: ['checkout-items'] });
-      }
-    };
-  }, [cachedBuyNowItems.length, queryClient]);
 
   const { data: inventoryData = [] } = useQuery({
     queryKey: ['inventory-data'],
@@ -241,22 +223,19 @@ export default function Checkout() {
         }
       }
       
-      // Clear cart only if this was a cart purchase (not Buy Now)
-      if (cachedBuyNowItems.length === 0) {
-        const { error: cartError } = await supabase
-          .from('cart')
-          .delete()
-          .eq('user_id', user.id)
-          .in('product_id', cartItems.map(item => item.product_id));
+      // Clear cart
+      const { error: cartError } = await supabase
+        .from('cart')
+        .delete()
+        .eq('user_id', user.id)
+        .in('product_id', cartItems.map(item => item.product_id));
 
-        if (cartError) {
-          console.error("Cart clearing error:", cartError);
-          throw cartError;
-        }
+      if (cartError) {
+        console.error("Cart clearing error:", cartError);
+        throw cartError;
       }
 
-      // Invalidate and remove relevant queries
-      queryClient.removeQueries({ queryKey: ['checkout-items'] });
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-data'] });

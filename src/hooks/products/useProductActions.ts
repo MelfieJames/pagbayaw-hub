@@ -55,23 +55,30 @@ export function useProductActions() {
         throw productError;
       }
 
-      // Create a temporary cart item in the query cache
-      const buyNowItems = [{
-        quantity: quantity,
-        product_id: productId,
-        products: {
-          product_name: product.product_name,
-          product_price: product.product_price,
-          image: product.image,
-          category: product.category
+      // Pre-fetch data for the checkout page
+      await queryClient.prefetchQuery({
+        queryKey: ['checkout-items', [productId]],
+        queryFn: async () => {
+          return [{
+            quantity: quantity,
+            product_id: productId,
+            products: {
+              product_name: product.product_name,
+              product_price: product.product_price,
+              image: product.image,
+              category: product.category
+            }
+          }];
         }
-      }];
+      });
 
-      // Set this data in the query cache for the checkout page to use
-      queryClient.setQueryData(['checkout-items'], buyNowItems);
-
-      // Navigate to checkout
-      navigate("/checkout");
+      // Navigate to checkout with the selected item and quantity
+      navigate("/checkout", { 
+        state: { 
+          selectedItems: [productId],
+          quantities: { [productId]: quantity }
+        } 
+      });
     } catch (error) {
       console.error('Error processing buy now:', error);
       toast("Failed to process buy now request");
