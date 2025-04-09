@@ -23,33 +23,30 @@ type SupabaseCartResponse = {
     image: string | null;
     category: string;
   };
-}
+};
 
 export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
 
-  // Get cached Buy Now items if they exist
   const cachedBuyNowItems = queryClient.getQueryData<CartItem[]>(['checkout-items']) || [];
 
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items'],
     queryFn: async () => {
-      // If we have Buy Now items in the cache, return those instead of fetching from cart
-      if (cachedBuyNowItems && cachedBuyNowItems.length > 0) {
+      if (cachedBuyNowItems.length > 0) {
         console.log("Using Buy Now items:", cachedBuyNowItems);
         return cachedBuyNowItems;
       }
-      
+
       if (!user?.id) return [];
-      
-      // Otherwise fetch normal cart items
+
       const { data: responseData, error } = await supabase
         .from('cart')
         .select(`
@@ -69,13 +66,12 @@ export default function Checkout() {
         console.error('Cart fetch error:', error);
         return [];
       }
-      
+
       return responseData as CartItem[];
     },
     enabled: !!user?.id || cachedBuyNowItems.length > 0,
   });
 
-  // Clear the Buy Now items from cache when leaving the checkout page
   useEffect(() => {
     return () => {
       if (cachedBuyNowItems.length > 0) {
@@ -87,9 +83,7 @@ export default function Checkout() {
   const { data: inventoryData = [] } = useQuery({
     queryKey: ['inventory-data'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('*');
+      const { data, error } = await supabase.from('inventory').select('*');
       if (error) throw error;
       return data;
     }
@@ -145,9 +139,8 @@ export default function Checkout() {
     }
   };
 
-  // Calculate total only once
   const total = cartItems.reduce((sum, item) => {
-    return sum + (item.quantity * (item.products?.product_price || 0));
+    return sum + item.quantity * (item.products?.product_price || 0);
   }, 0);
 
   const handleCheckout = async () => {
@@ -155,13 +148,12 @@ export default function Checkout() {
       toast.error("No items to checkout");
       return;
     }
-    
+
     setIsProcessing(true);
 
     try {
       for (const item of cartItems) {
         const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
-        
         if (!inventoryItem || inventoryItem.quantity < item.quantity) {
           toast.error(`Not enough stock for ${item.products?.product_name}`);
           setIsProcessing(false);
@@ -179,11 +171,8 @@ export default function Checkout() {
         .select()
         .single();
 
-      if (purchaseError) {
-        console.error("Purchase creation error:", purchaseError);
-        throw purchaseError;
-      }
-      
+      if (purchaseError) throw purchaseError;
+
       setPurchaseId(purchase.id);
 
       const purchaseItems = cartItems.map(item => ({
@@ -197,34 +186,25 @@ export default function Checkout() {
         .from('purchase_items')
         .insert(purchaseItems);
 
-      if (itemsError) {
-        console.error("Purchase items error:", itemsError);
-        throw itemsError;
-      }
+      if (itemsError) throw itemsError;
 
-      // Update inventory
       for (const item of cartItems) {
         const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
-        
         if (inventoryItem) {
           const newQuantity = inventoryItem.quantity - item.quantity;
-          
+
           const { error: updateError } = await supabase
             .from('inventory')
-            .update({ 
+            .update({
               quantity: newQuantity,
               updated_at: new Date().toISOString()
             })
             .eq('product_id', item.product_id);
 
-          if (updateError) {
-            console.error(`Inventory update error for product ${item.product_id}:`, updateError);
-            throw updateError;
-          }
+          if (updateError) throw updateError;
         }
       }
 
-      // Create notifications
       for (const item of cartItems) {
         const { error: notificationError } = await supabase
           .from('notifications')
@@ -235,13 +215,9 @@ export default function Checkout() {
             message: `Please rate and review your purchase: ${item.products?.product_name}`
           });
 
-        if (notificationError) {
-          console.error('Notification creation error:', notificationError);
-          throw notificationError;
-        }
+        if (notificationError) throw notificationError;
       }
-      
-      // Clear cart only if this was a cart purchase (not Buy Now)
+
       if (cachedBuyNowItems.length === 0) {
         const { error: cartError } = await supabase
           .from('cart')
@@ -249,13 +225,9 @@ export default function Checkout() {
           .eq('user_id', user.id)
           .in('product_id', cartItems.map(item => item.product_id));
 
-        if (cartError) {
-          console.error("Cart clearing error:", cartError);
-          throw cartError;
-        }
+        if (cartError) throw cartError;
       }
 
-      // Invalidate and remove relevant queries
       queryClient.removeQueries({ queryKey: ['checkout-items'] });
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
@@ -264,8 +236,7 @@ export default function Checkout() {
       queryClient.invalidateQueries({ queryKey: ['admin-sales-data'] });
       queryClient.invalidateQueries({ queryKey: ['admin-sales-items'] });
       queryClient.invalidateQueries({ queryKey: ['user-purchases', user.id] });
-      
-      // Show order summary dialog
+
       setShowOrderSummaryDialog(true);
     } catch (error) {
       console.error('Checkout error:', error);
@@ -291,8 +262,8 @@ export default function Checkout() {
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <Navbar />
       <div className="container mx-auto px-4 pt-20 pb-10">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="mb-4 flex items-center gap-2 hover:bg-gray-100"
           onClick={() => navigate('/products')}
         >
@@ -300,12 +271,12 @@ export default function Checkout() {
         </Button>
 
         <h1 className="text-3xl font-bold mb-8 text-gray-800">Checkout</h1>
-        
+
         {cartItems.length === 0 ? (
           <div className="text-center py-8 border rounded-lg shadow-sm bg-white">
             <ShoppingBag className="h-12 w-12 mx-auto text-gray-400 mb-3" />
             <p className="text-lg text-gray-600 mb-4">Your cart is empty</p>
-            <Button 
+            <Button
               onClick={() => navigate('/products')}
               className="bg-primary hover:bg-primary/90"
             >
@@ -315,18 +286,18 @@ export default function Checkout() {
         ) : (
           <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-4">
-              <OrderItems 
-                cartItems={cartItems} 
+              <OrderItems
+                cartItems={cartItems}
                 inventoryData={inventoryData}
                 updateQuantity={updateQuantity}
                 removeFromCart={removeFromCart}
               />
             </div>
-            
+
             <div className="md:col-span-1">
-              <OrderSummary 
+              <OrderSummary
                 total={total}
-                isComplete={true} // No longer requiring complete profile
+                isComplete={true}
                 cartItems={cartItems}
                 isProcessing={isProcessing}
                 handleCheckout={handleCheckout}
@@ -336,8 +307,7 @@ export default function Checkout() {
         )}
       </div>
 
-      {/* Success Dialog */}
-      <OrderSuccessDialog 
+      <OrderSuccessDialog
         open={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
         navigateToOrders={() => {
@@ -350,7 +320,6 @@ export default function Checkout() {
         }}
       />
 
-      {/* Order Summary Dialog - Shown after successful checkout */}
       <OrderSummaryDialog
         open={showOrderSummaryDialog}
         onOpenChange={setShowOrderSummaryDialog}
