@@ -66,19 +66,7 @@ export function UserManagement() {
         
         console.log("Profiles fetched:", profiles?.length);
         
-        // Get list of admin user IDs
-        const { data: admins, error: adminsError } = await supabase
-          .from('admins')
-          .select('user_id');
-          
-        if (adminsError) {
-          console.error("Error fetching admins:", adminsError);
-          throw adminsError;
-        }
-        
-        const adminUserIds = admins?.map(admin => admin.user_id) || [];
-        
-        // Convert profile data to expected format and add isAdmin flag
+        // Convert profile data to expected format
         const userProfiles = profiles?.map(profile => ({
           id: profile.id,
           email: profile.email || '',
@@ -88,8 +76,7 @@ export function UserManagement() {
           location: profile.location || '',
           phone_number: profile.phone_number || '',
           created_at: profile.created_at || new Date().toISOString(),
-          updated_at: profile.updated_at || null,
-          isAdmin: adminUserIds.includes(profile.id)
+          updated_at: profile.updated_at || null
         })) || [];
         
         console.log("User profiles prepared:", userProfiles.length);
@@ -106,21 +93,6 @@ export function UserManagement() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       try {
-        // Check if user is an admin first and prevent deletion
-        const { data: adminCheck, error: adminError } = await supabase
-          .from('admins')
-          .select('id')
-          .eq('user_id', userId)
-          .maybeSingle();
-          
-        if (adminError) {
-          console.error("Error checking admin status:", adminError);
-        }
-        
-        if (adminCheck) {
-          throw new Error("Cannot delete an admin user. Remove admin role first.");
-        }
-          
         // First, clean up user reviews to prevent foreign key constraints issues
         try {
           const { error: reviewsError } = await supabase
@@ -164,7 +136,7 @@ export function UserManagement() {
     },
   });
 
-  const filteredUsers = users.filter((user: UserProfile & { isAdmin?: boolean }) => 
+  const filteredUsers = users.filter((user: UserProfile) => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.location?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -185,13 +157,6 @@ export function UserManagement() {
   };
 
   const handleDeleteClick = (userId: string) => {
-    // Check if user is admin@unvas.com or another admin
-    const user = users.find(u => u.id === userId);
-    if (user?.email === 'admin@unvas.com' || (user as any)?.isAdmin) {
-      toast.error("Cannot delete admin users");
-      return;
-    }
-    
     setSelectedUserId(userId);
     setIsDeleteDialogOpen(true);
   };
@@ -252,22 +217,17 @@ export function UserManagement() {
               </TableHeader>
               <TableBody>
                 {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user: UserProfile & { isAdmin?: boolean }) => (
+                  filteredUsers.map((user: UserProfile) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
-                            <AvatarFallback className={user.isAdmin ? "bg-[#8B4513] text-white" : "bg-[#8B7355] text-white"}>
+                            <AvatarFallback className="bg-[#8B7355] text-white">
                               {getInitials(user)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium flex items-center gap-2">
-                              {getFullName(user)}
-                              {user.isAdmin && (
-                                <Badge className="bg-[#8B4513]">Admin</Badge>
-                              )}
-                            </div>
+                            <div className="font-medium">{getFullName(user)}</div>
                             <div className="text-xs text-gray-500">{user.email}</div>
                           </div>
                         </div>
@@ -308,7 +268,6 @@ export function UserManagement() {
                           size="sm"
                           onClick={() => handleDeleteClick(user.id)}
                           className="h-8 flex items-center gap-1"
-                          disabled={user.isAdmin || user.email === 'admin@unvas.com'}
                         >
                           <UserX className="h-4 w-4" />
                           Delete

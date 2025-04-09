@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/services/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ImagePlus, Trash2, Plus } from "lucide-react";
+import { ImagePlus, Trash2 } from "lucide-react";
 import { ImageUploadSection } from "./ImageUploadSection";
 
 interface AchievementImageUploaderProps {
@@ -134,22 +134,8 @@ export const AchievementImageUploader = ({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Upload Additional Images</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => document.getElementById('achievement-images-upload')?.click()}
-              className="flex items-center gap-1"
-            >
-              <Plus className="h-4 w-4" />
-              Add More
-            </Button>
-          </div>
-          
+        <div className="space-y-2">
           <ImageUploadSection
-            id="achievement-images-upload"
             imagePreviews={previews}
             onFileChange={handleFileChange}
             multiple={true}
@@ -159,15 +145,15 @@ export const AchievementImageUploader = ({
           <Button 
             onClick={uploadFiles} 
             disabled={isUploading || files.length === 0}
-            className="mt-4 w-full"
+            className="mt-4"
           >
             {isUploading ? "Uploading..." : "Upload Images"}
           </Button>
         </div>
 
         {existingImages.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="font-medium">Gallery Images</h3>
+          <div className="space-y-2">
+            <h3 className="font-medium">Existing Images</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {existingImages.map((image) => (
                 <div key={image.id} className="relative group">
@@ -192,4 +178,4 @@ export const AchievementImageUploader = ({
       </div>
     </div>
   );
-}
+};
