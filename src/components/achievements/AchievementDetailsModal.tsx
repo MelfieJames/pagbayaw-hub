@@ -51,11 +51,9 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
               <h2 className="text-xl font-bold text-center">{achievement.achievement_name}</h2>
             </div>
             <div className="achievement-details-wrapper">
-              <style jsx>{`
-                .achievement-details-wrapper :global(.description-section) {
-                  display: none !important;
-                }
-              `}</style>
+              <style>
+                {`.achievement-details-wrapper .description-section { display: none !important; }`}
+              </style>
               <AchievementDetailsContent 
                 achievement={achievement}
               />

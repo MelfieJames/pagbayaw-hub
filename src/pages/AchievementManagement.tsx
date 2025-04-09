@@ -39,13 +39,13 @@ const AchievementManagement = () => {
     // We'll use CSS to hide the description field since we can't modify the actual component
     return (
       <div className="achievement-form-wrapper">
-        <style jsx>{`
-          .achievement-form-wrapper :global([for="description"]),
-          .achievement-form-wrapper :global(#description),
-          .achievement-form-wrapper :global(textarea[name="description"]) {
-            display: none !important;
-          }
-        `}</style>
+        <style>
+          {`.achievement-form-wrapper [for="description"],
+            .achievement-form-wrapper #description,
+            .achievement-form-wrapper textarea[name="description"] {
+              display: none !important;
+            }`}
+        </style>
         <AchievementForm
           mode={mode}
           initialData={initialData}
