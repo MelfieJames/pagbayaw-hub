@@ -22,18 +22,24 @@ export default function AdminDashboard() {
     queryFn: async () => {
       if (!user) return false;
 
-      const { data, error } = await supabase
-        .from('admins')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Use a try-catch to handle potential errors
+      try {
+        const { data, error } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (error) {
-        console.error("Error checking admin status:", error);
+        if (error) {
+          console.error("Error checking admin status:", error);
+          return false;
+        }
+
+        return !!data;
+      } catch (err) {
+        console.error("Exception checking admin status:", err);
         return false;
       }
-
-      return !!data;
     },
     enabled: !!user?.id,
   });
