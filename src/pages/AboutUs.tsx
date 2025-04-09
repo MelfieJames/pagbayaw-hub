@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -11,7 +11,7 @@ const storySlides = [
     title: "Our Story",
     subtitle: "Highlights of Trials and Triumphs",
     content: null,
-    image: "https://scontent.fmnl8-3.fna.fbcdn.net/v/t39.30808-6/488889120_718177130902841_2468001341179812153_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeFikBOxb7Oa3amthWZEKo5kzOub-b3jAAHM65v5veMAAXFjxAd8PA6WEVzybPVd1iWFSW-u1IsNUGxY6_xHYix4&_nc_ohc=I2M6tJY9wPAQ7kNvwFswse-&_nc_oc=AdkX_TIdQoMprlXDWPRxHg8lS83tJwU6MEG_9tKifuG7JmvUmqqIZUix-eiJr0TOjXw&_nc_zt=23&_nc_ht=scontent.fmnl8-3.fna&_nc_gid=6D-Hwz4KN8Qjc1v8qkFBfg&oh=00_AfFHzzJGNAjnyKy8Jh7hUli2JH_Vn4yYMSTucSlUM1ISCw&oe=67FC286F"
+    image: "/lovable-uploads/0de7d5e0-b8b3-4056-9556-efc664e83dd0.png"
   },
   {
     id: 2,
@@ -92,82 +92,8 @@ const storySlides = [
   }
 ];
 
-// FAQ data
-const faqData = [
-  {
-    category: "About UNVAS",
-    questions: [
-      {
-        question: "What is UNVAS?",
-        answer: "UNVAS is an eco-friendly art canvas and craft material made from upcycled dried banana leaves (locally known as 'unas'). It's a sustainable alternative to traditional canvas materials, created to provide livelihood to communities in the Philippines."
-      },
-      {
-        question: "How is UNVAS made?",
-        answer: "UNVAS is made by collecting dried banana leaves, processing them through several natural methods, and converting them into durable sheets that can be used for various purposes including art canvas and craft materials."
-      },
-      {
-        question: "Is UNVAS eco-friendly?",
-        answer: "Yes, UNVAS is 100% eco-friendly. It utilizes agricultural waste (dried banana leaves) that would otherwise be burned, reducing pollution and carbon emissions. The production process uses minimal chemicals and emphasizes sustainability."
-      },
-      {
-        question: "What makes UNVAS different from other canvas materials?",
-        answer: "UNVAS stands out because of its unique texture, sustainability, and social impact. Each UNVAS product directly contributes to community livelihood programs across the Philippines, particularly helping marginalized groups."
-      },
-      {
-        question: "Can I use UNVAS for painting or crafting?",
-        answer: "Absolutely! UNVAS works wonderfully for various art forms including acrylic painting, oil painting, and many types of crafts. Its unique texture adds character to artwork and creates distinctive results."
-      }
-    ]
-  },
-  {
-    category: "Products",
-    questions: [
-      {
-        question: "What kind of UNVAS products do you sell?",
-        answer: "We offer a range of products including art canvas in various sizes, printing papers, handmade accessories like earrings and necklaces, home decorations, and raw materials for crafters who want to create their own designs."
-      },
-      {
-        question: "Are all the products handmade?",
-        answer: "Yes, all our products are handmade by different community groups across the Philippines, ensuring each item is unique and created with care. This also helps maximize the positive social impact of each purchase."
-      },
-      {
-        question: "Can I request a custom design?",
-        answer: "Yes, we accept custom orders for both individual pieces and bulk orders. Please contact us with your specific requirements, and we'll work with our artisan communities to create something special for you."
-      },
-      {
-        question: "Do you offer gift sets or bundles?",
-        answer: "Yes, we offer various gift sets and bundles, perfect for presents or as starter kits for those who want to try different UNVAS products. These bundles often come at a special price compared to buying individual items."
-      }
-    ]
-  }
-];
-
-const FAQItem = ({ question, answer, isOpen, toggleFAQ }: { question: string; answer: string; isOpen: boolean; toggleFAQ: () => void }) => {
-  return (
-    <div className="border-b border-[#A8D0B9]/40 last:border-0">
-      <button
-        className="flex justify-between items-center w-full py-4 text-left font-medium"
-        onClick={toggleFAQ}
-      >
-        <span className="text-[#5a3e2b]">{question}</span>
-        {isOpen ? (
-          <Minus className="h-4 w-4 text-[#6b8e68]" />
-        ) : (
-          <Plus className="h-4 w-4 text-[#6b8e68]" />
-        )}
-      </button>
-      {isOpen && (
-        <div className="pb-4 text-gray-700 animate-in fade-in-0 duration-200">
-          {answer}
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default function AboutUs() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [openFAQs, setOpenFAQs] = useState<Record<string, boolean>>({});
 
   const goToNextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % storySlides.length);
@@ -175,14 +101,6 @@ export default function AboutUs() {
 
   const goToPrevSlide = () => {
     setCurrentSlide((prev) => (prev === 0 ? storySlides.length - 1 : prev - 1));
-  };
-
-  const toggleFAQ = (category: string, index: number) => {
-    const faqId = `${category}-${index}`;
-    setOpenFAQs((prev) => ({
-      ...prev,
-      [faqId]: !prev[faqId]
-    }));
   };
 
   return (
@@ -210,8 +128,8 @@ export default function AboutUs() {
                   {/* Left: Image with leaf design */}
                   <div className="md:w-1/2 bg-[#A8D0B9]/10 flex items-center justify-center py-8 relative">
                     <img 
-                      src="/lovable-uploads/728aef88-d703-42dc-8a2e-5ba830706f08.png" 
-                      alt="UNVAS Background" 
+                      src="/lovable-uploads/26e0db8f-9b14-4b80-95ef-0c44a0320664.png" 
+                      alt="Banana Leaf Background" 
                       className="absolute inset-0 w-full h-full object-cover opacity-20"
                     />
                     <div className="relative z-10">
@@ -283,47 +201,19 @@ export default function AboutUs() {
           </div>
         </section>
         
-        {/* FAQ Section */}
-        <section className="py-12 bg-[#f7faf8]">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold text-[#5a3e2b] mb-10 text-center">Frequently Asked Questions</h2>
-              
-              <div className="space-y-8">
-                {faqData.map((category, categoryIndex) => (
-                  <div key={categoryIndex} className="bg-white rounded-lg shadow-md overflow-hidden border border-[#A8D0B9]/30">
-                    <h3 className="text-xl font-semibold p-4 bg-[#A8D0B9]/20 text-[#5a3e2b]">{category.category}</h3>
-                    <div className="divide-y divide-[#A8D0B9]/20 px-4">
-                      {category.questions.map((faq, index) => (
-                        <FAQItem 
-                          key={index}
-                          question={faq.question}
-                          answer={faq.answer}
-                          isOpen={!!openFAQs[`${category.category}-${index}`]}
-                          toggleFAQ={() => toggleFAQ(category.category, index)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-        
         {/* Founder Section */}
-        <section className="py-12 bg-white">
+        <section className="py-12 bg-[#f7faf8]">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-3xl font-bold text-[#5a3e2b] mb-8">Founder's Message</h2>
               
-              <div className="bg-[#f7faf8] p-8 rounded-lg shadow-md border border-[#A8D0B9]/30">
-                <blockquote className="italic text-gray-700 mb-6 text-lg">
+              <div className="bg-white p-6 rounded-lg shadow-md border border-[#A8D0B9]/30">
+                <blockquote className="italic text-gray-700 mb-6">
                   "We hope that more Filipino people will join us in revolutionizing sustainable livelihood by supporting UNVAS. Together, we can empower marginal communities in the Philippines, reduce waste, and create a greener future."
                 </blockquote>
                 
                 <div className="flex flex-col items-center">
-                  <p className="font-semibold text-[#6b8e68] text-lg">Julienne Stephanie Fabie</p>
+                  <p className="font-semibold text-[#6b8e68]">Julienne Stephanie Fabie</p>
                   <p className="text-sm text-gray-600">Managing Director, PAGBAYAW Inc.</p>
                   <p className="text-sm text-gray-600">Associate Professor, Western Mindanao State University</p>
                   <p className="text-sm text-gray-600">Inventor, UNVAS</p>

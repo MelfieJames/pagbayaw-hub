@@ -34,28 +34,6 @@ const AchievementManagement = () => {
     queryClient.invalidateQueries({ queryKey: ['achievements'] });
   };
 
-  // This is a wrapper for AchievementForm that will hide the description field
-  const AchievementFormWrapper = ({ mode, initialData, onSuccess, onClose }: any) => {
-    // We'll use CSS to hide the description field since we can't modify the actual component
-    return (
-      <div className="achievement-form-wrapper">
-        <style>
-          {`.achievement-form-wrapper [for="description"],
-            .achievement-form-wrapper #description,
-            .achievement-form-wrapper textarea[name="description"] {
-              display: none !important;
-            }`}
-        </style>
-        <AchievementForm
-          mode={mode}
-          initialData={initialData}
-          onSuccess={onSuccess}
-          onClose={onClose}
-        />
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -83,7 +61,7 @@ const AchievementManagement = () => {
                     <DialogTitle>Add New Achievement</DialogTitle>
                   </DialogHeader>
                   <div className="mt-4">
-                    <AchievementFormWrapper 
+                    <AchievementForm 
                       mode="add"
                       onSuccess={handleAddSuccess}
                       onClose={() => setIsAddDialogOpen(false)}
@@ -112,7 +90,7 @@ const AchievementManagement = () => {
             <DialogTitle>Edit Achievement</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <AchievementFormWrapper
+            <AchievementForm
               mode="edit"
               initialData={currentAchievement}
               onSuccess={handleEditSuccess}

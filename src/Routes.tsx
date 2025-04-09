@@ -14,7 +14,6 @@ import AchievementDetail from "@/pages/AchievementDetail";
 import MyRatings from "@/pages/MyRatings";
 import UserProfile from "@/pages/UserProfile";
 import PurchaseHistory from "@/pages/PurchaseHistory";
-import AboutUs from "@/pages/AboutUs";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -47,7 +46,6 @@ const Routes = () => {
       <Route path="/contact" element={<Contact />} />
       <Route path="/achievements" element={<Achievements />} />
       <Route path="/achievements/:id" element={<AchievementDetail />} />
-      <Route path="/about" element={<AboutUs />} />
 
       {/* Protected Routes */}
       <Route

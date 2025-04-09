@@ -76,7 +76,8 @@ export function CartPopover() {
       if (error) throw error;
       return data;
     },
-    enabled: true // Always enabled to ensure inventory data is available for all users
+    // Remove any conditional enabling to ensure this runs for all users
+    enabled: true
   });
   
   const updateQuantity = async (productId: number, newQuantity: number) => {
@@ -114,16 +115,7 @@ export function CartPopover() {
   };
   
   const removeFromCart = async (productId: number) => {
-    if (!user?.id) {
-      toast("Please log in to remove items from your cart");
-      navigate('/login', {
-        state: {
-          redirectAfterLogin: '/products',
-          message: "Please log in to manage your cart"
-        }
-      });
-      return;
-    }
+    if (!user?.id) return;
     try {
       const {
         error
