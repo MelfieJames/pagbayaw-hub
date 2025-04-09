@@ -18,7 +18,7 @@ import { User, Mail, Calendar, MapPin, Phone, Search, UserX } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -46,7 +46,6 @@ export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading, error } = useQuery({
@@ -87,41 +86,53 @@ export function UserManagement() {
         throw error;
       }
     },
-    retry: 1,
-    staleTime: 1 * 60 * 1000 // 1 minute
+    refetchInterval: 15000, // Refresh every 15 seconds
+    staleTime: 10 * 1000 // Consider data stale after 10 seconds
   });
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // First delete from profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      try {
+        // First, clean up user reviews to prevent foreign key constraints issues
+        try {
+          const { error: reviewsError } = await supabase
+            .from('reviews')
+            .delete()
+            .eq('user_id', userId);
+            
+          if (reviewsError) {
+            console.warn("Error cleaning up user reviews:", reviewsError);
+          }
+        } catch (cleanupError) {
+          console.warn("Error during review cleanup:", cleanupError);
+        }
       
-      if (profileError) {
-        console.error("Error deleting profile:", profileError);
-        throw new Error(`Error deleting profile: ${profileError.message}`);
+        // Delete profile from database
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        
+        if (profileError) {
+          console.error("Error deleting profile:", profileError);
+          throw new Error(`Error deleting profile: ${profileError.message}`);
+        }
+        
+        return userId;
+      } catch (error) {
+        console.error("Error in delete process:", error);
+        throw error;
       }
-      
-      return userId;
     },
     onSuccess: (userId) => {
-      toast({ 
-        title: "User deleted successfully",
-        description: "User profile has been removed from the system."
-      });
+      toast.success("User deleted successfully");
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setIsDeleteDialogOpen(false);
       setSelectedUserId(null);
     },
     onError: (error: Error) => {
       console.error("Delete user mutation error:", error);
-      toast({ 
-        title: "Failed to delete user", 
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error("Failed to delete user: " + error.message);
     },
   });
 
@@ -152,7 +163,7 @@ export function UserManagement() {
 
   const confirmDelete = () => {
     if (selectedUserId) {
-      deleteUserMutation.mutateAsync(selectedUserId);
+      deleteUserMutation.mutate(selectedUserId);
     }
   };
 

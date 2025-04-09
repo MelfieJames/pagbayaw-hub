@@ -47,23 +47,38 @@ export default function Products() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  const { products, inventoryData, productReviews, hasUserReviewedProduct, isLoading } = useProductQueries();
+  const { products, inventoryData, productReviews, hasUserReviewedProduct, getUserReviewForProduct, isLoading } = useProductQueries();
   const { handleBuyNow, handleAddToCart, handleSubmitReview } = useProductActions();
 
   useEffect(() => {
     if (location.state?.openReview && location.state?.reviewProduct) {
       const product = location.state.reviewProduct;
+      // Check if user has already reviewed this product
+      if (user && !product.isEditing && hasUserReviewedProduct(product.id)) {
+        setErrorMessage({
+          title: "Already Reviewed",
+          message: "You have already reviewed this product. You can only review a product once."
+        });
+        setErrorModalOpen(true);
+        // Clear location state
+        window.history.replaceState({}, document.title);
+        return;
+      }
+      
       setReviewProduct(product);
       
       if (product.isEditing) {
-        setRating(product.existingRating || 0);
-        setComment(product.existingComment || "");
+        const existingReview = getUserReviewForProduct(product.id);
+        if (existingReview) {
+          setRating(existingReview.rating || 0);
+          setComment(existingReview.comment || "");
+        }
       }
       
       setReviewDialogOpen(true);
       window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
+  }, [location.state, user, hasUserReviewedProduct, getUserReviewForProduct]);
 
   const productRatings = productReviews.reduce((acc, review) => {
     if (!acc[review.product_id]) {
@@ -167,6 +182,7 @@ export default function Products() {
     try {
       setIsSubmitting(true);
       
+      // Double check to prevent duplicate reviews
       if (!reviewProduct.isEditing && hasUserReviewedProduct(reviewProduct.id)) {
         setErrorMessage({
           title: "Already Reviewed",

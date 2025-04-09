@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+
 type SupabaseCartResponse = {
   quantity: number;
   product_id: number;
@@ -19,23 +20,20 @@ type SupabaseCartResponse = {
     category: string;
   };
 };
+
 export function CartPopover() {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
-  const {
-    data: cartItems = []
-  } = useQuery<CartItem[]>({
+  
+  const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ['cart-details'],
     queryFn: async () => {
       if (!user?.id) return [];
-      const {
-        data: responseData,
-        error
-      } = await supabase.from('cart').select(`
+      const { data: responseData, error } = await supabase
+        .from('cart')
+        .select(`
           quantity,
           product_id,
           products (
@@ -44,11 +42,15 @@ export function CartPopover() {
             image,
             category
           )
-        `).eq('user_id', user.id).returns<SupabaseCartResponse[]>();
+        `)
+        .eq('user_id', user.id)
+        .returns<SupabaseCartResponse[]>();
+        
       if (error) {
         console.error('Cart fetch error:', error);
         return [];
       }
+      
       return responseData.map(item => ({
         quantity: item.quantity,
         product_id: item.product_id,
@@ -62,19 +64,21 @@ export function CartPopover() {
     },
     enabled: !!user?.id
   });
-  const {
-    data: inventoryData = []
-  } = useQuery({
+
+  // Always fetch inventory data regardless of login status
+  const { data: inventoryData = [] } = useQuery({
     queryKey: ['inventory-data'],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from('inventory').select('*');
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*');
+        
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: true // Always enabled to ensure inventory data is available for all users
   });
+  
   const updateQuantity = async (productId: number, newQuantity: number) => {
     if (!user?.id) {
       toast("Please log in to update your cart");
@@ -108,8 +112,18 @@ export function CartPopover() {
       toast("Failed to update quantity");
     }
   };
+  
   const removeFromCart = async (productId: number) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast("Please log in to remove items from your cart");
+      navigate('/login', {
+        state: {
+          redirectAfterLogin: '/products',
+          message: "Please log in to manage your cart"
+        }
+      });
+      return;
+    }
     try {
       const {
         error
@@ -125,9 +139,11 @@ export function CartPopover() {
       toast("Failed to remove item from cart");
     }
   };
+  
   const toggleItemSelection = (productId: number) => {
     setSelectedItems(prev => prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]);
   };
+
   const groupedCartItems = cartItems.reduce((acc, item) => {
     const category = item.products?.category || 'Uncategorized';
     if (!acc[category]) {
@@ -136,7 +152,11 @@ export function CartPopover() {
     acc[category].push(item);
     return acc;
   }, {} as Record<string, CartItem[]>);
-  const selectedTotal = cartItems.filter(item => selectedItems.includes(item.product_id)).reduce((sum, item) => sum + item.quantity * (item.products?.product_price || 0), 0);
+
+  const selectedTotal = cartItems
+    .filter(item => selectedItems.includes(item.product_id))
+    .reduce((sum, item) => sum + item.quantity * (item.products?.product_price || 0), 0);
+
   const handleCheckout = () => {
     if (!user) {
       toast("Please log in to checkout");
@@ -152,10 +172,12 @@ export function CartPopover() {
       toast("Please select items to checkout");
       return;
     }
-    const quantities = cartItems.filter(item => selectedItems.includes(item.product_id)).reduce((acc, item) => ({
-      ...acc,
-      [item.product_id]: item.quantity
-    }), {});
+    const quantities = cartItems
+      .filter(item => selectedItems.includes(item.product_id))
+      .reduce((acc, item) => ({
+        ...acc,
+        [item.product_id]: item.quantity
+      }), {});
     navigate('/checkout', {
       state: {
         selectedItems,
@@ -163,52 +185,77 @@ export function CartPopover() {
       }
     });
   };
+
   const handleNavigateToProducts = () => {
     navigate('/products');
   };
-  return <Popover>
+
+  return (
+    <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative mx-[5px]">
           <ShoppingCart className="h-5 w-5" />
-          {user && cartItems.length > 0 && <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+          {user && cartItems.length > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
               {cartItems.length}
-            </span>}
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">Shopping Cart</h4>
-            {user && <span className="text-sm text-muted-foreground">
+            {user && (
+              <span className="text-sm text-muted-foreground">
                 {selectedItems.length} selected
-              </span>}
+              </span>
+            )}
           </div>
           
-          {!user ? <div className="text-center py-4 space-y-4">
+          {!user ? (
+            <div className="text-center py-4 space-y-4">
               <p className="text-muted-foreground">Please log in to view your cart</p>
-              <Button className="w-full" onClick={() => navigate('/login', {
-            state: {
-              redirectAfterLogin: '/products',
-              message: "Please log in to view your cart"
-            }
-          })}>
+              <Button 
+                className="w-full" 
+                onClick={() => navigate('/login', {
+                  state: {
+                    redirectAfterLogin: '/products',
+                    message: "Please log in to view your cart"
+                  }
+                })}
+              >
                 Log In
               </Button>
               <Button variant="outline" className="w-full" onClick={handleNavigateToProducts}>
                 Browse Products
               </Button>
-            </div> : cartItems.length === 0 ? <div className="text-center py-4 space-y-4">
+            </div>
+          ) : cartItems.length === 0 ? (
+            <div className="text-center py-4 space-y-4">
               <p className="text-muted-foreground">Your cart is empty</p>
               <Button className="w-full" onClick={handleNavigateToProducts}>
                 Browse Products
               </Button>
-            </div> : <>
+            </div>
+          ) : (
+            <>
               <div className="space-y-4 max-h-[60vh] overflow-auto">
-                {Object.entries(groupedCartItems).map(([category, items]) => <div key={category} className="space-y-2">
+                {Object.entries(groupedCartItems).map(([category, items]) => (
+                  <div key={category} className="space-y-2">
                     <h5 className="font-medium text-sm text-muted-foreground">{category}</h5>
-                    {items.map(item => <div key={item.product_id} className="flex items-start gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95">
-                        <Checkbox checked={selectedItems.includes(item.product_id)} onCheckedChange={() => toggleItemSelection(item.product_id)} className="mt-2" />
-                        <img src={item.products?.image || "/placeholder.svg"} alt={item.products?.product_name} className="w-12 h-12 object-cover rounded" />
+                    {items.map(item => (
+                      <div key={item.product_id} className="flex items-start gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95">
+                        <Checkbox 
+                          checked={selectedItems.includes(item.product_id)} 
+                          onCheckedChange={() => toggleItemSelection(item.product_id)} 
+                          className="mt-2" 
+                        />
+                        <img 
+                          src={item.products?.image || "/placeholder.svg"} 
+                          alt={item.products?.product_name} 
+                          className="w-12 h-12 object-cover rounded" 
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
                             {item.products?.product_name}
@@ -217,32 +264,54 @@ export function CartPopover() {
                             ₱{item.products?.product_price.toFixed(2)}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                            >
                               <Minus className="h-3 w-3" />
                             </Button>
                             <span className="text-sm w-8 text-center">{item.quantity}</span>
-                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.product_id, item.quantity + 1)}>
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                            >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.product_id)}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeFromCart(item.product_id)}
+                        >
                           <X className="h-4 w-4" />
                         </Button>
-                      </div>)}
-                  </div>)}
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
               <div className="pt-4 border-t">
                 <div className="flex justify-between mb-4">
                   <span className="font-medium">Selected Total:</span>
                   <span className="font-medium">₱{selectedTotal.toFixed(2)}</span>
                 </div>
-                <Button className="w-full" onClick={handleCheckout} disabled={selectedItems.length === 0}>
+                <Button 
+                  className="w-full" 
+                  onClick={handleCheckout} 
+                  disabled={selectedItems.length === 0}
+                >
                   Proceed to Checkout ({selectedItems.length} items)
                 </Button>
               </div>
-            </>}
+            </>
+          )}
         </div>
       </PopoverContent>
-    </Popover>;
+    </Popover>
+  );
 }

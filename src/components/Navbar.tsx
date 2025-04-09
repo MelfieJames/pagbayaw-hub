@@ -11,16 +11,15 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Navbar() {
-  const {
-    user,
-    signOut
-  } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const getInitials = (email: string) => {
     return email ? email[0].toUpperCase() : "U";
   };
-  const NavItems = () => <>
+  
+  const NavItems = () => (
+    <>
       <Link to="/" className="flex items-center gap-2 hover:text-primary transition-colors">
         <Home className="h-4 w-4" />
         <span>Home</span>
@@ -41,8 +40,11 @@ export default function Navbar() {
         <MessageSquare className="h-4 w-4" />
         <span>Contact Us</span>
       </Link>
-    </>;
-  return <nav className="fixed top-0 w-full bg-white border-b z-50">
+    </>
+  );
+  
+  return (
+    <nav className="fixed top-0 w-full bg-white border-b z-50">
       <div className="container mx-auto px-0">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="text-xl font-bold">
@@ -54,7 +56,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center space-x-3 pr-8 mx-[60px]">
-            {user ? <>
+            {user ? (
+              <>
                 <CartPopover />
                 <NotificationsPopover />
                 <DropdownMenu>
@@ -86,13 +89,19 @@ export default function Navbar() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </> : <div className="flex gap-2">
-                {!isMobile && <Button onClick={() => navigate("/login")} className="mx-[67px]">
+              </>
+            ) : (
+              <div className="flex gap-2">
+                {!isMobile && (
+                  <Button onClick={() => navigate("/login")} className="mx-[67px]">
                     Login
-                  </Button>}
-              </div>}
+                  </Button>
+                )}
+              </div>
+            )}
             
-            {isMobile && <Sheet>
+            {isMobile && (
+              <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
                     <Menu className="h-6 w-6" />
@@ -113,16 +122,20 @@ export default function Navbar() {
                         </Link>
                       </>
                     )}
-                    {!user && <div className="flex flex-col gap-2 mt-4">
+                    {!user && (
+                      <div className="flex flex-col gap-2 mt-4">
                         <Button onClick={() => navigate("/login")}>
                           Login
                         </Button>
-                      </div>}
+                      </div>
+                    )}
                   </div>
                 </SheetContent>
-              </Sheet>}
+              </Sheet>
+            )}
           </div>
         </div>
       </div>
-    </nav>;
+    </nav>
+  );
 }

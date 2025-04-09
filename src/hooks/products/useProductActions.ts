@@ -1,10 +1,8 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
-import { createReview, updateReview, deleteReview } from "@/services/productService";
 import { useState } from "react";
 
 export function useProductActions() {
@@ -33,7 +31,7 @@ export function useProductActions() {
         .from('inventory')
         .select('quantity')
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (inventoryError) {
         console.error("Inventory check error:", inventoryError);
@@ -50,37 +48,30 @@ export function useProductActions() {
         .from('products')
         .select('*')
         .eq('id', productId)
-        .single();
+        .maybeSingle();
         
       if (productError) {
         console.error("Product fetch error:", productError);
         throw productError;
       }
 
-      // Pre-fetch data for the checkout page
-      await queryClient.prefetchQuery({
-        queryKey: ['checkout-items', [productId]],
-        queryFn: async () => {
-          return [{
-            quantity: quantity,
-            product_id: productId,
-            products: {
-              product_name: product.product_name,
-              product_price: product.product_price,
-              image: product.image,
-              category: product.category
-            }
-          }];
+      // Create a temporary cart item in the query cache
+      const buyNowItems = [{
+        quantity: quantity,
+        product_id: productId,
+        products: {
+          product_name: product.product_name,
+          product_price: product.product_price,
+          image: product.image,
+          category: product.category
         }
-      });
+      }];
 
-      // Navigate to checkout with the selected item and quantity
-      navigate("/checkout", { 
-        state: { 
-          selectedItems: [productId],
-          quantities: { [productId]: quantity }
-        } 
-      });
+      // Set this data in the query cache for the checkout page to use
+      queryClient.setQueryData(['checkout-items'], buyNowItems);
+
+      // Navigate to checkout
+      navigate("/checkout");
     } catch (error) {
       console.error('Error processing buy now:', error);
       toast("Failed to process buy now request");
@@ -107,7 +98,7 @@ export function useProductActions() {
         .from('inventory')
         .select('quantity')
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (inventoryError) {
         console.error("Inventory check error:", inventoryError);
@@ -122,7 +113,7 @@ export function useProductActions() {
       // Check existing cart quantity
       const { data: existingItem, error: checkError } = await supabase
         .from('cart')
-        .select('quantity')
+        .select('quantity, id')
         .eq('user_id', user.id)
         .eq('product_id', productId)
         .maybeSingle();
@@ -140,19 +131,34 @@ export function useProductActions() {
         return;
       }
 
-      // Attempt to insert/update cart item
-      console.log("Upserting cart with quantity:", newQuantity);
-      const { error } = await supabase
-        .from('cart')
-        .upsert({
-          user_id: user.id,
-          product_id: productId,
-          quantity: newQuantity
-        });
+      // Fixed approach: separate insert and update operations
+      if (existingItem) {
+        // Update existing cart item
+        console.log("Updating existing cart item with quantity:", newQuantity);
+        const { error: updateError } = await supabase
+          .from('cart')
+          .update({ quantity: newQuantity })
+          .eq('id', existingItem.id);
 
-      if (error) {
-        console.error("Cart upsert error:", error);
-        throw error;
+        if (updateError) {
+          console.error("Cart update error:", updateError);
+          throw updateError;
+        }
+      } else {
+        // Insert new cart item
+        console.log("Inserting new cart item with quantity:", newQuantity);
+        const { error: insertError } = await supabase
+          .from('cart')
+          .insert({
+            user_id: user.id,
+            product_id: productId,
+            quantity: newQuantity
+          });
+
+        if (insertError) {
+          console.error("Cart insert error:", insertError);
+          throw insertError;
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
@@ -166,6 +172,12 @@ export function useProductActions() {
   const handleSubmitReview = async (productId: number, rating: number, comment: string, reviewId?: number, mediaFiles?: { image?: File, video?: File }) => {
     if (!user) {
       toast("Please log in to submit a review");
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: `/products`,
+          message: "Please log in to submit a review."
+        } 
+      });
       return false;
     }
 
@@ -279,6 +291,12 @@ export function useProductActions() {
   const handleDeleteReview = async (reviewId: number) => {
     if (!user) {
       toast("Please log in to delete a review");
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: `/my-ratings`,
+          message: "Please log in to manage your reviews."
+        } 
+      });
       return false;
     }
 
@@ -305,7 +323,15 @@ export function useProductActions() {
   };
 
   const markNotificationAsRead = async (notificationId: number) => {
-    if (!user) return;
+    if (!user) {
+      navigate("/login", { 
+        state: { 
+          redirectAfterLogin: "/",
+          message: "Please log in to view notifications."
+        } 
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -319,6 +345,26 @@ export function useProductActions() {
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
     } catch (error) {
       console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // Add the deleteReview function since it was removed from imports
+  const deleteReview = async (reviewId: number) => {
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId);
+        
+      if (error) {
+        console.error('Error deleting review:', error);
+        throw error;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in deleteReview:', error);
+      throw error;
     }
   };
 

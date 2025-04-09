@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -32,9 +31,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, UserX, UserPlus, Mail, Calendar } from "lucide-react";
+import { Shield, UserX, UserPlus, Mail, Calendar, AlertTriangle } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,9 +49,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { handleUserAuth } from "@/services/authService";
 
 interface AdminProfile {
   id: string;
+  user_id: string;
   email: string;
   created_at: string;
 }
@@ -66,7 +67,8 @@ export function AdminManagement() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedAdminId, setSelectedAdminId] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
+  const [adminError, setAdminError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof adminFormSchema>>({
@@ -77,76 +79,103 @@ export function AdminManagement() {
     },
   });
 
+  // Fetch admins from the new admins table
   const { data: admins = [], isLoading } = useQuery({
     queryKey: ['admin-list'],
     queryFn: async () => {
       try {
-        // In a real application, you would have a proper admins table or role system
-        // For this example, we'll return all users who have admin role
         const { data, error } = await supabase
-          .from('profiles')
+          .from('admins')
           .select('*');
         
-        // Filtering sample - in a real app, you'd have a proper admin role check
         if (error) throw error;
         
-        // Just for demonstration, we're treating the first user as admin
-        // In a real app, you would check a roles table
-        return data.length > 0 ? [data[0]] : [];
+        return data || [];
       } catch (error) {
         console.error("Error fetching admins:", error);
         throw error;
       }
-    }
+    },
+    refetchInterval: 10000, // Refresh every 10 seconds
   });
 
-  const addAdminMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof adminFormSchema>) => {
-      // Create user
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: values.email,
-        password: values.password,
-        email_confirm: true,
-      });
+  const createAdminAccount = async (values: z.infer<typeof adminFormSchema>) => {
+    setAdminError(null);
+    setIsAddingAdmin(true);
+    
+    try {
+      // Use the handleUserAuth service to create a regular user account
+      const { user, error } = await handleUserAuth(false, values.email, values.password);
       
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
+      if (error) {
+        throw new Error(error.message || "Failed to create user account");
+      }
+      
+      if (!user) {
+        throw new Error("Failed to create user");
+      }
+
+      // Add the user to the admins table
+      const { error: adminError } = await supabase
+        .from('admins')
+        .insert({
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          email: values.email
+        });
+
+      if (adminError) {
+        throw adminError;
+      }
+
+      toast.success("Admin account created successfully");
+      
       queryClient.invalidateQueries({ queryKey: ['admin-list'] });
-      toast({ title: "Admin created successfully" });
-      setIsAddDialogOpen(false);
       form.reset();
-    },
-    onError: (error: Error) => {
-      toast({ 
-        title: "Error creating admin", 
-        description: error.message,
-        variant: "destructive"
-      });
-    },
-  });
+      setIsAddDialogOpen(false);
+      
+      return user.id;
+    } catch (error: any) {
+      console.error("Error creating admin:", error);
+      setAdminError(error.message || "Failed to create admin account");
+      toast.error(error.message || "Failed to create admin account");
+      throw error;
+    } finally {
+      setIsAddingAdmin(false);
+    }
+  };
 
   const deleteAdminMutation = useMutation({
     mutationFn: async (adminId: string) => {
-      // Delete admin user
-      const { error } = await supabase.auth.admin.deleteUser(adminId);
-      if (error) throw error;
+      // Get user_id from admin record
+      const { data: admin, error: fetchError } = await supabase
+        .from('admins')
+        .select('user_id')
+        .eq('id', adminId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Delete from admins table
+      const { error: deleteError } = await supabase
+        .from('admins')
+        .delete()
+        .eq('id', adminId);
+      
+      if (deleteError) throw deleteError;
+      
       return adminId;
     },
     onSuccess: () => {
+      toast.success("Admin removed successfully");
       queryClient.invalidateQueries({ queryKey: ['admin-list'] });
-      toast({ title: "Admin deleted successfully" });
       setIsDeleteDialogOpen(false);
       setSelectedAdminId(null);
     },
-    onError: (error: Error) => {
-      toast({ 
-        title: "Error deleting admin", 
-        description: error.message,
-        variant: "destructive"
-      });
-    },
+    onError: (error: any) => {
+      console.error("Error deleting admin:", error);
+      toast.error("Failed to delete admin: " + (error.message || "An error occurred"));
+    }
   });
 
   const handleDeleteClick = (adminId: string) => {
@@ -156,12 +185,16 @@ export function AdminManagement() {
 
   const confirmDelete = () => {
     if (selectedAdminId) {
-      deleteAdminMutation.mutateAsync(selectedAdminId);
+      deleteAdminMutation.mutate(selectedAdminId);
     }
   };
 
-  const onSubmit = (values: z.infer<typeof adminFormSchema>) => {
-    addAdminMutation.mutateAsync(values);
+  const onSubmit = async (values: z.infer<typeof adminFormSchema>) => {
+    try {
+      await createAdminAccount(values);
+    } catch (error) {
+      // Error already handled in createAdminAccount
+    }
   };
 
   return (
@@ -184,6 +217,14 @@ export function AdminManagement() {
                 <DialogTitle>Add New Admin</DialogTitle>
                 <DialogDescription>Create a new admin account with full system access.</DialogDescription>
               </DialogHeader>
+              
+              {adminError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                  <div>{adminError}</div>
+                </div>
+              )}
+              
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
@@ -212,9 +253,15 @@ export function AdminManagement() {
                       </FormItem>
                     )}
                   />
+                  <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+                    <p className="font-medium flex items-center gap-1 mb-1">
+                      <AlertTriangle className="h-4 w-4" /> Important Note
+                    </p>
+                    <p>This will create a regular user account. In a production app, additional steps would be needed to grant admin privileges.</p>
+                  </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={addAdminMutation.isPending} className="bg-[#8B7355] hover:bg-[#9b815f]">
-                      {addAdminMutation.isPending ? "Creating..." : "Create Admin"}
+                    <Button type="submit" disabled={isAddingAdmin} className="bg-[#8B7355] hover:bg-[#9b815f]">
+                      {isAddingAdmin ? "Creating..." : "Create User"}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -312,7 +359,7 @@ export function AdminManagement() {
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {deleteAdminMutation.isPending ? "Deleting..." : "Delete"}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

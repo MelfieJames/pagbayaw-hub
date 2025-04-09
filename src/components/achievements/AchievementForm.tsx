@@ -1,236 +1,242 @@
-
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAchievementForm } from "@/hooks/achievement/useAchievementForm";
-import { AchievementFormFields } from "./form/AchievementFormFields";
-import { useState } from "react";
-import { DialogFooter } from "@/components/ui/dialog";
-import { Trash2 } from "lucide-react";
-import { supabase } from "@/services/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import ErrorModal from "@/components/ErrorModal";
-import { addAchievementImage } from "@/utils/achievementOperations";
+import { supabase } from "@/services/supabase/client";
+import { FileInput } from "@/components/ui/file-input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+
+const formSchema = z.object({
+  achievement_name: z.string().min(2, {
+    message: "Achievement name must be at least 2 characters.",
+  }),
+  date: z.date(),
+  venue: z.string().min(2, {
+    message: "Venue must be at least 2 characters.",
+  }),
+  image: z.any().optional(),
+  about_text: z.string().optional(),
+});
 
 interface AchievementFormProps {
+  mode: "add" | "edit";
+  initialData?: any;
   onSuccess: () => void;
-  initialData?: {
-    id?: number;
-    achievement_name: string;
-    description: string;
-    about_text?: string;
-    date: string;
-    venue: string;
-    image: string;
-  };
-  mode: 'add' | 'edit';
-  onClose?: () => void;
+  onClose: () => void;
 }
 
-export const AchievementForm = ({ onSuccess, initialData, mode, onClose }: AchievementFormProps) => {
-  const { user } = useAuth();
+export const AchievementForm = ({ mode, initialData, onSuccess, onClose }: AchievementFormProps) => {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorModalOpen, setErrorModalOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  
-  // For gallery images
-  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
-  
-  const {
-    formData,
-    imagePreview,
-    handleInputChange,
-    handleSubmit: submitForm,
-    handleFileChange,
-    removeImage,
-  } = useAchievementForm({ 
-    initialData, 
-    mode, 
-    onSuccess: async (achievementId) => {
-      // Upload gallery images
-      if (galleryFiles.length > 0 && achievementId) {
-        try {
-          for (let i = 0; i < galleryFiles.length; i++) {
-            const file = galleryFiles[i];
-            // Generate a safe filename
-            const fileExt = file.name.split('.').pop();
-            const filePath = `${crypto.randomUUID()}.${fileExt}`;
-            
-            // Upload to Supabase storage
-            const { data, error: uploadError } = await supabase.storage
-              .from('achievements')
-              .upload(filePath, file);
+  const [isLoading, setIsLoading] = useState(false);
 
-            if (uploadError) throw uploadError;
-
-            // Get the public URL
-            const { data: { publicUrl } } = supabase.storage
-              .from('achievements')
-              .getPublicUrl(filePath);
-
-            // Add image to achievement_images table
-            await addAchievementImage(achievementId, publicUrl, i);
-          }
-        } catch (error) {
-          console.error("Error uploading gallery images:", error);
-          toast({
-            title: "Warning",
-            description: "Achievement saved, but some gallery images failed to upload",
-            variant: "destructive"
-          });
-        }
-      }
-      
-      toast({
-        title: "Success",
-        description: `Achievement ${mode === 'add' ? 'added' : 'updated'} successfully`,
-      });
-      setIsSubmitting(false);
-      onSuccess();
-      onClose?.();
-    }, 
-    user,
-    onError: (error) => {
-      setIsSubmitting(false);
-      setErrorMessage(error.message || `Failed to ${mode} achievement`);
-      setErrorModalOpen(true);
-      toast({
-        title: "Error",
-        description: error.message || `Failed to ${mode} achievement`,
-        variant: "destructive"
-      });
-    }
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: initialData || {
+      achievement_name: "",
+      date: new Date(),
+      venue: "",
+      image: null,
+      about_text: "",
+    },
+    mode: "onChange",
   });
 
-  const handleGalleryFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    
-    const newFiles = Array.from(e.target.files);
-    setGalleryFiles(prev => [...prev, ...newFiles]);
-    
-    // Create previews
-    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
-    setGalleryPreviews(prev => [...prev, ...newPreviews]);
-  };
-
-  const removeGalleryImage = (index: number) => {
-    // Clean up the object URL to avoid memory leaks
-    URL.revokeObjectURL(galleryPreviews[index]);
-    
-    setGalleryFiles(prev => prev.filter((_, i) => i !== index));
-    setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      console.log("Starting submission process...");
-      await submitForm(e);
-    } catch (error) {
-      console.error("Unhandled error in form submission:", error);
-      setIsSubmitting(false);
-      setErrorMessage(error instanceof Error ? error.message : "Unknown error occurred");
-      setErrorModalOpen(true);
-      toast({
-        title: "Error",
-        description: "Failed to process your request. Please try again.",
-        variant: "destructive"
-      });
+  useEffect(() => {
+    if (initialData) {
+      form.reset(initialData);
     }
-  };
+  }, [initialData, form]);
 
-  const handleDelete = async () => {
-    if (!initialData?.id || !user?.isAdmin) return;
-    setIsSubmitting(true);
-
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
     try {
-      // Delete the achievement
-      const { error } = await supabase
-        .from('achievements')
-        .delete()
-        .eq('id', initialData.id);
+      let imageUrl = initialData?.image || null;
 
-      if (error) throw error;
+      if (values.image) {
+        const fileExt = values.image.name.split('.').pop();
+        const filePath = `achievements/${crypto.randomUUID()}.${fileExt}`;
 
-      toast({
-        title: "Success",
-        description: "Achievement deleted successfully",
-      });
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(filePath, values.image);
 
-      setIsSubmitting(false);
-      onSuccess();
-      onClose?.();
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          throw new Error('Error uploading image');
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('products')
+          .getPublicUrl(filePath);
+
+        imageUrl = publicUrl;
+      }
+
+      const achievementData = {
+        achievement_name: values.achievement_name,
+        date: values.date.toISOString(),
+        venue: values.venue,
+        image: imageUrl,
+        about_text: values.about_text,
+      };
+
+      let response;
+      if (mode === "edit") {
+        response = await supabase
+          .from('achievements')
+          .update(achievementData)
+          .eq('id', initialData.id);
+      } else {
+        response = await supabase
+          .from('achievements')
+          .insert(achievementData)
+          .select();
+      }
+
+      if (response.error) {
+        console.error("Error submitting achievement:", response.error);
+        toast({
+          title: "Error",
+          description: `Failed to ${mode === "edit" ? "update" : "create"} achievement.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Achievement ${mode === "edit" ? "updated" : "created"} successfully.`,
+        });
+        onSuccess();
+      }
     } catch (error: any) {
-      console.error('Error deleting achievement:', error);
-      setIsSubmitting(false);
-      setErrorMessage(error.message || "Failed to delete achievement");
-      setErrorModalOpen(true);
+      console.error("Error submitting achievement:", error);
       toast({
         title: "Error",
-        description: "Failed to delete achievement",
-        variant: "destructive"
+        description: error.message || `Failed to ${mode === "edit" ? "update" : "create"} achievement.`,
+        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <ScrollArea className="max-h-[80vh] overflow-y-auto p-6">
-        <div className="space-y-4">
-          <AchievementFormFields
-            values={formData}
-            imageFile={null}
-            imagePreview={imagePreview}
-            galleryFiles={galleryFiles}
-            galleryPreviews={galleryPreviews}
-            errors={{}}
-            onChange={handleInputChange}
-            onFileChange={handleFileChange}
-            onGalleryFilesChange={handleGalleryFilesChange}
-            onRemoveGalleryImage={removeGalleryImage}
-            onDateChange={(date) => handleInputChange({
-              target: { 
-                name: 'date', 
-                value: date ? date.toISOString().split('T')[0] : ''
-              }
-            } as any)}
-          />
-
-          <DialogFooter className="flex justify-between items-center mt-6">
-            <div className="flex gap-2">
-              {mode === 'edit' && (
-                <Button
-                  variant="destructive"
-                  type="button"
-                  onClick={handleDelete}
-                  className="flex items-center gap-2"
-                  disabled={isSubmitting}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </Button>
-              )}
-            </div>
-            <Button 
-              type="submit" 
-              onClick={handleSubmit} 
-              disabled={isSubmitting}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="achievement_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Achievement Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Achievement Name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Date</FormLabel>
+              <DatePicker
+                className={cn(
+                  "border-input bg-background text-foreground ring-offset-background focus-visible:ring-ring focus-visible:ring-offset-2",
+                  "w-full"
+                )}
+                onSelect={field.onChange}
+                defaultMonth={field.value}
+                value={field.value}
+                dateFormat="MM/dd/yyyy"
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="venue"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Venue</FormLabel>
+              <FormControl>
+                <Input placeholder="Venue" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="about_text"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>About</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell us more about this achievement"
+                  className="resize-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="image"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Image</FormLabel>
+              <FormControl>
+                <FileInput
+                  onChange={(file: File | null) => {
+                    field.onChange(file);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end space-x-2">
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
             >
-              {isSubmitting ? 'Processing...' : mode === 'add' ? 'Add Achievement' : 'Update Achievement'}
+              Cancel
             </Button>
-          </DialogFooter>
+          </DialogClose>
+          <Button
+            type="submit"
+            disabled={isLoading}
+          >
+            {mode === "edit" ? "Update" : "Create"}
+          </Button>
         </div>
-      </ScrollArea>
-
-      <ErrorModal
-        isOpen={errorModalOpen}
-        onClose={() => setErrorModalOpen(false)}
-        title="Error"
-        message={errorMessage}
-      />
-    </>
+      </form>
+    </Form>
   );
 };
