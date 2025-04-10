@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -94,19 +93,11 @@ export function UserManagement() {
     mutationFn: async (userId: string) => {
       try {
         // First, clean up user reviews to prevent foreign key constraints issues
-        try {
-          const { error: reviewsError } = await supabase
-            .from('reviews')
-            .delete()
-            .eq('user_id', userId);
-            
-          if (reviewsError) {
-            console.warn("Error cleaning up user reviews:", reviewsError);
-          }
-        } catch (cleanupError) {
-          console.warn("Error during review cleanup:", cleanupError);
-        }
-      
+        await supabase
+          .from('reviews')
+          .delete()
+          .eq('user_id', userId);
+
         // Delete profile from database
         const { error: profileError } = await supabase
           .from('profiles')
@@ -150,10 +141,7 @@ export function UserManagement() {
   };
 
   const getFullName = (user: UserProfile) => {
-    if (user.first_name || user.last_name) {
-      return `${user.first_name || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim();
-    }
-    return 'Unknown';
+    return `${user.first_name || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim() || 'Unknown';
   };
 
   const handleDeleteClick = (userId: string) => {
