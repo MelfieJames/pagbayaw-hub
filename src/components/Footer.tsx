@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="flex flex-col items-center md:items-start">
             <img
-              src="/lovable-uploads/unvaspic.jpg"
+              src="/lovable-uploads/unvaspic0.jpg"
               alt="UNVAS Logo"
               className="w-24 h-24 object-contain mb-4 rounded-full"
             />

@@ -1,30 +1,19 @@
-import { useState, useEffect } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { Award, Package, MessageSquare, Menu, Home, Info, Star, User, LogIn } from "lucide-react";
+import { NotificationsPopover } from "./notifications/NotificationsPopover";
+import { CartPopover } from "./products/CartPopover";
+import { useMediaQuery } from "@/hooks/use-mobile";
+import { Award, Package, MessageSquare, Menu, Home, Info, Star, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const [scrolled, setScrolled] = useState(false);
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      const offset = window.scrollY;
-      setScrolled(offset > 50);
-    };
-    
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const getInitials = (email: string) => {
     return email ? email[0].toUpperCase() : "U";
   };
@@ -55,62 +44,58 @@ export default function Navbar() {
   );
   
   return (
-    <nav className={cn(
-      "fixed top-0 w-full z-50 transition-all duration-300",
-      scrolled 
-        ? "bg-white/95 backdrop-blur-sm shadow-sm border-b py-3" 
-        : "bg-white/80 backdrop-blur-md py-4"
-    )}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold tracking-tight transition-opacity hover:opacity-90">
+    <nav className="fixed top-0 w-full bg-white border-b z-50">
+      <div className="container mx-auto px-0">
+        <div className="flex items-center justify-between h-16">
+          <Link to="/" className="text-xl font-bold">
             UNVAS®
           </Link>
 
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex space-x-6">
             <NavItems />
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 pr-8 mx-[60px]">
             {user ? (
               <>
+                <CartPopover />
+                <NotificationsPopover />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="rounded-full p-0 h-8 w-8 overflow-hidden">
+                    <Button variant="ghost" className="p-0 h-8 w-8">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
+                        <AvatarFallback>
                           {getInitials(user.email || "")}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 mt-1">
-                    <DropdownMenuItem onClick={() => navigate("/profile")} className="py-2 cursor-pointer">
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <User className="h-4 w-4 mr-2" />
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/my-ratings")} className="py-2 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate("/my-ratings")}>
                       <Star className="h-4 w-4 mr-2" />
                       My Ratings
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => signOut()} className="py-2 cursor-pointer">
+                    {user.isAdmin && (
+                      <DropdownMenuItem onClick={() => navigate("/admin")}>
+                        Dashboard
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => signOut()}>
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 {!isMobile && (
-                  <>
-                    <Button 
-                      onClick={() => navigate("/login")} 
-                      className="rounded-full bg-primary hover:bg-primary/90 transition-all"
-                    >
-                      <LogIn className="h-4 w-4 mr-2" />
-                      Login
-                    </Button>
-                  </>
+                  <Button onClick={() => navigate("/login")} className="mx-[67px]">
+                    Login
+                  </Button>
                 )}
               </div>
             )}
@@ -118,14 +103,14 @@ export default function Navbar() {
             {isMobile && (
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="ml-2">
-                    <Menu className="h-5 w-5" />
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent>
-                  <div className="flex flex-col space-y-5 mt-8">
+                  <div className="flex flex-col space-y-4 mt-8">
                     <NavItems />
-                    {user ? (
+                    {user && (
                       <>
                         <Link to="/profile" className="flex items-center gap-2 hover:text-primary transition-colors">
                           <User className="h-4 w-4" />
@@ -135,18 +120,11 @@ export default function Navbar() {
                           <Star className="h-4 w-4" />
                           <span>My Ratings</span>
                         </Link>
-                        <Button 
-                          onClick={() => signOut()} 
-                          variant="destructive" 
-                          className="mt-4"
-                        >
-                          Logout
-                        </Button>
                       </>
-                    ) : (
-                      <div className="flex flex-col gap-3 mt-6">
+                    )}
+                    {!user && (
+                      <div className="flex flex-col gap-2 mt-4">
                         <Button onClick={() => navigate("/login")}>
-                          <LogIn className="h-4 w-4 mr-2" />
                           Login
                         </Button>
                       </div>
