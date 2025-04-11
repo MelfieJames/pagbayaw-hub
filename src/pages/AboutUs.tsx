@@ -10,7 +10,7 @@ const storySlides = [
     title: "Our Story",
     subtitle: "Highlights of Trials and Triumphs",
     content: null,
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 2,
@@ -19,7 +19,7 @@ const storySlides = [
         <span className="font-semibold text-green-800">In the middle of the pandemic, Jimmy Sorabia</span>, a former Overseas Filipino Worker, noticed a pile of "unas" or dried banana leaves in his backyard, which he thought can be upcycled and can become a source of livelihood. Jimmy called DOST, where he was referred to me since I was working on a <span className="font-semibold text-green-800">DOST-funded project on bioplastics from agricultural wastes</span> while concurrently collaborating with Persons Deprived of Liberty in creating handmade papers as a source of livelihood. This started UNVAS, a brand with registered trademark, offering paper-based materials and products generated from dried banana leaves.
       </>
     ),
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 3,
@@ -28,7 +28,7 @@ const storySlides = [
         After thorough research, I have learned that there are <span className="font-semibold text-green-800">444,000 hectares of banana plantations</span> in the Philippines, which can generate around <span className="font-semibold text-green-800">2.66 Billion kg of dried banana leaves</span> in a span of six months, with the <span className="font-semibold text-green-800">island of Mindanao ranking first as the top-producing area</span>. This voluminous amount of dried banana leaves is usually burnt or left to degrade on its own, thereby releasing harmful chemicals in the process.
       </>
     ),
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 4,
@@ -37,7 +37,7 @@ const storySlides = [
         The idea of upcycling dried banana leaves presented livelihood opportunities, while addressing the pressing problem of pollution. Hence, I have considered the request of Mr. Sorabia as it is aligned to my personal advocacy and purpose of developing value-added products that could contribute to financial stability and community resilience. This started <span className="font-semibold text-green-800">UNVAS</span>, a brand with registered trademark, offering paper-based materials and products generated from dried banana leaves.
       </>
     ),
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 5,
@@ -46,7 +46,7 @@ const storySlides = [
         The heart and core of UNVAS is that <span className="font-semibold text-green-800">it provides income among the partner communities of PAGBAYAW Inc.</span>, a nonprofit organization committed to provide technology-based livelihood among marginal communities in the Philippines.
       </>
     ),
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 6,
@@ -55,7 +55,7 @@ const storySlides = [
         <span className="font-semibold text-green-800">UNVAS</span> became the primary material sold for income generation not only to the members of the <span className="font-semibold text-green-800">Sagun Farmers Producers Cooperative</span>—the cooperative of Mr. Sorabia but also other communities such as <span className="font-semibold text-green-800">Persons Deprived of Liberty</span> from Pagadian City Jail Female Dormitory, <span className="font-semibold text-green-800">working youth</span> from Western Mindanao State University Pagadian Campus, a group of <span className="font-semibold text-green-800">women from Liangan</span>, Vincenzo Sagun, Zamboanga del Sur, and very recently, the <span className="font-semibold text-green-800">Women of War in Matanog</span>, Maguindanao, Maguindanao del Norte. We also take pride that because of this invention, a <span className="font-semibold text-green-800">barangay ordinance prohibiting the burning of dried banana leaves</span> is now enforced at Maraya, Vincenzo Sagun, Zamboanga Del Sur.
       </>
     ),
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 7,
@@ -64,7 +64,7 @@ const storySlides = [
         Initially, UNVAS or "unas," (local term for dried banana leaves) canvas, is sold as art canvas for students and artists in the province. A thinner version of unVas was sold as printing papers for schools and agencies needing special papers for certificates. unVas was further developed into beads and converted into accessories, home decors, and other wearable items. On its first year of production, <span className="font-semibold text-green-800">unVas was awarded "Best New Product" during the Zamboanga Peninsula Exposition 2022</span> hosted and organized by the Department of Trade and Industry IX.
       </>
     ),
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 8,
@@ -73,7 +73,7 @@ const storySlides = [
         But aside from its authenticity and uniqueness, what's even more special about this project is that <span className="font-semibold text-green-800">each community is assigned with a different task</span>, which means that every UNVAS accessory sold was collaboratively created by all the communities involved. For instance, the conversion of dried banana leaves to UNVAS is done by the Sagun Farmers Producers Cooperative, chaired by Mr. Sorabia. Half of the produced UNVAS are usually sold as art canvas, while the other half is forwarded to Persons Deprived of Liberty in Pagadian City Jail Female Dormitory for beads production.
       </>
     ),
-    image: "/lovable-uploads/unvaspic0.jpg"
+    image: "/lovable-uploads/unvaspic.jpg"
   },
   {
     id: 9,
@@ -215,7 +215,7 @@ export default function AboutUs() {
                     />
                     <div className="relative z-10">
                       <img 
-                        src="/lovable-uploads/unvaspic0.jpg" 
+                        src="/lovable-uploads/unvaspic.jpg" 
                         alt="PAGBAYAW Logo" 
                         className="w-32 h-32 object-contain mx-auto rounded-full" 
                       />
