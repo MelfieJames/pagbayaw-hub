@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { Award, Package, MessageSquare, Menu, Home, Info, Star, User } from "lucide-react";
+import { Award, Package, MessageSquare, Menu, Home, Info, Star, User, LogIn } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -104,16 +104,10 @@ export default function Navbar() {
                 {!isMobile && (
                   <>
                     <Button 
-                      onClick={() => navigate("/auth?mode=signup")} 
-                      variant="outline" 
-                      className="rounded-full border-primary/20 hover:bg-primary/5 transition-all"
-                    >
-                      Sign Up
-                    </Button>
-                    <Button 
                       onClick={() => navigate("/login")} 
                       className="rounded-full bg-primary hover:bg-primary/90 transition-all"
                     >
+                      <LogIn className="h-4 w-4 mr-2" />
                       Login
                     </Button>
                   </>
@@ -151,10 +145,8 @@ export default function Navbar() {
                       </>
                     ) : (
                       <div className="flex flex-col gap-3 mt-6">
-                        <Button onClick={() => navigate("/auth?mode=signup")}>
-                          Sign Up
-                        </Button>
-                        <Button onClick={() => navigate("/login")} variant="outline">
+                        <Button onClick={() => navigate("/login")}>
+                          <LogIn className="h-4 w-4 mr-2" />
                           Login
                         </Button>
                       </div>
