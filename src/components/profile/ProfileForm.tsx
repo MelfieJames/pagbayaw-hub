@@ -7,11 +7,11 @@ import { toast } from "sonner";
 import { supabase } from "@/services/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { UserRound, ShoppingCart } from "lucide-react";
-import { ProfileRow } from "@/types/supabase";
+import { ProfileData } from "@/hooks/useProfile";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface ProfileFormProps {
-  profileData: ProfileRow;
+  profileData: ProfileData;
   onProfileChange: (field: string, value: string) => void;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   isSaving: boolean;

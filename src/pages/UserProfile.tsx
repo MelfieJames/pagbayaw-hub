@@ -130,17 +130,7 @@ export default function UserProfile() {
             )}
             
             <ProfileForm
-              profileData={{
-                id: profileData.id || user?.id || '',
-                email: profileData.email || user?.email || '',
-                first_name: profileData.first_name,
-                middle_name: profileData.middle_name,
-                last_name: profileData.last_name,
-                phone_number: profileData.phone_number,
-                location: profileData.location,
-                created_at: profileData.created_at,
-                updated_at: profileData.updated_at
-              }}
+              profileData={profileData}
               onProfileChange={handleChange}
               onSubmit={handleSubmit}
               isSaving={isSaving}

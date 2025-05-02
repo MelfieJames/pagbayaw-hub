@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
@@ -6,11 +5,15 @@ import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export interface ProfileData {
+  id?: string;
+  email?: string;
   first_name: string;
   middle_name: string;
   last_name: string;
   location: string;
   phone_number: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**
@@ -24,11 +27,15 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
   const navigate = useNavigate();
   const location = useLocation();
   const [profileData, setProfileData] = useState<ProfileData>({
+    id: "",
+    email: "",
     first_name: "",
     middle_name: "",
     last_name: "",
     location: "",
-    phone_number: ""
+    phone_number: "",
+    created_at: "",
+    updated_at: ""
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
@@ -45,7 +52,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name, middle_name, last_name, location, phone_number')
+        .select('id, email, first_name, middle_name, last_name, location, phone_number, created_at, updated_at')
         .eq('id', user.id)
         .single();
       
@@ -180,11 +187,15 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
         
         if (profileData) {
           const profileFields = {
+            id: profileData.id || user.id,
+            email: profileData.email || user.email,
             first_name: profileData.first_name || "",
             middle_name: profileData.middle_name || "",
             last_name: profileData.last_name || "",
             location: profileData.location || "",
-            phone_number: profileData.phone_number || ""
+            phone_number: profileData.phone_number || "",
+            created_at: profileData.created_at,
+            updated_at: profileData.updated_at
           };
           
           setProfileData(profileFields);
@@ -224,11 +235,15 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
               });
               
             setProfileData({
+              id: user.id,
+              email: user.email,
               first_name: "",
               middle_name: "",
               last_name: "",
               location: "",
-              phone_number: ""
+              phone_number: "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             });
             
             setIsFetched(true);
@@ -275,7 +290,11 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
           middle_name: updatedProfile.middle_name || "",
           last_name: updatedProfile.last_name || "",
           location: updatedProfile.location || "",
-          phone_number: updatedProfile.phone_number || ""
+          phone_number: updatedProfile.phone_number || "",
+          id: updatedProfile.id || user.id,
+          email: updatedProfile.email || user.email,
+          created_at: updatedProfile.created_at,
+          updated_at: updatedProfile.updated_at
         });
         
         const isProfileComplete = !!(
