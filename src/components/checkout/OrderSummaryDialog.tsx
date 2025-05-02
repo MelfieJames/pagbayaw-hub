@@ -67,7 +67,7 @@ export default function OrderSummaryDialog({
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails>({
     first_name: "",
     last_name: "",
-    email: userEmail || "", // Ensure email is passed correctly
+    email: userEmail || "", 
     phone_number: "",
     address: "",
   });

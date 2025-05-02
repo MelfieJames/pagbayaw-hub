@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { PlusCircle, Edit2, Trash2, MapPin, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -49,7 +50,7 @@ interface AddressFormData {
 
 interface AddressManagementProps {
   onAddressSelect?: (address: AddressType) => void;
-  selectedAddressId?: number;
+  selectedAddressId?: number | null;
   showSelectionUI?: boolean;
 }
 
@@ -304,86 +305,88 @@ export default function AddressManagement({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {addresses.map((address) => (
-            <Card 
-              key={address.id} 
-              className={`overflow-hidden ${
-                selectedAddressId === address.id ? "border-2 border-primary" : ""
-              }`}
-            >
-              <CardHeader className="bg-gray-50 py-3 px-4 flex flex-row justify-between items-center space-y-0">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {address.address_name}
-                  {address.is_default && (
-                    <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">
-                      Default
-                    </span>
-                  )}
-                </CardTitle>
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleEditAddress(address)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleDeleteAddress(address.id)}
-                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <p className="font-medium">{address.recipient_name}</p>
-                <p className="text-sm text-gray-500">{address.address_line1}</p>
-                {address.address_line2 && (
-                  <p className="text-sm text-gray-500">{address.address_line2}</p>
-                )}
-                <p className="text-sm text-gray-500">
-                  {address.city}, {address.state_province}, {address.postal_code}
-                </p>
-                <p className="text-sm text-gray-500">{address.country}</p>
-                <p className="text-sm text-gray-500 pt-2">{address.phone_number}</p>
-              </CardContent>
-              {showSelectionUI && (
-                <CardFooter className="flex justify-between px-4 py-3 bg-gray-50 border-t">
-                  {!address.is_default && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleSetDefault(address.id)}
-                    >
-                      Set as Default
-                    </Button>
-                  )}
-                  <Button 
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleSelectAddress(address)}
-                    className={selectedAddressId === address.id ? "bg-green-600" : ""}
-                  >
-                    {selectedAddressId === address.id ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Selected
-                      </>
-                    ) : (
-                      "Use This Address"
+        <ScrollArea className="h-[400px] pr-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {addresses.map((address) => (
+              <Card 
+                key={address.id} 
+                className={`overflow-hidden ${
+                  selectedAddressId === address.id ? "border-2 border-primary" : ""
+                }`}
+              >
+                <CardHeader className="bg-gray-50 py-3 px-4 flex flex-row justify-between items-center space-y-0">
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    {address.address_name}
+                    {address.is_default && (
+                      <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">
+                        Default
+                      </span>
                     )}
-                  </Button>
-                </CardFooter>
-              )}
-            </Card>
-          ))}
-        </div>
+                  </CardTitle>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleEditAddress(address)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeleteAddress(address.id)}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <p className="font-medium">{address.recipient_name}</p>
+                  <p className="text-sm text-gray-500">{address.address_line1}</p>
+                  {address.address_line2 && (
+                    <p className="text-sm text-gray-500">{address.address_line2}</p>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    {address.city}, {address.state_province}, {address.postal_code}
+                  </p>
+                  <p className="text-sm text-gray-500">{address.country}</p>
+                  <p className="text-sm text-gray-500 pt-2">{address.phone_number}</p>
+                </CardContent>
+                {showSelectionUI && (
+                  <CardFooter className="flex justify-between px-4 py-3 bg-gray-50 border-t">
+                    {!address.is_default && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleSetDefault(address.id)}
+                      >
+                        Set as Default
+                      </Button>
+                    )}
+                    <Button 
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleSelectAddress(address)}
+                      className={selectedAddressId === address.id ? "bg-green-600" : ""}
+                    >
+                      {selectedAddressId === address.id ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Selected
+                        </>
+                      ) : (
+                        "Use This Address"
+                      )}
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
       )}
 
       {/* Add Address Modal */}
@@ -396,135 +399,137 @@ export default function AddressManagement({
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleAddAddress} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="address_name">Address Name (e.g. Home, Office)</Label>
-              <Input
-                id="address_name"
-                name="address_name"
-                value={formData.address_name}
-                onChange={handleInputChange}
-                placeholder="Home"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="recipient_name">Recipient Name</Label>
-              <Input
-                id="recipient_name"
-                name="recipient_name"
-                value={formData.recipient_name}
-                onChange={handleInputChange}
-                placeholder="John Doe"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address_line1">Address Line 1</Label>
-              <Input
-                id="address_line1"
-                name="address_line1"
-                value={formData.address_line1}
-                onChange={handleInputChange}
-                placeholder="Street address, P.O. box"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
-              <Input
-                id="address_line2"
-                name="address_line2"
-                value={formData.address_line2}
-                onChange={handleInputChange}
-                placeholder="Apartment, suite, unit, building, floor, etc."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="max-h-[60vh]">
+            <form onSubmit={handleAddAddress} className="space-y-4 py-4 px-1">
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="address_name">Address Name (e.g. Home, Office)</Label>
                 <Input
-                  id="city"
-                  name="city"
-                  value={formData.city}
+                  id="address_name"
+                  name="address_name"
+                  value={formData.address_name}
                   onChange={handleInputChange}
-                  placeholder="City"
+                  placeholder="Home"
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="state_province">Province/State</Label>
+                <Label htmlFor="recipient_name">Recipient Name</Label>
                 <Input
-                  id="state_province"
-                  name="state_province"
-                  value={formData.state_province}
+                  id="recipient_name"
+                  name="recipient_name"
+                  value={formData.recipient_name}
                   onChange={handleInputChange}
-                  placeholder="Province"
+                  placeholder="John Doe"
                   required
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="postal_code">Postal Code</Label>
+                <Label htmlFor="address_line1">Address Line 1</Label>
                 <Input
-                  id="postal_code"
-                  name="postal_code"
-                  value={formData.postal_code}
+                  id="address_line1"
+                  name="address_line1"
+                  value={formData.address_line1}
                   onChange={handleInputChange}
-                  placeholder="Postal code"
+                  placeholder="Street address, P.O. box"
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
                 <Input
-                  id="country"
-                  name="country"
-                  value={formData.country}
+                  id="address_line2"
+                  name="address_line2"
+                  value={formData.address_line2}
                   onChange={handleInputChange}
-                  placeholder="Country"
+                  placeholder="Apartment, suite, unit, building, floor, etc."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    placeholder="City"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state_province">Province/State</Label>
+                  <Input
+                    id="state_province"
+                    name="state_province"
+                    value={formData.state_province}
+                    onChange={handleInputChange}
+                    placeholder="Province"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="postal_code">Postal Code</Label>
+                  <Input
+                    id="postal_code"
+                    name="postal_code"
+                    value={formData.postal_code}
+                    onChange={handleInputChange}
+                    placeholder="Postal code"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    placeholder="Country"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone_number">Phone Number</Label>
+                <Input
+                  id="phone_number"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleInputChange}
+                  placeholder="Phone number for delivery questions"
                   required
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone_number">Phone Number</Label>
-              <Input
-                id="phone_number"
-                name="phone_number"
-                value={formData.phone_number}
-                onChange={handleInputChange}
-                placeholder="Phone number for delivery questions"
-                required
-              />
-            </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="is_default"
+                  name="is_default"
+                  checked={formData.is_default}
+                  onChange={handleInputChange}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="is_default">Set as default address</Label>
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="is_default"
-                name="is_default"
-                checked={formData.is_default}
-                onChange={handleInputChange}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="is_default">Set as default address</Label>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddAddressModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Save Address</Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddAddressModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Save Address</Button>
+              </DialogFooter>
+            </form>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 
@@ -538,135 +543,137 @@ export default function AddressManagement({
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleUpdateAddress} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit_address_name">Address Name</Label>
-              <Input
-                id="edit_address_name"
-                name="address_name"
-                value={formData.address_name}
-                onChange={handleInputChange}
-                placeholder="Home"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit_recipient_name">Recipient Name</Label>
-              <Input
-                id="edit_recipient_name"
-                name="recipient_name"
-                value={formData.recipient_name}
-                onChange={handleInputChange}
-                placeholder="John Doe"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit_address_line1">Address Line 1</Label>
-              <Input
-                id="edit_address_line1"
-                name="address_line1"
-                value={formData.address_line1}
-                onChange={handleInputChange}
-                placeholder="Street address, P.O. box"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit_address_line2">Address Line 2 (Optional)</Label>
-              <Input
-                id="edit_address_line2"
-                name="address_line2"
-                value={formData.address_line2}
-                onChange={handleInputChange}
-                placeholder="Apartment, suite, unit, building, floor, etc."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="max-h-[60vh]">
+            <form onSubmit={handleUpdateAddress} className="space-y-4 py-4 px-1">
               <div className="space-y-2">
-                <Label htmlFor="edit_city">City</Label>
+                <Label htmlFor="edit_address_name">Address Name</Label>
                 <Input
-                  id="edit_city"
-                  name="city"
-                  value={formData.city}
+                  id="edit_address_name"
+                  name="address_name"
+                  value={formData.address_name}
                   onChange={handleInputChange}
-                  placeholder="City"
+                  placeholder="Home"
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="edit_state_province">Province/State</Label>
+                <Label htmlFor="edit_recipient_name">Recipient Name</Label>
                 <Input
-                  id="edit_state_province"
-                  name="state_province"
-                  value={formData.state_province}
+                  id="edit_recipient_name"
+                  name="recipient_name"
+                  value={formData.recipient_name}
                   onChange={handleInputChange}
-                  placeholder="Province"
+                  placeholder="John Doe"
                   required
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit_postal_code">Postal Code</Label>
+                <Label htmlFor="edit_address_line1">Address Line 1</Label>
                 <Input
-                  id="edit_postal_code"
-                  name="postal_code"
-                  value={formData.postal_code}
+                  id="edit_address_line1"
+                  name="address_line1"
+                  value={formData.address_line1}
                   onChange={handleInputChange}
-                  placeholder="Postal code"
+                  placeholder="Street address, P.O. box"
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="edit_country">Country</Label>
+                <Label htmlFor="edit_address_line2">Address Line 2 (Optional)</Label>
                 <Input
-                  id="edit_country"
-                  name="country"
-                  value={formData.country}
+                  id="edit_address_line2"
+                  name="address_line2"
+                  value={formData.address_line2}
                   onChange={handleInputChange}
-                  placeholder="Country"
+                  placeholder="Apartment, suite, unit, building, floor, etc."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_city">City</Label>
+                  <Input
+                    id="edit_city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    placeholder="City"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_state_province">Province/State</Label>
+                  <Input
+                    id="edit_state_province"
+                    name="state_province"
+                    value={formData.state_province}
+                    onChange={handleInputChange}
+                    placeholder="Province"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_postal_code">Postal Code</Label>
+                  <Input
+                    id="edit_postal_code"
+                    name="postal_code"
+                    value={formData.postal_code}
+                    onChange={handleInputChange}
+                    placeholder="Postal code"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_country">Country</Label>
+                  <Input
+                    id="edit_country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    placeholder="Country"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_phone_number">Phone Number</Label>
+                <Input
+                  id="edit_phone_number"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleInputChange}
+                  placeholder="Phone number for delivery questions"
                   required
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit_phone_number">Phone Number</Label>
-              <Input
-                id="edit_phone_number"
-                name="phone_number"
-                value={formData.phone_number}
-                onChange={handleInputChange}
-                placeholder="Phone number for delivery questions"
-                required
-              />
-            </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit_is_default"
+                  name="is_default"
+                  checked={formData.is_default}
+                  onChange={handleInputChange}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="edit_is_default">Set as default address</Label>
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="edit_is_default"
-                name="is_default"
-                checked={formData.is_default}
-                onChange={handleInputChange}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="edit_is_default">Set as default address</Label>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsEditAddressModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Update Address</Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditAddressModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Update Address</Button>
+              </DialogFooter>
+            </form>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

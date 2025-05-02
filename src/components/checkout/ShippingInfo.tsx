@@ -9,6 +9,8 @@ interface ShippingInfoProps {
   isComplete: boolean;
 }
 
+// This component is no longer used as we've replaced it with AddressManagement
+// It is kept for reference only and could be safely removed from the project
 export default function ShippingInfo({ profileData, isComplete }: ShippingInfoProps) {
   const navigate = useNavigate();
   
