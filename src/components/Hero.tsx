@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import GradientButton from "@/components/ui/GradientButton";
+import { Award, ShoppingBag, ArrowRightCircle } from "lucide-react";
 
 const images = [
   "/lovable-uploads/unvaspic.jpg",
@@ -32,17 +32,23 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center py-20 px-6 overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center py-20 px-6 bg-gradient-to-br from-[#fefce8] via-[#fdf6e3] to-[#f0ebe1] overflow-hidden">
+
+      {/* Decorative Floating Icon */}
+      <div className="absolute top-8 right-8 animate-bounce-slow text-green-500 opacity-30">
+        <Award className="w-12 h-16" />
+      </div>
 
       <div className="container mx-auto">
         <div className="flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-20">
           {/* Text Content */}
           <div className="flex-1 text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
-            <div className="mb-6 inline-flex items-center px-3 py-1.5 rounded-full bg-green-200 text-xs font-medium tracking-wide text-green-700">
+            <div className="mb-6 inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-sm font-medium tracking-wide text-green-700 shadow-sm">
+              <Award className="w-4 h-4 mr-2" />
               Welcome to UNVAS®
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-[#5a3e2b]">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 text-[#5a3e2b] drop-shadow-lg leading-tight">
               PAGBAYAW INC.
             </h1>
 
@@ -50,13 +56,14 @@ export default function Hero() {
               Celebrating Filipino craftsmanship through sustainable and innovative products that showcase our cultural heritage.
             </p>
 
-            {/* Buttons */}
+            {/* Buttons with Icons */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <GradientButton
                 size="lg"
                 onClick={() => navigate("/achievements")}
-                className="bg-[#8b5e3c] text-white hover:bg-[#6b4f3b]"
+                className="bg-[#8b5e3c] text-white hover:bg-[#6b4f3b] shadow-md"
               >
+                <Award className="w-5 h-5 mr-2" />
                 Our Achievements
               </GradientButton>
 
@@ -64,21 +71,14 @@ export default function Hero() {
                 className="inline-flex items-center text-sm font-medium px-5 py-3 text-[#5a3e2b] hover:text-[#6b8e68] transition-colors duration-200"
                 onClick={() => navigate("/products")}
               >
+                <ShoppingBag className="w-5 h-5 mr-2" />
                 Our Products
-                <svg className="ml-2 w-4 h-4" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M6.5 3.5L11 8L6.5 12.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <ArrowRightCircle className="ml-2 w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Image with Animation and Smooth Carousel */}
+          {/* Animated Image Carousel */}
           <div
             className="flex-1 w-full max-w-xl mx-auto"
             onMouseMove={handleMouseMove}
@@ -86,24 +86,27 @@ export default function Hero() {
             onMouseLeave={() => setHover(false)}
           >
             <div
-              className="relative w-full aspect-[3/2] rounded-2xl overflow-hidden shadow-lg transition-transform duration-300"
+              className="relative w-full aspect-[3/2] rounded-3xl overflow-hidden shadow-2xl border-4 border-white transition-transform duration-300"
               style={{
                 transform: hover ? `translate(${position.x}px, ${position.y}px)` : "translate(0,0)",
               }}
             >
-              {/* Image Container with Smooth Transition */}
+              {/* Image Container */}
               <div className="relative w-full h-full">
                 {images.map((image, index) => (
                   <img
                     key={index}
                     src={image}
                     alt={`UNVAS product showcase ${index + 1}`}
-                    className={`absolute inset-0 w-full h-full rounded-2xl object-cover transition-opacity duration-[1800ms] ease-in-out ${
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1800ms] ease-in-out rounded-3xl ${
                       index === currentImage ? "opacity-100" : "opacity-0"
                     }`}
                   />
                 ))}
               </div>
+
+              {/* Soft Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent rounded-3xl pointer-events-none" />
             </div>
           </div>
         </div>
