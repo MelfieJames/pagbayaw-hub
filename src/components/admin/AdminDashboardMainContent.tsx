@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SalesCharts } from "./SalesCharts";
 import { PurchasesManagement } from "./PurchasesManagement";
@@ -34,17 +33,26 @@ export default function AdminDashboardMainContent() {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="purchases">
-          <PurchasesManagement />
-        </TabsContent>
-        
-        <TabsContent value="users">
-          <UserManagement />
-        </TabsContent>
-        
-        <TabsContent value="admins">
-          <AdminManagement />
-        </TabsContent>
+        {/* Wrapping each section in a box with overflow and scrollbar */}
+        <div className="space-y-4">
+          <TabsContent value="purchases">
+            <div className="bg-white rounded-lg shadow-lg p-4 max-h-[400px] overflow-y-auto">
+              <PurchasesManagement />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <div className="bg-white rounded-lg shadow-lg p-4 max-h-[400px] overflow-y-auto">
+              <UserManagement />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="admins">
+            <div className="bg-white rounded-lg shadow-lg p-4 max-h-[400px] overflow-y-auto">
+              <AdminManagement />
+            </div>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
