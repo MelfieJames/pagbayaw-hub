@@ -1,4 +1,3 @@
-
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -19,11 +18,16 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter basename="/">
-          <Routes />
+          <div className="w-full min-h-screen overflow-x-hidden m-0 p-0">
+            <main className="w-full">
+              <Routes />
+            </main>
+          </div>
         </BrowserRouter>
       </QueryClientProvider>
     </AuthProvider>
   );
 }
+
 
 export default App;
