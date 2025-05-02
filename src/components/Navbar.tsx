@@ -1,12 +1,26 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsPopover } from "./notifications/NotificationsPopover";
 import { CartPopover } from "./products/CartPopover";
 import { useMediaQuery } from "@/hooks/use-mobile";
-import { Award, Package, MessageSquare, Menu, Home, Info, Star, User } from "lucide-react";
+import {
+  Award,
+  Package,
+  MessageSquare,
+  Menu,
+  Home,
+  Info,
+  Star,
+  User,
+  Clock
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -14,10 +28,11 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)");
+
   const getInitials = (email: string) => {
     return email ? email[0].toUpperCase() : "U";
   };
-  
+
   const NavItems = () => (
     <>
       <Link to="/" className="flex items-center gap-2 hover:text-primary transition-colors">
@@ -42,12 +57,12 @@ export default function Navbar() {
       </Link>
     </>
   );
-  
+
   return (
-    <nav className="fixed top-0 w-full bg-white border-b z-50">
-      <div className="container mx-auto px-0">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-xl font-bold">
+    <nav className="fixed top-0 left-0 w-full bg-white border-b z-50">
+      <div className="w-full px-4">
+        <div className="flex items-center justify-between h-16 w-full">
+          <Link to="/" className="text-xl font-bold ml-5">
             UNVAS®
           </Link>
 
@@ -55,7 +70,7 @@ export default function Navbar() {
             <NavItems />
           </div>
 
-          <div className="flex items-center space-x-3 pr-8 mx-[60px]">
+          <div className="flex items-center space-x-3 pr-8">
             {user ? (
               <>
                 <CartPopover />
@@ -79,6 +94,10 @@ export default function Navbar() {
                       <Star className="h-4 w-4 mr-2" />
                       My Ratings
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/purchase-history")}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      Purchase History
+                    </DropdownMenuItem>
                     {user.isAdmin && (
                       <DropdownMenuItem onClick={() => navigate("/admin")}>
                         Dashboard
@@ -93,13 +112,13 @@ export default function Navbar() {
             ) : (
               <div className="flex gap-2">
                 {!isMobile && (
-                  <Button onClick={() => navigate("/login")} className="mx-[67px]">
+                  <Button onClick={() => navigate("/login")} className="mr-[10px]">
                     Login
                   </Button>
                 )}
               </div>
             )}
-            
+
             {isMobile && (
               <Sheet>
                 <SheetTrigger asChild>
@@ -120,6 +139,10 @@ export default function Navbar() {
                           <Star className="h-4 w-4" />
                           <span>My Ratings</span>
                         </Link>
+                        <Link to="/purchase-history" className="flex items-center gap-2 hover:text-primary transition-colors">
+                          <Clock className="h-4 w-4" />
+                          <span>Purchase History</span>
+                        </Link>
                       </>
                     )}
                     {!user && (
@@ -139,3 +162,4 @@ export default function Navbar() {
     </nav>
   );
 }
+// Test change for Git push
