@@ -1,5 +1,5 @@
 
-import { useState, useEffect, FormEvent } from "react";
+import React, { useState, useEffect, FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -129,13 +129,13 @@ export default function UserProfile() {
               </div>
             )}
             
-            {/* Custom props type for ProfileForm component since we're not creating a separate interface file */}
-            {React.createElement(ProfileForm, {
-              profileData: profileData,
-              onProfileChange: handleChange,
-              onSubmit: handleSubmit,
-              isSaving: isSaving
-            })}
+            {/* Create ProfileForm component with React.createElement */}
+            <ProfileForm
+              profileData={profileData}
+              onProfileChange={handleChange}
+              onSubmit={handleSubmit}
+              isSaving={isSaving}
+            />
             
             {user && (
               <div className="p-4 pt-2 border-t bg-gray-50">

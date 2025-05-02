@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -7,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Search, User, MapPin, Phone, Mail } from "lucide-react";
+import { Search, User, MapPin, Phone, Mail, Filter } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -36,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface TransactionDetails {
   id: number;
@@ -84,7 +87,10 @@ export function PurchasesManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-purchases"] });
-      setSelectedPurchase(null);
+      toast.success("Order status updated successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update order status: ${error.message}`);
     },
   });
 
@@ -196,6 +202,10 @@ export function PurchasesManagement() {
     );
   };
 
+  const handleStatusChange = (purchaseId: number, newStatus: string) => {
+    updatePurchaseStatus.mutate({ purchaseId, newStatus });
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[400px]">
@@ -224,17 +234,17 @@ export function PurchasesManagement() {
                 <Button 
                   className="h-12 px-6" 
                   variant="default"
-                  onClick={() => {
-                    // Trigger search - currently instant search is implemented
-                    // This button is for visual feedback
-                  }}
                 >
+                  <Search className="h-4 w-4 mr-2" />
                   Search
                 </Button>
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by status" />
+                  <div className="flex items-center">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter by status" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Orders</SelectItem>
@@ -292,12 +302,7 @@ export function PurchasesManagement() {
                     <TableCell>
                       <Select
                         value={purchase.status}
-                        onValueChange={(newStatus) => {
-                          updatePurchaseStatus.mutate({
-                            purchaseId: purchase.id,
-                            newStatus
-                          });
-                        }}
+                        onValueChange={(newStatus) => handleStatusChange(purchase.id, newStatus)}
                       >
                         <SelectTrigger className={
                           purchase.status === "completed"
@@ -314,6 +319,7 @@ export function PurchasesManagement() {
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="processing">Processing</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -479,70 +485,45 @@ export function PurchasesManagement() {
               </div>
             </div>
 
-            {/* Order Status */}
+            {/* Order Status - Updated to allow status change in modal as well */}
             <div className="mt-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4">
                 <div>
                   <span className="text-sm text-gray-500 mr-2">Order Status:</span>
-                  <Badge
-                    className={
-                      selectedPurchase.status === "completed"
-                        ? "bg-green-500"
-                        : selectedPurchase.status === "pending"
-                        ? "bg-amber-500"
-                        : selectedPurchase.status === "processing"
-                        ? "bg-blue-500"
-                        : "bg-red-500"
-                    }
+                  <Select
+                    value={selectedPurchase.status}
+                    onValueChange={(newStatus) => {
+                      updatePurchaseStatus.mutate({
+                        purchaseId: selectedPurchase.id,
+                        newStatus
+                      });
+                    }}
                   >
-                    {selectedPurchase.status}
-                  </Badge>
+                    <SelectTrigger className={
+                      selectedPurchase.status === "completed"
+                        ? "w-40 bg-green-500 text-white border-0"
+                        : selectedPurchase.status === "pending"
+                        ? "w-40 bg-amber-500 text-white border-0"
+                        : selectedPurchase.status === "processing"
+                        ? "w-40 bg-blue-500 text-white border-0"
+                        : "w-40 bg-red-500 text-white border-0"
+                    }>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              
-              {/* Status Update Buttons */}
-              <div className="mt-4 flex gap-2">
-                {selectedPurchase.status !== "pending" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updatePurchaseStatus.mutate({ 
-                      purchaseId: selectedPurchase.id, 
-                      newStatus: "pending" 
-                    })}
-                    disabled={updatePurchaseStatus.isPending}
-                  >
-                    Set as Pending
-                  </Button>
-                )}
-                {selectedPurchase.status !== "processing" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updatePurchaseStatus.mutate({ 
-                      purchaseId: selectedPurchase.id, 
-                      newStatus: "processing" 
-                    })}
-                    disabled={updatePurchaseStatus.isPending}
-                  >
-                    Set as Processing
-                  </Button>
-                )}
-                {selectedPurchase.status !== "completed" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updatePurchaseStatus.mutate({ 
-                      purchaseId: selectedPurchase.id, 
-                      newStatus: "completed" 
-                    })}
-                    disabled={updatePurchaseStatus.isPending}
-                  >
-                    Set as Completed
-                  </Button>
-                )}
-              </div>
             </div>
+
+            <DialogFooter>
+              <Button onClick={() => setSelectedPurchase(null)}>Close</Button>
+            </DialogFooter>
           </DialogContent>
         )}
       </Dialog>

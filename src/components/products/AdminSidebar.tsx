@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   Award,
@@ -7,7 +8,14 @@ import {
   LayoutDashboard,
   UserCircle,
   MessageSquare,
-  PackageCheck, // ✅ Icon for Purchases Management
+  PackageCheck,
+  Home,
+  Users,
+  CreditCard,
+  Bell,
+  PieChart,
+  BarChart3,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -37,13 +45,13 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   return (
     <div
       className={cn(
-        "w-72 h-screen shadow-xl bg-[#fdfbf7] border-r flex flex-col transition-all duration-300 z-20",
+        "w-72 h-screen shadow-xl bg-[#fdfbf7] border-r flex flex-col transition-all duration-300 z-20 overflow-y-auto",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         "fixed md:relative"
       )}
     >
       {/* Header */}
-      <div className="p-6 flex items-center gap-4 border-b bg-[#f0e8d9]">
+      <div className="p-6 flex items-center gap-4 border-b bg-[#f0e8d9] sticky top-0 z-10">
         <UserCircle className="w-10 h-10 text-[#8B7355]" />
         <h1 className="text-2xl font-bold text-[#8B7355] tracking-wide">
           Admin Panel
@@ -51,7 +59,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6 text-[15px]">
+      <nav className="flex-1 px-4 py-6 space-y-6 text-[15px] overflow-y-auto">
         <div>
           <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
             Dashboard
@@ -72,6 +80,19 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
           >
             <LayoutDashboard className="w-5 h-5" />
             <span>Overview</span>
+          </Link>
+          
+          <Link
+            to="/"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <Home className="w-5 h-5" />
+            <span>View Website</span>
           </Link>
         </div>
 
@@ -107,7 +128,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
 
         <Separator />
 
-        {/* NEW: Order Management */}
+        {/* Order Management */}
         <div>
           <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
             Order Management
@@ -123,6 +144,71 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
           >
             <PackageCheck className="w-5 h-5" />
             <span>Purchases</span>
+          </Link>
+          
+          <Link
+            to="/admin/reports"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/reports")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <FileText className="w-5 h-5" />
+            <span>Order Reports</span>
+          </Link>
+        </div>
+
+        <Separator />
+
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            User Management
+          </div>
+          <Link
+            to="/admin/users"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/users")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <Users className="w-5 h-5" />
+            <span>Customers</span>
+          </Link>
+        </div>
+
+        <Separator />
+
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            Analytics
+          </div>
+          <Link
+            to="/admin/sales"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/sales")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Sales Analytics</span>
+          </Link>
+          <Link
+            to="/admin/stats"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/stats")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <PieChart className="w-5 h-5" />
+            <span>Product Statistics</span>
           </Link>
         </div>
 
@@ -141,8 +227,20 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
                 : "hover:bg-[#f3f3f3] text-gray-700"
             )}
           >
-            <MessageSquare className="w-5 h-5" />
+            <Bell className="w-5 h-5" />
             <span>Send Notification</span>
+          </Link>
+          <Link
+            to="/admin/messages"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/messages")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span>Customer Messages</span>
           </Link>
         </div>
 
@@ -164,11 +262,23 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
             <Settings className="w-5 h-5" />
             <span>System Settings</span>
           </Link>
+          <Link
+            to="/admin/payment-settings"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/payment-settings")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <CreditCard className="w-5 h-5" />
+            <span>Payment Settings</span>
+          </Link>
         </div>
       </nav>
 
       {/* Footer */}
-      <div className="p-6 border-t bg-[#fdfbf7]">
+      <div className="p-6 border-t bg-[#fdfbf7] sticky bottom-0 z-10">
         <Button
           onClick={handleLogout}
           variant="destructive"

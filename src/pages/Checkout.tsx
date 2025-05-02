@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +14,8 @@ import OrderItems from "@/components/checkout/OrderItems";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import OrderSuccessDialog from "@/components/checkout/OrderSuccessDialog";
 import OrderSummaryDialog from "@/components/checkout/OrderSummaryDialog";
+import AddressManagement from "@/components/checkout/AddressManagement";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -34,6 +37,7 @@ export default function Checkout() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
   // Get cached Buy Now items if they exist
   const cachedBuyNowItems = queryClient.getQueryData<CartItem[]>(['checkout-items']) || [];
@@ -95,6 +99,35 @@ export default function Checkout() {
     }
   });
 
+  // Get user's addresses
+  const { data: userAddresses = [], isLoading: addressesLoading } = useQuery({
+    queryKey: ['user-addresses'],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('user_addresses')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Set default address as selected if available
+  useEffect(() => {
+    if (userAddresses.length > 0) {
+      const defaultAddress = userAddresses.find(addr => addr.is_default);
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+      } else {
+        setSelectedAddressId(userAddresses[0].id);
+      }
+    }
+  }, [userAddresses]);
+
   const updateQuantity = async (productId: number, newQuantity: number) => {
     if (!user?.id || newQuantity < 1) return;
 
@@ -150,9 +183,19 @@ export default function Checkout() {
     return sum + (item.quantity * (item.products?.product_price || 0));
   }, 0);
 
+  const handleAddressSelect = (address: any) => {
+    setSelectedAddressId(address.id);
+  };
+
   const handleCheckout = async () => {
     if (!user || cartItems.length === 0) {
       toast.error("No items to checkout");
+      return;
+    }
+
+    // Check if a delivery address is selected
+    if (!selectedAddressId && userAddresses.length > 0) {
+      toast.error("Please select a delivery address");
       return;
     }
     
@@ -174,7 +217,7 @@ export default function Checkout() {
         .insert({
           user_id: user.id,
           total_amount: total,
-          status: 'completed'
+          status: 'pending' // Changed default status to pending
         })
         .select()
         .single();
@@ -200,6 +243,36 @@ export default function Checkout() {
       if (itemsError) {
         console.error("Purchase items error:", itemsError);
         throw itemsError;
+      }
+
+      // If we have a selected address, link it to the purchase
+      if (selectedAddressId) {
+        const { data: addressData } = await supabase
+          .from('user_addresses')
+          .select('*')
+          .eq('id', selectedAddressId)
+          .single();
+          
+        if (addressData) {
+          // Format the address
+          const addressLine2 = addressData.address_line2 ? `${addressData.address_line2}, ` : '';
+          const fullAddress = `${addressData.address_line1}, ${addressLine2}${addressData.city}, ${addressData.state_province}, ${addressData.postal_code}, ${addressData.country}`;
+          
+          const { error: transactionError } = await supabase
+            .from('transaction_details')
+            .insert({
+              purchase_id: purchase.id,
+              first_name: addressData.recipient_name.split(' ')[0],
+              last_name: addressData.recipient_name.split(' ').slice(1).join(' '),
+              email: user.email,
+              phone_number: addressData.phone_number,
+              address: fullAddress
+            });
+            
+          if (transactionError) {
+            console.error("Transaction details error:", transactionError);
+          }
+        }
       }
 
       // Update inventory
@@ -264,6 +337,7 @@ export default function Checkout() {
       queryClient.invalidateQueries({ queryKey: ['admin-sales-data'] });
       queryClient.invalidateQueries({ queryKey: ['admin-sales-items'] });
       queryClient.invalidateQueries({ queryKey: ['user-purchases', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-addresses'] });
       
       // Show order summary dialog
       setShowOrderSummaryDialog(true);
@@ -313,8 +387,21 @@ export default function Checkout() {
             </Button>
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-2 space-y-6">
+              <Card>
+                <CardHeader className="bg-gray-50">
+                  <CardTitle className="text-lg">Delivery Address</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <AddressManagement 
+                    onAddressSelect={handleAddressSelect} 
+                    selectedAddressId={selectedAddressId}
+                    showSelectionUI={true}
+                  />
+                </CardContent>
+              </Card>
+              
               <OrderItems 
                 cartItems={cartItems} 
                 inventoryData={inventoryData}
@@ -326,7 +413,7 @@ export default function Checkout() {
             <div className="md:col-span-1">
               <OrderSummary 
                 total={total}
-                isComplete={true} // No longer requiring complete profile
+                isComplete={true} 
                 cartItems={cartItems}
                 isProcessing={isProcessing}
                 handleCheckout={handleCheckout}

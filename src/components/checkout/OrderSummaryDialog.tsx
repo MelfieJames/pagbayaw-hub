@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import AddressManagement from "./AddressManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TransactionDetails {
   first_name: string;
@@ -22,6 +25,19 @@ interface TransactionDetails {
   email: string;
   phone_number: string;
   address: string;
+}
+
+interface AddressData {
+  id: number;
+  address_name: string;
+  recipient_name: string;
+  address_line1: string;
+  address_line2: string | null;
+  city: string;
+  state_province: string;
+  postal_code: string;
+  country: string;
+  phone_number: string;
 }
 
 interface OrderSummaryDialogProps {
@@ -45,6 +61,8 @@ export default function OrderSummaryDialog({
 }: OrderSummaryDialogProps) {
   const [step, setStep] = useState<"summary" | "details">("summary");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("saved");
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails>({
     first_name: "",
@@ -93,8 +111,10 @@ export default function OrderSummaryDialog({
       }
     };
 
-    fetchTransactionDetails();
-  }, [purchaseId, userEmail]);
+    if (open) {
+      fetchTransactionDetails();
+    }
+  }, [purchaseId, userEmail, open]);
 
   const fetchPurchaseEmail = async (purchaseId: number) => {
     const { data, error } = await supabase
@@ -130,14 +150,46 @@ export default function OrderSummaryDialog({
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("transaction_details").upsert(
-        {
-          ...transactionDetails,
-        },
-        { onConflict: "email" }
-      );
+      // If a saved address was selected, use that data
+      if (selectedAddressId) {
+        const { data, error } = await supabase
+          .from('user_addresses')
+          .select('*')
+          .eq('id', selectedAddressId)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          const addressLine2 = data.address_line2 ? `${data.address_line2}, ` : '';
+          const formattedAddress = `${data.address_line1}, ${addressLine2}${data.city}, ${data.state_province}, ${data.postal_code}, ${data.country}`;
+          
+          const { error: updateError } = await supabase.from("transaction_details").upsert(
+            {
+              first_name: data.recipient_name.split(' ')[0] || transactionDetails.first_name,
+              last_name: data.recipient_name.split(' ').slice(1).join(' ') || transactionDetails.last_name,
+              email: transactionDetails.email,
+              phone_number: data.phone_number,
+              address: formattedAddress,
+              purchase_id: purchaseId
+            },
+            { onConflict: "email" }
+          );
 
-      if (error) throw error;
+          if (updateError) throw updateError;
+        }
+      } else {
+        // Use manual input
+        const { error } = await supabase.from("transaction_details").upsert(
+          {
+            ...transactionDetails,
+            purchase_id: purchaseId
+          },
+          { onConflict: "email" }
+        );
+
+        if (error) throw error;
+      }
 
       toast.success("Shipping details saved successfully!");
       onDetailsSubmitted();
@@ -148,6 +200,10 @@ export default function OrderSummaryDialog({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleAddressSelect = (address: AddressData) => {
+    setSelectedAddressId(address.id);
   };
 
   return (
@@ -236,56 +292,78 @@ export default function OrderSummaryDialog({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            <Tabs defaultValue="saved" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="saved">Saved Addresses</TabsTrigger>
+                <TabsTrigger value="new">Enter Address</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="saved" className="space-y-4 py-4">
+                <AddressManagement 
+                  onAddressSelect={handleAddressSelect} 
+                  selectedAddressId={selectedAddressId}
+                  showSelectionUI={true} 
+                />
+              </TabsContent>
+              
+              <TabsContent value="new" className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name">First Name</Label>
+                    <Input
+                      id="first_name"
+                      name="first_name"
+                      value={transactionDetails.first_name}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name">Last Name</Label>
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      value={transactionDetails.last_name}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" name="email" type="email" value={transactionDetails.email} disabled />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone_number">Phone Number</Label>
                   <Input
-                    id="first_name"
-                    name="first_name"
-                    value={transactionDetails.first_name}
+                    id="phone_number"
+                    name="phone_number"
+                    value={transactionDetails.phone_number}
                     onChange={handleInputChange}
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
+                  <Label htmlFor="address">Shipping Address</Label>
                   <Input
-                    id="last_name"
-                    name="last_name"
-                    value={transactionDetails.last_name}
+                    id="address"
+                    name="address"
+                    value={transactionDetails.address}
                     onChange={handleInputChange}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" value={transactionDetails.email} disabled />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">Phone Number</Label>
-                <Input
-                  id="phone_number"
-                  name="phone_number"
-                  value={transactionDetails.phone_number}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Shipping Address</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={transactionDetails.address}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
 
             <DialogFooter>
-              <Button onClick={handleSubmitDetails} className="w-full" disabled={isSubmitting}>
+              <Button 
+                onClick={() => setStep("summary")} 
+                variant="outline" 
+                disabled={isSubmitting}
+              >
+                Back
+              </Button>
+              <Button onClick={handleSubmitDetails} className="w-full md:w-auto" disabled={isSubmitting || (activeTab === "saved" && !selectedAddressId)}>
                 {isSubmitting ? (
                   <>
                     <LoadingSpinner size="sm" />
