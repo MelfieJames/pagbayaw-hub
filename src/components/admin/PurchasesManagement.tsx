@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Search, Calendar, User, MapPin, Phone, Mail } from "lucide-react";
+import { Search, User, MapPin, Phone, Mail } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TransactionDetails {
   id: number;
@@ -66,6 +71,22 @@ export function PurchasesManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseData | null>(null);
+  const queryClient = useQueryClient();
+
+  const updatePurchaseStatus = useMutation({
+    mutationFn: async ({ purchaseId, newStatus }: { purchaseId: number; newStatus: string }) => {
+      const { error } = await supabase
+        .from("purchases")
+        .update({ status: newStatus })
+        .eq("id", purchaseId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-purchases"] });
+      setSelectedPurchase(null);
+    },
+  });
 
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ["admin-purchases"],
@@ -186,30 +207,44 @@ export function PurchasesManagement() {
   return (
     <Card className="shadow-sm bg-white">
       <CardHeader className="bg-gray-50">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <CardTitle className="text-xl">Customer Orders</CardTitle>
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-              <Input
-                placeholder="Search orders..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle className="text-xl">Customer Orders</CardTitle>
+            <div className="flex gap-2 items-center">
+              <div className="flex gap-2 flex-1">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+                  <Input
+                    placeholder="Search orders by ID, customer name, email, or product..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 h-12 text-base w-[300px]"
+                  />
+                </div>
+                <Button 
+                  className="h-12 px-6" 
+                  variant="default"
+                  onClick={() => {
+                    // Trigger search - currently instant search is implemented
+                    // This button is for visual feedback
+                  }}
+                >
+                  Search
+                </Button>
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Orders</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Orders</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </CardHeader>
@@ -255,19 +290,32 @@ export function PurchasesManagement() {
                       ₱{Number(purchase.total_amount).toFixed(2)}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        className={
-                          purchase.status === "completed"
-                            ? "bg-green-500"
-                            : purchase.status === "pending"
-                            ? "bg-amber-500"
-                            : purchase.status === "processing"
-                            ? "bg-blue-500"
-                            : "bg-red-500"
-                        }
+                      <Select
+                        value={purchase.status}
+                        onValueChange={(newStatus) => {
+                          updatePurchaseStatus.mutate({
+                            purchaseId: purchase.id,
+                            newStatus
+                          });
+                        }}
                       >
-                        {purchase.status}
-                      </Badge>
+                        <SelectTrigger className={
+                          purchase.status === "completed"
+                            ? "w-32 bg-green-500 text-white border-0 hover:bg-green-600"
+                            : purchase.status === "pending"
+                            ? "w-32 bg-amber-500 text-white border-0 hover:bg-amber-600"
+                            : purchase.status === "processing"
+                            ? "w-32 bg-blue-500 text-white border-0 hover:bg-blue-600"
+                            : "w-32 bg-red-500 text-white border-0 hover:bg-red-600"
+                        }>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       <Button
@@ -432,28 +480,66 @@ export function PurchasesManagement() {
             </div>
 
             {/* Order Status */}
-            <div className="mt-4 flex items-center justify-between">
-              <div>
-                <span className="text-sm text-gray-500 mr-2">Order Status:</span>
-                <Badge
-                  className={
-                    selectedPurchase.status === "completed"
-                      ? "bg-green-500"
-                      : selectedPurchase.status === "pending"
-                      ? "bg-amber-500"
-                      : selectedPurchase.status === "processing"
-                      ? "bg-blue-500"
-                      : "bg-red-500"
-                  }
-                >
-                  {selectedPurchase.status}
-                </Badge>
+            <div className="mt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm text-gray-500 mr-2">Order Status:</span>
+                  <Badge
+                    className={
+                      selectedPurchase.status === "completed"
+                        ? "bg-green-500"
+                        : selectedPurchase.status === "pending"
+                        ? "bg-amber-500"
+                        : selectedPurchase.status === "processing"
+                        ? "bg-blue-500"
+                        : "bg-red-500"
+                    }
+                  >
+                    {selectedPurchase.status}
+                  </Badge>
+                </div>
               </div>
-              <div className="text-sm text-gray-500 flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {format(
-                  new Date(selectedPurchase.created_at),
-                  "MMM d, yyyy 'at' h:mm a"
+              
+              {/* Status Update Buttons */}
+              <div className="mt-4 flex gap-2">
+                {selectedPurchase.status !== "pending" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updatePurchaseStatus.mutate({ 
+                      purchaseId: selectedPurchase.id, 
+                      newStatus: "pending" 
+                    })}
+                    disabled={updatePurchaseStatus.isPending}
+                  >
+                    Set as Pending
+                  </Button>
+                )}
+                {selectedPurchase.status !== "processing" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updatePurchaseStatus.mutate({ 
+                      purchaseId: selectedPurchase.id, 
+                      newStatus: "processing" 
+                    })}
+                    disabled={updatePurchaseStatus.isPending}
+                  >
+                    Set as Processing
+                  </Button>
+                )}
+                {selectedPurchase.status !== "completed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updatePurchaseStatus.mutate({ 
+                      purchaseId: selectedPurchase.id, 
+                      newStatus: "completed" 
+                    })}
+                    disabled={updatePurchaseStatus.isPending}
+                  >
+                    Set as Completed
+                  </Button>
                 )}
               </div>
             </div>
