@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
-import { FaUser, FaLock, FaEnvelope, FaCheckCircle } from "react-icons/fa"; // Added icons
+import { User, Mail, Lock } from "lucide-react"; // Using lucide icons
 import {
   AlertDialog,
   AlertDialogAction,
@@ -172,7 +173,7 @@ const LoginPage = () => {
                         required={!isLogin}
                         className="w-full pl-10"
                       />
-                      <FaUser className="absolute left-3 top-3 text-gray-500" />
+                      <User className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
                     </div>
                   </div>
                 )}
@@ -189,7 +190,7 @@ const LoginPage = () => {
                       required
                       className="w-full pl-10"
                     />
-                    <FaEnvelope className="absolute left-3 top-3 text-gray-500" />
+                    <Mail className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
                   </div>
                 </div>
 
@@ -205,7 +206,7 @@ const LoginPage = () => {
                       required
                       className="w-full pl-10"
                     />
-                    <FaLock className="absolute left-3 top-3 text-gray-500" />
+                    <Lock className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
                   </div>
                 </div>
 
@@ -241,7 +242,7 @@ const LoginPage = () => {
         </div>
 
         <AlertDialog open={isConfirmationAlertOpen} onOpenChange={setIsConfirmationAlertOpen}>
-          <AlertDialogContent className="duration-\[1800ms\]">
+          <AlertDialogContent className="duration-[1800ms]">
             <AlertDialogHeader>
               <AlertDialogTitle>Email Not Confirmed</AlertDialogTitle>
               <AlertDialogDescription>

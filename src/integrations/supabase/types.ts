@@ -210,6 +210,7 @@ export type Database = {
           is_read: boolean | null
           message: string
           purchase_id: number | null
+          tracking_number: string | null
           type: string
           user_id: string | null
         }
@@ -219,6 +220,7 @@ export type Database = {
           is_read?: boolean | null
           message: string
           purchase_id?: number | null
+          tracking_number?: string | null
           type: string
           user_id?: string | null
         }
@@ -228,6 +230,7 @@ export type Database = {
           is_read?: boolean | null
           message?: string
           purchase_id?: number | null
+          tracking_number?: string | null
           type?: string
           user_id?: string | null
         }
@@ -367,29 +370,50 @@ export type Database = {
       purchases: {
         Row: {
           created_at: string | null
+          email: string | null
           id: number
           status: string | null
           total_amount: number
+          transaction_details_id: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
           id?: number
           status?: string | null
           total_amount: number
+          transaction_details_id?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          email?: string | null
           id?: number
           status?: string | null
           total_amount?: number
+          transaction_details_id?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_email"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "transaction_details"
+            referencedColumns: ["email"]
+          },
+          {
+            foreignKeyName: "fk_transaction_details"
+            columns: ["transaction_details_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_details"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -454,6 +478,7 @@ export type Database = {
           id: number
           last_name: string
           phone_number: string
+          profile_picture_path: string | null
           purchase_id: number | null
         }
         Insert: {
@@ -464,6 +489,7 @@ export type Database = {
           id?: number
           last_name: string
           phone_number: string
+          profile_picture_path?: string | null
           purchase_id?: number | null
         }
         Update: {
@@ -474,6 +500,7 @@ export type Database = {
           id?: number
           last_name?: string
           phone_number?: string
+          profile_picture_path?: string | null
           purchase_id?: number | null
         }
         Relationships: [
