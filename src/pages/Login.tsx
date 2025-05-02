@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -11,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
+import { FaUser, FaLock, FaEnvelope, FaCheckCircle } from "react-icons/fa"; // Added icons
 import {
   AlertDialog,
   AlertDialogAction,
@@ -133,77 +133,82 @@ const LoginPage = () => {
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen w-full overflow-hidden pt-16">
+      <div className="flex min-h-screen w-full overflow-hidden pt-16 bg-gray-50">
         {/* Left panel - decorative */}
-        <div className="hidden w-1/2 bg-[#A8D0B9] lg:flex flex-col items-center justify-center p-12 relative">
-          <div className="max-w-md text-center">
-            <img 
-              src="/lovable-uploads/pic.png" 
-              alt="UNVAS Illustration" 
-              className="w-48 h-auto mx-auto mb-10"
-            />
-            <h2 className="text-2xl font-semibold text-white mb-4">Your trusted partner in eco-friendly products</h2>
-            <p className="text-white/80">Discover sustainable solutions that respect our environment while enhancing your daily life.</p>
+        <div className="hidden lg:flex w-1/2 bg-cover bg-center relative" style={{ backgroundImage: 'url("/lovable-uploads/unvaspic4.jpg")' }}>
+          <div className="bg-black opacity-40 absolute inset-0"></div>
+          <div className="absolute bottom-12 left-6 right-6 text-center text-white px-6 py-12 z-10">
+            <h2 className="text-3xl font-semibold mb-4">Your trusted partner in eco-friendly products</h2>
+            <p className="text-white/80 text-lg">Discover sustainable solutions that respect our environment while enhancing your daily life.</p>
           </div>
         </div>
-        
+
         {/* Right panel - form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white">
           <div className="w-full max-w-md space-y-8">
-            <div className="text-center">
-              <h1 className="text-3xl font-semibold mb-2 text-gray-800">UNVAS</h1>
-              <p className="text-gray-500 mb-8">Welcome to UNVAS</p>
+            <div className="text-center mb-6">
+              <h1 className="text-4xl font-semibold text-gray-800">UNVAS®</h1>
+              <p className="text-gray-500">Welcome to UNVAS®</p>
             </div>
-            
+
             {errorMessage && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
                 {errorMessage}
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input 
-                      id="name"
-                      type="text" 
-                      placeholder="Enter your full name" 
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required={!isLogin}
-                      className="w-full"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required={!isLogin}
+                        className="w-full pl-10"
+                      />
+                      <FaUser className="absolute left-3 top-3 text-gray-500" />
+                    </div>
                   </div>
                 )}
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input 
-                    id="email"
-                    type="email" 
-                    placeholder="Enter your email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full pl-10"
+                    />
+                    <FaEnvelope className="absolute left-3 top-3 text-gray-500" />
+                  </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password"
-                    type="password" 
-                    placeholder="Enter your password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full pl-10"
+                    />
+                    <FaLock className="absolute left-3 top-3 text-gray-500" />
+                  </div>
                 </div>
-                
+
                 {isLogin && (
                   <div className="flex items-center space-x-2">
                     <Checkbox 
@@ -217,15 +222,15 @@ const LoginPage = () => {
                   </div>
                 )}
               </div>
-              
-              <Button type="submit" className="w-full bg-[#A8D0B9] hover:bg-[#97C0A9]">
+
+              <Button type="submit" className="w-full bg-[#A8D0B9] hover:bg-[#97C0A9] text-white">
                 {isLogin ? "Sign in" : "Sign up"}
               </Button>
             </form>
-            
+
             <p className="text-center text-sm text-gray-500">
-              {isLogin ? "New to UNVAS?" : "Already have an account?"} {" "}
-              <button 
+              {isLogin ? "New to UNVAS®?" : "Already have an account?"} {" "}
+              <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="font-medium text-primary hover:underline"
               >
@@ -234,7 +239,7 @@ const LoginPage = () => {
             </p>
           </div>
         </div>
-        
+
         <AlertDialog open={isConfirmationAlertOpen} onOpenChange={setIsConfirmationAlertOpen}>
           <AlertDialogContent className="duration-\[1800ms\]">
             <AlertDialogHeader>
