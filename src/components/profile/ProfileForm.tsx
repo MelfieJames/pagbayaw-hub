@@ -8,6 +8,7 @@ import { supabase } from "@/services/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { UserRound, ShoppingCart } from "lucide-react";
 import { ProfileRow } from "@/types/supabase";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface ProfileFormProps {
   profileData: ProfileRow;
