@@ -1,8 +1,9 @@
+
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { supabase } from "@/services/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { UserRound, ShoppingCart } from "lucide-react";
