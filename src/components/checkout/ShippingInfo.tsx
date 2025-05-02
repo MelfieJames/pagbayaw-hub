@@ -16,11 +16,11 @@ export default function ShippingInfo({ profileData, isComplete }: ShippingInfoPr
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border mb-6">
       <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-800">
-        <User className="h-5 w-5 text-primary" /> Shipping Information
+        <User className="h-5 w-5 text-primary" /> Address Management
       </h2>
       
       <div className="text-center py-4">
-        <p className="text-gray-600 mb-3">Please use the Address Management section to add or select shipping addresses</p>
+        <p className="text-gray-600 mb-3">Please use the Address Management section to manage your shipping addresses</p>
         <Button 
           onClick={() => navigate('/profile', { state: { redirectAfterUpdate: '/checkout' }})}
           className="bg-primary hover:bg-primary/90"

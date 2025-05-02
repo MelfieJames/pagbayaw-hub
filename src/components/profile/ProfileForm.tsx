@@ -1,14 +1,13 @@
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/services/supabase/client";
-import { useSession } from "@/hooks/useSession";
-import { UserRound, ShoppingCart } from "lucide-react";
+import { UserRound, Upload, Camera } from "lucide-react";
 import { ProfileData } from "@/hooks/useProfile";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileFormProps {
   profileData: ProfileData;
@@ -18,9 +17,108 @@ interface ProfileFormProps {
 }
 
 export default function ProfileForm({ profileData, onProfileChange, onSubmit, isSaving }: ProfileFormProps) {
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(profileData.profile_picture || null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadAvatar = async () => {
+    if (!avatarFile) return null;
+    
+    setIsUploading(true);
+    try {
+      const fileExt = avatarFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `profile-pictures/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile);
+        
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: publicUrl } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+        
+      onProfileChange('profile_picture', publicUrl.publicUrl);
+      return publicUrl.publicUrl;
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload avatar. Please try again.');
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    let pictureUrl = profileData.profile_picture;
+    
+    if (avatarFile) {
+      const uploadedUrl = await uploadAvatar();
+      if (uploadedUrl) {
+        pictureUrl = uploadedUrl;
+      }
+    }
+    
+    // Continue with regular form submission
+    onSubmit(e);
+  };
+
+  const getInitials = () => {
+    if (profileData.first_name && profileData.last_name) {
+      return `${profileData.first_name[0]}${profileData.last_name[0]}`;
+    }
+    return profileData.email ? profileData.email.substring(0, 2).toUpperCase() : 'U';
+  };
+
   return (
     <div className="p-6">
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
+        {/* Avatar Upload Section */}
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="relative">
+            <Avatar className="h-24 w-24">
+              {avatarPreview ? (
+                <AvatarImage src={avatarPreview} alt="Profile" />
+              ) : (
+                <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                  {getInitials()}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <label 
+              htmlFor="avatar-upload"
+              className="absolute bottom-0 right-0 bg-primary hover:bg-primary/90 text-white p-1.5 rounded-full cursor-pointer"
+            >
+              <Camera className="h-4 w-4" />
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <p className="text-sm text-gray-500 mt-2">Click the camera icon to upload profile picture</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
@@ -52,6 +150,19 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
         </div>
 
         <div className="space-y-2">
+          <label htmlFor="middle_name" className="block text-sm font-medium text-gray-700">
+            Middle Name (Optional)
+          </label>
+          <Input
+            id="middle_name"
+            name="middle_name"
+            value={profileData.middle_name || ''}
+            onChange={(e) => onProfileChange('middle_name', e.target.value)}
+            placeholder="Middle Name"
+          />
+        </div>
+
+        <div className="space-y-2">
           <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700">
             Phone Number
           </label>
@@ -80,11 +191,11 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={isSaving} className="w-full md:w-auto">
-            {isSaving ? (
+          <Button type="submit" disabled={isSaving || isUploading} className="w-full md:w-auto">
+            {(isSaving || isUploading) ? (
               <>
                 <LoadingSpinner size="sm" className="mr-2" />
-                Saving...
+                {isUploading ? 'Uploading...' : 'Saving...'}
               </>
             ) : (
               'Save Profile'

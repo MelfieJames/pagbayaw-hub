@@ -1,1 +1,45 @@
+
+# Project ID to use when creating resources.
 project_id = "msvlqapipscspxukbhyb"
+
+[api]
+# Port that the emulator web server will run on. Defaults to 54321
+port = 54321
+# Extra environment variables to pass to the API
+#env_variables = { ... }
+# Command to run when doing supabase start
+# cmd = "..."
+# Hostname that the API will listen on
+hostname = "localhost"
+
+[db]
+# Port that the emulator database listens on. Defaults to 54322
+port = 54322
+# The maximum amount of memory to use for the database's shared buffer. This controls
+# how much memory the database server will use for caching data: -m=<MB>
+# Info: https://www.postgresql.org/docs/current/runtime-config-resource.html#GUC-SHARED-BUFFERS
+# default: shared_memory = 256
+# shared_memory = 256
+# Command to run when doing 'supabase start'
+# cmd = "..."
+# Hostname that the database will listen on
+hostname = "localhost"
+
+[realtime]
+# Port that the realtime service will run on. Defaults to 54323
+port = 54323
+
+[studio]
+#  Port that the Studio will run on. Defaults to 54324
+port = 54324
+# Command to run when doing 'supabase start'
+# cmd = "..."
+# Hostname that the API will listen on
+hostname = "localhost"
+
+[functions]
+# Port that the functions service will run on. Defaults to 54325
+port = 54325
+
+[functions.increment-inventory]
+verify_jwt = true

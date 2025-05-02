@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
@@ -14,6 +15,7 @@ export interface ProfileData {
   phone_number: string;
   created_at?: string;
   updated_at?: string;
+  profile_picture?: string;
 }
 
 /**
@@ -35,7 +37,8 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
     location: "",
     phone_number: "",
     created_at: "",
-    updated_at: ""
+    updated_at: "",
+    profile_picture: ""
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
@@ -52,7 +55,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, first_name, middle_name, last_name, location, phone_number, created_at, updated_at')
+        .select('id, email, first_name, middle_name, last_name, location, phone_number, created_at, updated_at, profile_picture')
         .eq('id', user.id)
         .single();
       
@@ -119,6 +122,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
             last_name: profileData.last_name,
             location: profileData.location,
             phone_number: profileData.phone_number,
+            profile_picture: profileData.profile_picture || '',
             updated_at: new Date().toISOString()
           })
           .select();
@@ -146,6 +150,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
             last_name: profileData.last_name,
             location: profileData.location,
             phone_number: profileData.phone_number,
+            profile_picture: profileData.profile_picture || undefined,
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)
@@ -195,7 +200,8 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
             location: profileData.location || "",
             phone_number: profileData.phone_number || "",
             created_at: profileData.created_at,
-            updated_at: profileData.updated_at
+            updated_at: profileData.updated_at,
+            profile_picture: profileData.profile_picture || ""
           };
           
           setProfileData(profileFields);
@@ -231,7 +237,8 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
                 middle_name: "",
                 last_name: "",
                 location: "",
-                phone_number: ""
+                phone_number: "",
+                profile_picture: ""
               });
               
             setProfileData({
@@ -242,6 +249,7 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
               last_name: "",
               location: "",
               phone_number: "",
+              profile_picture: "",
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
@@ -294,7 +302,8 @@ export const useProfile = (redirectIfIncomplete?: boolean, redirectPath?: string
           id: updatedProfile.id || user.id,
           email: updatedProfile.email || user.email,
           created_at: updatedProfile.created_at,
-          updated_at: updatedProfile.updated_at
+          updated_at: updatedProfile.updated_at,
+          profile_picture: updatedProfile.profile_picture || ""
         });
         
         const isProfileComplete = !!(

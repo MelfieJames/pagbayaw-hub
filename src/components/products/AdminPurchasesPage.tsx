@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { useQuery } from "@tanstack/react-query";
@@ -20,8 +21,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, X, Info, Search } from "lucide-react";
 import { TransactionDetailsRow } from "@/types/supabase";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Purchase = {
   id: number;
@@ -40,6 +49,8 @@ const AdminPurchasesPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const { data: purchases = [], isLoading, error } = useQuery<Purchase[]>({
     queryKey: ["admin-purchases-detailed"],
@@ -52,7 +63,7 @@ const AdminPurchasesPage = () => {
           total_amount,
           status,
           purchase_items(*, products(*)),
-          transaction_details:transaction_details_id (first_name, last_name, email, phone_number, address)
+          transaction_details(first_name, last_name, email, phone_number, address)
         `)
         .order("created_at", { ascending: false });
 
@@ -71,6 +82,11 @@ const AdminPurchasesPage = () => {
     },
     refetchInterval: 30000,
   });
+
+  const viewPurchaseDetails = (purchase: Purchase) => {
+    setSelectedPurchase(purchase);
+    setDetailsOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -170,6 +186,7 @@ const AdminPurchasesPage = () => {
                     <TableHead>Date</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -193,6 +210,17 @@ const AdminPurchasesPage = () => {
                           {purchase.status?.charAt(0).toUpperCase() + purchase.status?.slice(1)}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="text-primary"
+                          onClick={() => viewPurchaseDetails(purchase)}
+                        >
+                          <Info className="h-4 w-4 mr-1" />
+                          Details
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -200,6 +228,63 @@ const AdminPurchasesPage = () => {
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5" />
+                Order #{selectedPurchase?.id}
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedPurchase && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-md border">
+                    <h3 className="font-medium mb-2">Customer Information</h3>
+                    <p className="text-sm">Name: {selectedPurchase.customer_name}</p>
+                    <p className="text-sm">Email: {selectedPurchase.customer_email}</p>
+                    <p className="text-sm">Phone: {selectedPurchase.customer_phone}</p>
+                    <p className="text-sm">Address: {selectedPurchase.customer_address}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-md border">
+                    <h3 className="font-medium mb-2">Order Information</h3>
+                    <p className="text-sm">Date: {format(new Date(selectedPurchase.created_at), "PPP")}</p>
+                    <p className="text-sm">Status: <span className={`inline-block px-2 py-1 rounded text-xs ${getBadgeColor(selectedPurchase.status)}`}>{selectedPurchase.status}</span></p>
+                    <p className="text-sm">Total: {formatCurrency(selectedPurchase.total_amount)}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium mb-2">Order Items</h3>
+                  <ScrollArea className="h-[300px] rounded-md border">
+                    <div className="p-4">
+                      {selectedPurchase.purchase_items?.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-3 py-3 border-b last:border-0">
+                          <img 
+                            src={item.products?.image || "/placeholder.svg"}
+                            alt={item.products?.product_name}
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                          <div className="flex-grow">
+                            <p className="font-medium">{item.products?.product_name}</p>
+                            <p className="text-sm text-gray-500">
+                              ₱{Number(item.price_at_time).toFixed(2)} x {item.quantity}
+                            </p>
+                          </div>
+                          <p className="font-medium">
+                            ₱{(Number(item.price_at_time) * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

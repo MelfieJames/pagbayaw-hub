@@ -106,6 +106,7 @@ export interface Database {
           location?: string
           created_at?: string
           updated_at?: string
+          profile_picture?: string
         }
         Insert: {
           id: string
@@ -117,6 +118,7 @@ export interface Database {
           location?: string
           created_at?: string
           updated_at?: string
+          profile_picture?: string
         }
         Update: {
           id?: string
@@ -128,6 +130,7 @@ export interface Database {
           location?: string
           created_at?: string
           updated_at?: string
+          profile_picture?: string
         }
       }
       cart: {
@@ -184,6 +187,7 @@ export interface Database {
           status: string
           created_at: string
           updated_at?: string
+          transaction_details_id?: number
         }
         Insert: {
           id?: number
@@ -192,6 +196,7 @@ export interface Database {
           status?: string
           created_at?: string
           updated_at?: string
+          transaction_details_id?: number
         }
         Update: {
           id?: number
@@ -200,6 +205,7 @@ export interface Database {
           status?: string
           created_at?: string
           updated_at?: string
+          transaction_details_id?: number
         }
       }
       purchase_items: {

@@ -7,15 +7,9 @@ import {
   Settings,
   LayoutDashboard,
   UserCircle,
-  MessageSquare,
   PackageCheck,
   Home,
-  Users,
-  CreditCard,
-  Bell,
-  PieChart,
-  BarChart3,
-  FileText
+  X
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -56,6 +50,14 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         <h1 className="text-2xl font-bold text-[#8B7355] tracking-wide">
           Admin Panel
         </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto md:hidden"
+          onClick={() => setIsOpen && setIsOpen(false)}
+        >
+          <X className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Navigation */}
@@ -72,7 +74,6 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
               !isActive("/admin/products") &&
               !isActive("/admin/achievements") &&
               !isActive("/admin/settings") &&
-              !isActive("/admin/send-notification") &&
               !isActive("/admin/purchases")
                 ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
                 : "hover:bg-[#f3f3f3] text-gray-700"
@@ -145,149 +146,22 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
             <PackageCheck className="w-5 h-5" />
             <span>Purchases</span>
           </Link>
-          
-          <Link
-            to="/admin/reports"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/reports")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <FileText className="w-5 h-5" />
-            <span>Order Reports</span>
-          </Link>
         </div>
 
         <Separator />
 
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            User Management
-          </div>
-          <Link
-            to="/admin/users"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/users")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
+        {/* Footer */}
+        <div className="mt-auto">
+          <Button
+            onClick={handleLogout}
+            variant="destructive"
+            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
           >
-            <Users className="w-5 h-5" />
-            <span>Customers</span>
-          </Link>
-        </div>
-
-        <Separator />
-
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            Analytics
-          </div>
-          <Link
-            to="/admin/sales"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/sales")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <BarChart3 className="w-5 h-5" />
-            <span>Sales Analytics</span>
-          </Link>
-          <Link
-            to="/admin/stats"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/stats")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <PieChart className="w-5 h-5" />
-            <span>Product Statistics</span>
-          </Link>
-        </div>
-
-        <Separator />
-
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            Communication
-          </div>
-          <Link
-            to="/admin/send-notification"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/send-notification")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <Bell className="w-5 h-5" />
-            <span>Send Notification</span>
-          </Link>
-          <Link
-            to="/admin/messages"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/messages")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span>Customer Messages</span>
-          </Link>
-        </div>
-
-        <Separator />
-
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            Settings
-          </div>
-          <Link
-            to="/admin/settings"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/settings")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <Settings className="w-5 h-5" />
-            <span>System Settings</span>
-          </Link>
-          <Link
-            to="/admin/payment-settings"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/payment-settings")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <CreditCard className="w-5 h-5" />
-            <span>Payment Settings</span>
-          </Link>
+            <LogOut className="w-5 h-5" />
+            <span>Logout</span>
+          </Button>
         </div>
       </nav>
-
-      {/* Footer */}
-      <div className="p-6 border-t bg-[#fdfbf7] sticky bottom-0 z-10">
-        <Button
-          onClick={handleLogout}
-          variant="destructive"
-          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>Logout</span>
-        </Button>
-      </div>
     </div>
   );
 }
