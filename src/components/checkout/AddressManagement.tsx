@@ -391,7 +391,7 @@ export default function AddressManagement({
 
       {/* Add Address Modal */}
       <Dialog open={isAddAddressModalOpen} onOpenChange={setIsAddAddressModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Add New Address</DialogTitle>
             <DialogDescription>
@@ -400,55 +400,59 @@ export default function AddressManagement({
           </DialogHeader>
           
           <ScrollArea className="max-h-[60vh]">
-            <form onSubmit={handleAddAddress} className="space-y-4 py-4 px-1">
-              <div className="space-y-2">
-                <Label htmlFor="address_name">Address Name (e.g. Home, Office)</Label>
-                <Input
-                  id="address_name"
-                  name="address_name"
-                  value={formData.address_name}
-                  onChange={handleInputChange}
-                  placeholder="Home"
-                  required
-                />
+            <form onSubmit={handleAddAddress} className="py-4 px-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="address_name">Address Name (e.g. Home, Office)</Label>
+                  <Input
+                    id="address_name"
+                    name="address_name"
+                    value={formData.address_name}
+                    onChange={handleInputChange}
+                    placeholder="Home"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="recipient_name">Recipient Name</Label>
+                  <Input
+                    id="recipient_name"
+                    name="recipient_name"
+                    value={formData.recipient_name}
+                    onChange={handleInputChange}
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="recipient_name">Recipient Name</Label>
-                <Input
-                  id="recipient_name"
-                  name="recipient_name"
-                  value={formData.recipient_name}
-                  onChange={handleInputChange}
-                  placeholder="John Doe"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="address_line1">Address Line 1</Label>
+                  <Input
+                    id="address_line1"
+                    name="address_line1"
+                    value={formData.address_line1}
+                    onChange={handleInputChange}
+                    placeholder="Street address, P.O. box"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
+                  <Input
+                    id="address_line2"
+                    name="address_line2"
+                    value={formData.address_line2}
+                    onChange={handleInputChange}
+                    placeholder="Apartment, suite, unit, building, floor, etc."
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address_line1">Address Line 1</Label>
-                <Input
-                  id="address_line1"
-                  name="address_line1"
-                  value={formData.address_line1}
-                  onChange={handleInputChange}
-                  placeholder="Street address, P.O. box"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address_line2">Address Line 2 (Optional)</Label>
-                <Input
-                  id="address_line2"
-                  name="address_line2"
-                  value={formData.address_line2}
-                  onChange={handleInputChange}
-                  placeholder="Apartment, suite, unit, building, floor, etc."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="city">City</Label>
                   <Input
@@ -471,9 +475,6 @@ export default function AddressManagement({
                     required
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="postal_code">Postal Code</Label>
                   <Input
@@ -485,6 +486,9 @@ export default function AddressManagement({
                     required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="country">Country</Label>
                   <Input
@@ -496,21 +500,20 @@ export default function AddressManagement({
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone_number">Phone Number</Label>
+                  <Input
+                    id="phone_number"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleInputChange}
+                    placeholder="Phone number for delivery questions"
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">Phone Number</Label>
-                <Input
-                  id="phone_number"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleInputChange}
-                  placeholder="Phone number for delivery questions"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 mt-4">
                 <input
                   type="checkbox"
                   id="is_default"
@@ -522,7 +525,7 @@ export default function AddressManagement({
                 <Label htmlFor="is_default">Set as default address</Label>
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setIsAddAddressModalOpen(false)}>
                   Cancel
                 </Button>
@@ -535,7 +538,7 @@ export default function AddressManagement({
 
       {/* Edit Address Modal */}
       <Dialog open={isEditAddressModalOpen} onOpenChange={setIsEditAddressModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Address</DialogTitle>
             <DialogDescription>
@@ -544,55 +547,59 @@ export default function AddressManagement({
           </DialogHeader>
           
           <ScrollArea className="max-h-[60vh]">
-            <form onSubmit={handleUpdateAddress} className="space-y-4 py-4 px-1">
-              <div className="space-y-2">
-                <Label htmlFor="edit_address_name">Address Name</Label>
-                <Input
-                  id="edit_address_name"
-                  name="address_name"
-                  value={formData.address_name}
-                  onChange={handleInputChange}
-                  placeholder="Home"
-                  required
-                />
+            <form onSubmit={handleUpdateAddress} className="py-4 px-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_address_name">Address Name</Label>
+                  <Input
+                    id="edit_address_name"
+                    name="address_name"
+                    value={formData.address_name}
+                    onChange={handleInputChange}
+                    placeholder="Home"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit_recipient_name">Recipient Name</Label>
+                  <Input
+                    id="edit_recipient_name"
+                    name="recipient_name"
+                    value={formData.recipient_name}
+                    onChange={handleInputChange}
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit_recipient_name">Recipient Name</Label>
-                <Input
-                  id="edit_recipient_name"
-                  name="recipient_name"
-                  value={formData.recipient_name}
-                  onChange={handleInputChange}
-                  placeholder="John Doe"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_address_line1">Address Line 1</Label>
+                  <Input
+                    id="edit_address_line1"
+                    name="address_line1"
+                    value={formData.address_line1}
+                    onChange={handleInputChange}
+                    placeholder="Street address, P.O. box"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit_address_line2">Address Line 2 (Optional)</Label>
+                  <Input
+                    id="edit_address_line2"
+                    name="address_line2"
+                    value={formData.address_line2}
+                    onChange={handleInputChange}
+                    placeholder="Apartment, suite, unit, building, floor, etc."
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit_address_line1">Address Line 1</Label>
-                <Input
-                  id="edit_address_line1"
-                  name="address_line1"
-                  value={formData.address_line1}
-                  onChange={handleInputChange}
-                  placeholder="Street address, P.O. box"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit_address_line2">Address Line 2 (Optional)</Label>
-                <Input
-                  id="edit_address_line2"
-                  name="address_line2"
-                  value={formData.address_line2}
-                  onChange={handleInputChange}
-                  placeholder="Apartment, suite, unit, building, floor, etc."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit_city">City</Label>
                   <Input
@@ -615,9 +622,6 @@ export default function AddressManagement({
                     required
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit_postal_code">Postal Code</Label>
                   <Input
@@ -629,6 +633,9 @@ export default function AddressManagement({
                     required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit_country">Country</Label>
                   <Input
@@ -640,21 +647,20 @@ export default function AddressManagement({
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_phone_number">Phone Number</Label>
+                  <Input
+                    id="edit_phone_number"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleInputChange}
+                    placeholder="Phone number for delivery questions"
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit_phone_number">Phone Number</Label>
-                <Input
-                  id="edit_phone_number"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleInputChange}
-                  placeholder="Phone number for delivery questions"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 mt-4">
                 <input
                   type="checkbox"
                   id="edit_is_default"
@@ -666,7 +672,7 @@ export default function AddressManagement({
                 <Label htmlFor="edit_is_default">Set as default address</Label>
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setIsEditAddressModalOpen(false)}>
                   Cancel
                 </Button>

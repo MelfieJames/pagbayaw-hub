@@ -38,6 +38,8 @@ interface AddressData {
   postal_code: string;
   country: string;
   phone_number: string;
+  is_default: boolean;
+  created_at: string;
 }
 
 interface OrderSummaryDialogProps {
@@ -140,11 +142,16 @@ export default function OrderSummaryDialog({
 
   const handleSubmitDetails = async () => {
     // Validate inputs
-    for (const [key, value] of Object.entries(transactionDetails)) {
-      if (!value.trim()) {
-        toast.error(`Please fill in your ${key.replace("_", " ")}`);
-        return;
+    if (activeTab === "new") {
+      for (const [key, value] of Object.entries(transactionDetails)) {
+        if (!value.trim()) {
+          toast.error(`Please fill in your ${key.replace("_", " ")}`);
+          return;
+        }
       }
+    } else if (activeTab === "saved" && !selectedAddressId) {
+      toast.error("Please select an address");
+      return;
     }
 
     setIsSubmitting(true);
@@ -286,7 +293,7 @@ export default function OrderSummaryDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle className="text-xl">Your Shipping Details</DialogTitle>
+              <DialogTitle className="text-xl">Shipping Details</DialogTitle>
               <DialogDescription>
                 Please provide your shipping information to complete your order #{purchaseId}.
               </DialogDescription>

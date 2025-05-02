@@ -9,8 +9,7 @@ interface ShippingInfoProps {
   isComplete: boolean;
 }
 
-// This component is no longer used as we've replaced it with AddressManagement
-// It is kept for reference only and could be safely removed from the project
+// This component has been deprecated and replaced by AddressManagement
 export default function ShippingInfo({ profileData, isComplete }: ShippingInfoProps) {
   const navigate = useNavigate();
   
@@ -20,38 +19,15 @@ export default function ShippingInfo({ profileData, isComplete }: ShippingInfoPr
         <User className="h-5 w-5 text-primary" /> Shipping Information
       </h2>
       
-      {isComplete && profileData ? (
-        <div className="space-y-3 pl-2">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="p-3 bg-gray-50 rounded-md">
-              <div className="text-sm text-gray-500 mb-1">Name</div>
-              <div className="font-medium">
-                {profileData.first_name} {profileData.middle_name && `${profileData.middle_name} `}{profileData.last_name}
-              </div>
-            </div>
-            
-            <div className="p-3 bg-gray-50 rounded-md">
-              <div className="text-sm text-gray-500 mb-1">Phone</div>
-              <div className="font-medium">{profileData.phone_number}</div>
-            </div>
-          </div>
-          
-          <div className="p-3 bg-gray-50 rounded-md">
-            <div className="text-sm text-gray-500 mb-1">Address</div>
-            <div className="font-medium">{profileData.location}</div>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-4">
-          <p className="text-gray-600 mb-3">Please complete your profile to continue with checkout</p>
-          <Button 
-            onClick={() => navigate('/profile', { state: { redirectAfterUpdate: '/checkout' }})}
-            className="bg-primary hover:bg-primary/90"
-          >
-            Complete Profile
-          </Button>
-        </div>
-      )}
+      <div className="text-center py-4">
+        <p className="text-gray-600 mb-3">Please use the Address Management section to add or select shipping addresses</p>
+        <Button 
+          onClick={() => navigate('/profile', { state: { redirectAfterUpdate: '/checkout' }})}
+          className="bg-primary hover:bg-primary/90"
+        >
+          Manage Addresses
+        </Button>
+      </div>
     </div>
   );
 }

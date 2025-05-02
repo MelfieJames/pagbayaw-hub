@@ -260,6 +260,53 @@ export interface Database {
           created_at?: string
         }
       }
+      user_addresses: {
+        Row: {
+          id: number
+          user_id: string
+          address_name: string
+          recipient_name: string
+          address_line1: string
+          address_line2: string | null
+          city: string
+          state_province: string
+          postal_code: string
+          country: string
+          phone_number: string
+          is_default: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          address_name: string
+          recipient_name: string
+          address_line1: string
+          address_line2?: string | null
+          city: string
+          state_province: string
+          postal_code: string
+          country: string
+          phone_number: string
+          is_default?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          address_name?: string
+          recipient_name?: string
+          address_line1?: string
+          address_line2?: string | null
+          city?: string
+          state_province?: string
+          postal_code?: string
+          country?: string
+          phone_number?: string
+          is_default?: boolean
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

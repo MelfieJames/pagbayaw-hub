@@ -513,6 +513,54 @@ export type Database = {
           },
         ]
       }
+      user_addresses: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          address_name: string
+          city: string
+          country: string
+          created_at: string
+          id: number
+          is_default: boolean | null
+          phone_number: string
+          postal_code: string
+          recipient_name: string
+          state_province: string
+          user_id: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          address_name: string
+          city: string
+          country: string
+          created_at?: string
+          id?: never
+          is_default?: boolean | null
+          phone_number: string
+          postal_code: string
+          recipient_name: string
+          state_province: string
+          user_id: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          address_name?: string
+          city?: string
+          country?: string
+          created_at?: string
+          id?: never
+          is_default?: boolean | null
+          phone_number?: string
+          postal_code?: string
+          recipient_name?: string
+          state_province?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
