@@ -1,20 +1,27 @@
-
 import { Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Public Pages
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import Products from "@/pages/Products";
 import Contact from "@/pages/Contact";
 import Achievements from "@/pages/Achievements";
+import AchievementDetail from "@/pages/AchievementDetail";
+import AboutUs from "@/pages/AboutUs";
+
+// User Protected Pages
+import UserProfile from "@/pages/UserProfile";
+import Checkout from "@/pages/Checkout";
+import MyRatings from "@/pages/MyRatings";
+import PurchaseHistory from "@/pages/PurchaseHistory";
+
+// Admin Protected Pages
 import AdminDashboard from "@/pages/AdminDashboard";
 import ProductManagement from "@/pages/ProductManagement";
 import AchievementManagement from "@/pages/AchievementManagement";
-import Checkout from "@/pages/Checkout";
-import AchievementDetail from "@/pages/AchievementDetail";
-import MyRatings from "@/pages/MyRatings";
-import UserProfile from "@/pages/UserProfile";
-import PurchaseHistory from "@/pages/PurchaseHistory";
-import AboutUs from "@/pages/AboutUs";
+import SendNotificationForm from "@/components/admin/SendNotificationForm"; 
+import AdminPurchasesPage from "@/components/products/AdminPurchasesPage"; // ✅ Import the new Purchases page
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -49,7 +56,7 @@ const Routes = () => {
       <Route path="/achievements/:id" element={<AchievementDetail />} />
       <Route path="/about" element={<AboutUs />} />
 
-      {/* Protected Routes */}
+      {/* User Protected Routes */}
       <Route
         path="/profile"
         element={
@@ -75,7 +82,7 @@ const Routes = () => {
         }
       />
       <Route
-        path="/purchases"
+        path="/purchase-history"
         element={
           <ProtectedRoute>
             <PurchaseHistory />
@@ -83,7 +90,7 @@ const Routes = () => {
         }
       />
 
-      {/* Admin Routes */}
+      {/* Admin Protected Routes */}
       <Route
         path="/admin"
         element={
@@ -108,8 +115,24 @@ const Routes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/send-notification"
+        element={
+          <ProtectedRoute requireAdmin>
+            <SendNotificationForm />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/purchases" // ✅ Add the Purchases Management Route
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminPurchasesPage />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Fallback route */}
+      {/* Fallback Route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </RouterRoutes>
   );
