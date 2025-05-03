@@ -58,35 +58,40 @@ const AdminPurchasesPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: purchases = [], isLoading, error } = useQuery<Purchase[]>({
+  const { data: purchases = [], isLoading, error } = useQuery({
     queryKey: ["admin-purchases-detailed"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchases")
-        .select(`
-          id,
-          created_at,
-          total_amount,
-          status,
-          purchase_items(*, products(*)),
-          transaction_details(first_name, last_name, email, phone_number, address)
-        `)
-        .order("created_at", { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from("purchases")
+          .select(`
+            id,
+            created_at,
+            total_amount,
+            status,
+            purchase_items(*, products(*)),
+            transaction_details(first_name, last_name, email, phone_number, address)
+          `)
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      return data.map((purchase: any) => {
-        const transaction: TransactionDetailsRow = purchase.transaction_details?.[0];
-        return {
-          ...purchase,
-          customer_name: transaction ? `${transaction.first_name} ${transaction.last_name}` : "Anonymous",
-          customer_email: transaction?.email ?? "N/A",
-          customer_phone: transaction?.phone_number ?? "N/A",
-          customer_address: transaction?.address ?? "N/A",
-        };
-      });
+        return data.map((purchase: any) => {
+          const transaction: TransactionDetailsRow = purchase.transaction_details?.[0];
+          return {
+            ...purchase,
+            customer_name: transaction ? `${transaction.first_name} ${transaction.last_name}` : "Anonymous",
+            customer_email: transaction?.email ?? "N/A",
+            customer_phone: transaction?.phone_number ?? "N/A",
+            customer_address: transaction?.address ?? "N/A",
+          };
+        });
+      } catch (error) {
+        console.error("Error fetching purchases:", error);
+        throw error;
+      }
     },
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Cancel order mutation
@@ -111,7 +116,7 @@ const AdminPurchasesPage = () => {
 
       if (updateError) throw updateError;
 
-      // Step 3: Restore inventory quantities using the edge function
+      // Step 3: Restore inventory quantities by calling edge function
       const purchaseItems = purchaseData.purchase_items;
       for (const item of purchaseItems) {
         try {
@@ -122,8 +127,8 @@ const AdminPurchasesPage = () => {
             }
           });
           
-          if (!response.data.success) {
-            console.error('Error updating inventory via function:', response.data.message);
+          if (!response.data?.success) {
+            console.error('Error updating inventory via function:', response.data?.message || 'Unknown error');
           }
         } catch (err) {
           console.error('Error calling increment-inventory function:', err);

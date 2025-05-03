@@ -92,7 +92,7 @@ export default function Chatbot() {
           }
         ]);
       }
-      // Show suggestions again after answering
+      // Always show suggestions after answering
       setShowSuggestions(true);
     }, 500);
 
@@ -119,7 +119,7 @@ export default function Chatbot() {
         ...prev,
         { sender: "bot", text: faq.answer }
       ]);
-      // Show suggestions again after answering
+      // Always show suggestions after answering
       setShowSuggestions(true);
     }, 500);
   };
@@ -173,7 +173,7 @@ export default function Chatbot() {
             <div ref={messagesEndRef} />
 
             {/* Suggestions - always shown after bot responds */}
-            {showSuggestions && messages.length >= 1 && (
+            {showSuggestions && messages.length >= 1 && messages[messages.length - 1].sender === "bot" && (
               <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-2 mt-4">
                 <div className="flex justify-between items-center">
                   <h4 className="text-sm font-medium text-gray-700">Ask me about:</h4>
