@@ -8,6 +8,7 @@ import { BellRing, UserSearch, Hash, Pencil, User, Clipboard } from "lucide-reac
 import { Label } from "@/components/ui/label";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { supabase } from "@/services/supabase/client";
+import { toast } from "sonner";
 
 interface User {
   id: string;
@@ -24,7 +25,6 @@ export default function SendNotificationForm() {
   const [message, setMessage] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
-  // Add state for sidebar visibility
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function SendNotificationForm() {
 
       if (error) {
         console.error("Error fetching users:", error);
-        alert("Error fetching users. Please try again later.");
+        toast.error("Error fetching users. Please try again later.");
         return;
       }
 
@@ -67,7 +67,8 @@ export default function SendNotificationForm() {
 
   const handleSend = async () => {
     if (!selectedUserId || !message.trim() || !trackingNumber.trim()) {
-      return alert("Please fill all fields.");
+      toast.error("Please fill all fields.");
+      return;
     }
 
     setLoading(true);
@@ -76,15 +77,15 @@ export default function SendNotificationForm() {
         user_id: selectedUserId,
         message: `${message.trim()} - TRACKING NUMBER: ${trackingNumber.trim()}`,
         tracking_number: trackingNumber.trim(),
-        type: "tracking_update", // or any relevant type like "order_status", etc.
+        type: "tracking_update",
       },
     ]);
 
     if (error) {
       console.error("Error sending notification:", error);
-      alert("Something went wrong. Please try again later.");
+      toast.error("Something went wrong. Please try again later.");
     } else {
-      alert("Notification sent successfully!");
+      toast.success("Notification sent successfully!");
       setMessage("");
       setTrackingNumber("");
       setSearchTerm("");
@@ -96,28 +97,29 @@ export default function SendNotificationForm() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      alert("Tracking number copied!");
+      toast.success("Tracking number copied!");
     });
   };
 
   return (
     <div className="flex min-h-screen bg-[#f4f1ed]">
-      {/* Admin Sidebar */}
       <AdminSidebar 
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
       />
 
-      {/* Main Content */}
       <main className="flex-1 p-10">
         <Card className="max-w-xl mx-auto shadow-lg bg-[#fdfbf7] border-[#e5e2dd]">
           <CardContent className="p-6 space-y-6">
-            <div className="flex items-center gap-2">
-              <BellRing className="text-[#8B7355]" />
-              <h2 className="text-xl font-bold text-[#8B7355]">Send Notification</h2>
+            <div className="flex items-center gap-3">
+              <img 
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                alt="JNT Logo" 
+                className="h-10 w-10 rounded-full object-cover"
+              />
+              <h2 className="text-xl font-bold text-[#8B7355]">Send Tracking Update</h2>
             </div>
 
-            {/* Search Users */}
             <div>
               <Label className="text-[#8B7355] flex items-center gap-2">
                 <UserSearch className="w-4 h-4" />
@@ -152,7 +154,6 @@ export default function SendNotificationForm() {
               )}
             </div>
 
-            {/* Tracking Number */}
             <div>
               <Label className="text-[#8B7355] flex items-center gap-2">
                 <Hash className="w-4 h-4" />
@@ -176,7 +177,6 @@ export default function SendNotificationForm() {
               </div>
             </div>
 
-            {/* Message */}
             <div>
               <Label className="text-[#8B7355] flex items-center gap-2">
                 <Pencil className="w-4 h-4" />
@@ -190,13 +190,12 @@ export default function SendNotificationForm() {
               />
             </div>
 
-            {/* Send Button */}
             <Button
               onClick={handleSend}
               disabled={loading}
               className="w-full bg-[#8B7355] hover:bg-[#7a624d] text-white"
             >
-              {loading ? "Sending..." : "Send Notification"}
+              {loading ? "Sending..." : "Send Tracking Update"}
             </Button>
           </CardContent>
         </Card>

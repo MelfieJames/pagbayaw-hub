@@ -45,6 +45,8 @@ export default function AdminNotificationsPage() {
         return 'bg-amber-500';
       case 'alert':
         return 'bg-red-500';
+      case 'tracking_update':
+        return 'bg-[#C4A484]';
       default:
         return 'bg-gray-500';
     }
@@ -119,9 +121,17 @@ export default function AdminNotificationsPage() {
                         className={`p-4 rounded-lg border ${notification.is_read ? 'bg-gray-50' : 'bg-white'}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white`}>
-                            {getNotificationIcon(notification.type)}
-                          </div>
+                          {notification.type === 'tracking_update' ? (
+                            <img 
+                              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                              alt="JNT Logo" 
+                              className="h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white`}>
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                          )}
                           <div className="flex-1">
                             <p className="text-gray-800">{notification.message}</p>
                             <div className="flex items-center justify-between mt-2">
@@ -129,7 +139,7 @@ export default function AdminNotificationsPage() {
                                 {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
                               </span>
                               <Badge variant="outline" className={getNotificationColor(notification.type) + " text-white"}>
-                                {notification.type}
+                                {notification.type === 'tracking_update' ? 'Tracking Update' : notification.type}
                               </Badge>
                             </div>
                           </div>
