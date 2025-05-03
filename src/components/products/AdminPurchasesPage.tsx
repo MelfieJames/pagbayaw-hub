@@ -176,55 +176,57 @@ const AdminPurchasesPage = () => {
                 No purchases found
               </div>
             ) : (
-              <Table>
-                <TableHeader className="bg-gray-50">
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPurchases.map((purchase) => (
-                    <TableRow key={purchase.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">#{purchase.id}</TableCell>
-                      <TableCell>{purchase.customer_name}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">{purchase.customer_email}</div>
-                        <div className="text-xs text-gray-500">{purchase.customer_phone}</div>
-                      </TableCell>
-                      <TableCell>{purchase.purchase_items?.length || 0} items</TableCell>
-                      <TableCell>
-                        {format(new Date(purchase.created_at), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(purchase.total_amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getBadgeColor(purchase.status)}>
-                          {purchase.status?.charAt(0).toUpperCase() + purchase.status?.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          className="text-primary"
-                          onClick={() => viewPurchaseDetails(purchase)}
-                        >
-                          <Info className="h-4 w-4 mr-1" />
-                          Details
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-gray-50">
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPurchases.map((purchase) => (
+                      <TableRow key={purchase.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">#{purchase.id}</TableCell>
+                        <TableCell>{purchase.customer_name}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">{purchase.customer_email}</div>
+                          <div className="text-xs text-gray-500">{purchase.customer_phone}</div>
+                        </TableCell>
+                        <TableCell>{purchase.purchase_items?.length || 0} items</TableCell>
+                        <TableCell>
+                          {format(new Date(purchase.created_at), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(purchase.total_amount)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getBadgeColor(purchase.status)}>
+                            {purchase.status?.charAt(0).toUpperCase() + purchase.status?.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            className="text-primary"
+                            onClick={() => viewPurchaseDetails(purchase)}
+                          >
+                            <Info className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
