@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { format } from "date-fns";
 import {
@@ -21,16 +21,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, X, Info, Search } from "lucide-react";
+import { ShoppingBag, X, Info, Search, AlertCircle } from "lucide-react";
 import { TransactionDetailsRow } from "@/types/supabase";
 import { 
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 type Purchase = {
   id: number;
@@ -51,6 +54,9 @@ const AdminPurchasesPage = () => {
   const [dateFilter, setDateFilter] = useState("");
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: purchases = [], isLoading, error } = useQuery<Purchase[]>({
     queryKey: ["admin-purchases-detailed"],
@@ -83,9 +89,85 @@ const AdminPurchasesPage = () => {
     refetchInterval: 30000,
   });
 
+  // Cancel order mutation
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (purchaseId: number) => {
+      // Step 1: Get purchase items to restore inventory
+      const { data: purchaseData, error: fetchError } = await supabase
+        .from('purchases')
+        .select(`
+          purchase_items(product_id, quantity)
+        `)
+        .eq('id', purchaseId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Step 2: Update purchase status to cancelled
+      const { error: updateError } = await supabase
+        .from('purchases')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', purchaseId);
+
+      if (updateError) throw updateError;
+
+      // Step 3: Restore inventory quantities using the edge function
+      const purchaseItems = purchaseData.purchase_items;
+      for (const item of purchaseItems) {
+        try {
+          const response = await supabase.functions.invoke('increment-inventory', {
+            body: { 
+              productId: item.product_id, 
+              quantity: item.quantity 
+            }
+          });
+          
+          if (!response.data.success) {
+            console.error('Error updating inventory via function:', response.data.message);
+          }
+        } catch (err) {
+          console.error('Error calling increment-inventory function:', err);
+        }
+      }
+
+      return purchaseId;
+    },
+    onSuccess: () => {
+      toast.success('Order cancelled successfully');
+      setCancelDialogOpen(false);
+      setDetailsOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-purchases-detailed'] });
+    },
+    onError: (error) => {
+      console.error('Error cancelling order:', error);
+      toast.error('Failed to cancel order. Please try again.');
+    }
+  });
+
   const viewPurchaseDetails = (purchase: Purchase) => {
     setSelectedPurchase(purchase);
     setDetailsOpen(true);
+  };
+
+  const handleCancelOrder = (purchase: Purchase) => {
+    if (purchase.status === 'cancelled') {
+      toast.info('This order is already cancelled');
+      return;
+    }
+    setSelectedPurchase(purchase);
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancelOrder = () => {
+    if (selectedPurchase) {
+      cancelOrderMutation.mutate(selectedPurchase.id);
+    }
+  };
+
+  const viewUserPurchaseHistory = () => {
+    if (selectedPurchase) {
+      navigate(`/purchase-history?highlight=${selectedPurchase.id}`);
+    }
   };
 
   if (isLoading) {
@@ -98,8 +180,15 @@ const AdminPurchasesPage = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-[500px] text-red-600">
-        Error fetching purchases. Please try again later.
+      <div className="flex flex-col items-center justify-center h-[500px] gap-4">
+        <AlertCircle size={48} className="text-red-500" />
+        <div className="text-red-600 text-lg font-medium">Error fetching purchases</div>
+        <p className="text-gray-600 max-w-md text-center">
+          There was a problem loading the purchase data. This might be due to a network issue or database connection problem.
+        </p>
+        <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-purchases-detailed'] })}>
+          Try Again
+        </Button>
       </div>
     );
   }
@@ -132,6 +221,8 @@ const AdminPurchasesPage = () => {
         return "bg-yellow-500 hover:bg-yellow-600 text-white";
       case "cancelled":
         return "bg-red-500 hover:bg-red-600 text-white";
+      case "processing":
+        return "bg-blue-500 hover:bg-blue-600 text-white";
       default:
         return "bg-gray-500 hover:bg-gray-600 text-white";
     }
@@ -212,15 +303,17 @@ const AdminPurchasesPage = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            className="text-primary"
-                            onClick={() => viewPurchaseDetails(purchase)}
-                          >
-                            <Info className="h-4 w-4 mr-1" />
-                            Details
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              className="text-primary"
+                              onClick={() => viewPurchaseDetails(purchase)}
+                            >
+                              <Info className="h-4 w-4 mr-1" />
+                              Details
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -231,6 +324,7 @@ const AdminPurchasesPage = () => {
           </CardContent>
         </Card>
 
+        {/* Purchase Details Dialog */}
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
@@ -255,6 +349,27 @@ const AdminPurchasesPage = () => {
                     <p className="text-sm">Date: {format(new Date(selectedPurchase.created_at), "PPP")}</p>
                     <p className="text-sm">Status: <span className={`inline-block px-2 py-1 rounded text-xs ${getBadgeColor(selectedPurchase.status)}`}>{selectedPurchase.status}</span></p>
                     <p className="text-sm">Total: {formatCurrency(selectedPurchase.total_amount)}</p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={viewUserPurchaseHistory} 
+                      className="w-full"
+                      variant="outline"
+                    >
+                      View in Purchase History
+                    </Button>
+                    
+                    {selectedPurchase.status !== 'cancelled' && (
+                      <Button 
+                        onClick={() => handleCancelOrder(selectedPurchase)} 
+                        variant="destructive"
+                        className="w-full"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Cancel Order
+                      </Button>
+                    )}
                   </div>
                 </div>
                 
@@ -285,6 +400,40 @@ const AdminPurchasesPage = () => {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Cancel Order Confirmation Dialog */}
+        <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cancel Order</DialogTitle>
+            </DialogHeader>
+            <p>Are you sure you want to cancel order #{selectedPurchase?.id}?</p>
+            <p className="text-sm text-gray-500">This will update the order status to "cancelled" and restore the items to inventory.</p>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+                No, Keep Order
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={confirmCancelOrder}
+                disabled={cancelOrderMutation.isPending}
+              >
+                {cancelOrderMutation.isPending ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <X className="h-4 w-4 mr-1" />
+                    Yes, Cancel Order
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

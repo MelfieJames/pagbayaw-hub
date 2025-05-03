@@ -92,10 +92,11 @@ export default function Chatbot() {
           }
         ]);
       }
+      // Show suggestions again after answering
+      setShowSuggestions(true);
     }, 500);
 
     setInputText("");
-    setShowSuggestions(false);
   };
 
   const handleKeyPress = (e) => {
@@ -118,9 +119,9 @@ export default function Chatbot() {
         ...prev,
         { sender: "bot", text: faq.answer }
       ]);
+      // Show suggestions again after answering
+      setShowSuggestions(true);
     }, 500);
-
-    setShowSuggestions(false);
   };
 
   return (
@@ -171,11 +172,11 @@ export default function Chatbot() {
             ))}
             <div ref={messagesEndRef} />
 
-            {/* Suggestions */}
-            {showSuggestions && messages.length <= 2 && (
+            {/* Suggestions - always shown after bot responds */}
+            {showSuggestions && messages.length >= 1 && (
               <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-2 mt-4">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-medium text-gray-700">Frequently Asked Questions</h4>
+                  <h4 className="text-sm font-medium text-gray-700">Ask me about:</h4>
                   <button 
                     onClick={() => setShowSuggestions(false)}
                     className="text-gray-400 hover:text-gray-600"
