@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -70,7 +69,7 @@ const AdminPurchasesPage = () => {
             total_amount,
             status,
             purchase_items(*, products(*)),
-            transaction_details(first_name, last_name, email, phone_number, address)
+            transaction_details!transaction_details_purchase_id_fkey(first_name, last_name, email, phone_number, address)
           `)
           .order("created_at", { ascending: false });
 

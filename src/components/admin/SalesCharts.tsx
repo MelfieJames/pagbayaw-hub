@@ -116,7 +116,7 @@ export function SalesCharts() {
       <CardHeader className="bg-[#F5F5DC]">
         <div className="flex justify-between items-center">
           <CardTitle className="text-[#8B7355]">Sales Overview</CardTitle>
-          <Tabs defaultValue={chartType} onValueChange={setChartType}>
+          <Tabs value={chartType} onValueChange={setChartType}>
             <TabsList>
               <TabsTrigger value="area">Area</TabsTrigger>
               <TabsTrigger value="bar">Bar</TabsTrigger>
@@ -128,13 +128,12 @@ export function SalesCharts() {
       </CardHeader>
       <CardContent>
         <div className="h-[400px] mt-4">
-          {/* Make sure these TabsContent components are wrapped in a Tabs component */}
-          <Tabs defaultValue={chartType} value={chartType}>
+          <Tabs value={chartType}>
             <TabsContent value="area" className="h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={salesData?.dailySales}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  margin={{ top: 10, right: 30, left: 20, bottom: 0 }}
                 >
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -162,7 +161,7 @@ export function SalesCharts() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={salesData?.dailySales}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  margin={{ top: 10, right: 30, left: 20, bottom: 0 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                   <XAxis dataKey="date" />
@@ -177,7 +176,7 @@ export function SalesCharts() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={salesData?.dailySales}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  margin={{ top: 10, right: 30, left: 20, bottom: 0 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                   <XAxis dataKey="date" />

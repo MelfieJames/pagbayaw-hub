@@ -8,7 +8,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle, AlertTriangle } from "lucide-react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Notification {
   id: number;
@@ -93,8 +93,11 @@ export default function AdminNotificationsPage() {
       <div className="flex-1 p-6">
         <h2 className="text-2xl font-semibold text-[#8B7355]">Notifications Management</h2>
         
-        {/* Wrap the card in a Tabs component with a default value */}
         <Tabs defaultValue="notifications">
+          <TabsList className="mb-4">
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
+          
           <Card className="mt-6 border-2 border-[#C4A484]">
             <CardHeader className="bg-[#F5F5DC]">
               <CardTitle className="text-[#8B7355] flex items-center gap-2">
