@@ -128,92 +128,95 @@ export function SalesCharts() {
       </CardHeader>
       <CardContent>
         <div className="h-[400px] mt-4">
-          <TabsContent value="area" className="h-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={salesData?.dailySales}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6b8e68" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#6b8e68" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="date" />
-                <YAxis tickFormatter={(value) => `₱${value}`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Area
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#6b8e68"
-                  fillOpacity={1}
-                  fill="url(#colorSales)"
-                  name="Sales"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </TabsContent>
-          
-          <TabsContent value="bar" className="h-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={salesData?.dailySales}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="date" />
-                <YAxis tickFormatter={(value) => `₱${value}`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Bar dataKey="sales" fill="#6b8e68" name="Sales" />
-              </BarChart>
-            </ResponsiveContainer>
-          </TabsContent>
-          
-          <TabsContent value="line" className="h-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={salesData?.dailySales}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="date" />
-                <YAxis tickFormatter={(value) => `₱${value}`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Line
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#6b8e68"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  name="Sales"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </TabsContent>
-          
-          <TabsContent value="pie" className="h-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={salesData?.categorySales}
-                  dataKey="value"
-                  nameKey="category"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  label={(entry) => `${entry.category}: ${formatCurrency(entry.value)}`}
+          {/* Make sure these TabsContent components are wrapped in a Tabs component */}
+          <Tabs defaultValue={chartType} value={chartType}>
+            <TabsContent value="area" className="h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={salesData?.dailySales}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
-                  {salesData?.categorySales.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </TabsContent>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6b8e68" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#6b8e68" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="date" />
+                  <YAxis tickFormatter={(value) => `₱${value}`} />
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Area
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="#6b8e68"
+                    fillOpacity={1}
+                    fill="url(#colorSales)"
+                    name="Sales"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </TabsContent>
+            
+            <TabsContent value="bar" className="h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={salesData?.dailySales}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="date" />
+                  <YAxis tickFormatter={(value) => `₱${value}`} />
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Bar dataKey="sales" fill="#6b8e68" name="Sales" />
+                </BarChart>
+              </ResponsiveContainer>
+            </TabsContent>
+            
+            <TabsContent value="line" className="h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={salesData?.dailySales}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="date" />
+                  <YAxis tickFormatter={(value) => `₱${value}`} />
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Line
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="#6b8e68"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    name="Sales"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </TabsContent>
+            
+            <TabsContent value="pie" className="h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={salesData?.categorySales}
+                    dataKey="value"
+                    nameKey="category"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    label={(entry) => `${entry.category}: ${formatCurrency(entry.value)}`}
+                  >
+                    {salesData?.categorySales.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </TabsContent>
+          </Tabs>
         </div>
       </CardContent>
     </Card>
