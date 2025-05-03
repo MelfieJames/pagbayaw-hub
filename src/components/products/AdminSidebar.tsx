@@ -5,18 +5,17 @@ import {
   Home,
   Package,
   ShoppingBag,
-  Users,
   ChevronLeft,
   MenuIcon,
-  CircleDollarSign,
   Layers,
-  LogOut
+  LogOut,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-interface AdminSidebarProps {
+export interface AdminSidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
@@ -45,6 +44,11 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       href: "/admin/inventory",
       icon: Layers,
     },
+    {
+      name: "Notifications",
+      href: "/admin/notifications",
+      icon: Bell,
+    }
   ];
 
   return (

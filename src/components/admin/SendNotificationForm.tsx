@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ export default function SendNotificationForm() {
   const [message, setMessage] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  // Add state for sidebar visibility
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -100,7 +103,10 @@ export default function SendNotificationForm() {
   return (
     <div className="flex min-h-screen bg-[#f4f1ed]">
       {/* Admin Sidebar */}
-      <AdminSidebar />
+      <AdminSidebar 
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+      />
 
       {/* Main Content */}
       <main className="flex-1 p-10">
