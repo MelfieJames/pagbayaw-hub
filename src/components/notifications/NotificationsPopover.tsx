@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, CheckCircle, AlertTriangle, Package, ChevronRight, Copy, Eye } from "lucide-react";
+import { Bell, CheckCircle, AlertTriangle, Package, ChevronRight, Copy, Eye, Star } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter
+} from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 interface Notification {
   id: number;
@@ -22,6 +29,7 @@ interface Notification {
   is_read: boolean;
   purchase_id: number | null;
   tracking_number: string | null;
+  product_id?: number;
 }
 
 export function NotificationsPopover() {
@@ -30,6 +38,7 @@ export function NotificationsPopover() {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications', user?.id],
@@ -118,6 +127,17 @@ export function NotificationsPopover() {
     toast.success("Tracking number copied to clipboard!");
   };
 
+  const handleReviewProduct = (productId?: number) => {
+    if (!productId) {
+      toast.error("Product ID not found");
+      return;
+    }
+    
+    navigate(`/products?productId=${productId}&openReview=true`);
+    setDetailsOpen(false);
+    setOpen(false);
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type?.toLowerCase()) {
       case 'order':
@@ -126,6 +146,8 @@ export function NotificationsPopover() {
         return <AlertTriangle className="h-5 w-5" />;
       case 'tracking_update':
         return <Package className="h-5 w-5" />;
+      case 'review_request':
+        return <Star className="h-5 w-5" />;
       default:
         return <Bell className="h-5 w-5" />;
     }
@@ -143,6 +165,8 @@ export function NotificationsPopover() {
         return 'bg-red-500';
       case 'tracking_update':
         return 'bg-[#C4A484]';
+      case 'review_request':
+        return 'bg-yellow-500';
       default:
         return 'bg-gray-500';
     }
@@ -244,9 +268,27 @@ export function NotificationsPopover() {
                             </Button>
                           </div>
                         )}
+
+                        {/* Add Review button for review_request notifications */}
+                        {notification.type === 'review_request' && notification.product_id && (
+                          <div className="mt-2">
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs bg-yellow-100 border-yellow-300 text-yellow-700 hover:bg-yellow-200"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReviewProduct(notification.product_id);
+                              }}
+                            >
+                              <Star className="h-3 w-3 mr-1" />
+                              Leave Review
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       
-                      {!notification.tracking_number && (
+                      {!notification.tracking_number && notification.type !== 'review_request' && (
                         <Button 
                           variant="ghost" 
                           size="icon"
@@ -293,7 +335,8 @@ export function NotificationsPopover() {
               ) : (
                 getNotificationIcon(selectedNotification?.type || '')
               )}
-              {selectedNotification?.type === 'tracking_update' ? 'Tracking Update' : 'Notification'}
+              {selectedNotification?.type === 'tracking_update' ? 'Tracking Update' : 
+               selectedNotification?.type === 'review_request' ? 'Review Request' : 'Notification'}
             </DialogTitle>
           </DialogHeader>
           
@@ -341,6 +384,18 @@ export function NotificationsPopover() {
                   </div>
                 </div>
               )}
+
+              {selectedNotification.type === 'review_request' && selectedNotification.product_id && (
+                <div className="text-center">
+                  <Button
+                    onClick={() => handleReviewProduct(selectedNotification.product_id)}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                  >
+                    <Star className="h-4 w-4 mr-2" />
+                    Write a Review
+                  </Button>
+                </div>
+              )}
               
               {selectedNotification.purchase_id && (
                 <div className="text-sm text-gray-500">
@@ -349,6 +404,12 @@ export function NotificationsPopover() {
               )}
             </div>
           )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

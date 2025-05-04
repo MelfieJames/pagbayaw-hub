@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +13,6 @@ import OrderItems from "@/components/checkout/OrderItems";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import OrderSuccessDialog from "@/components/checkout/OrderSuccessDialog";
 import OrderSummaryDialog from "@/components/checkout/OrderSummaryDialog";
-import AddressManagement from "@/components/checkout/AddressManagement";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type SupabaseCartResponse = {
@@ -183,10 +181,6 @@ export default function Checkout() {
     return sum + (item.quantity * (item.products?.product_price || 0));
   }, 0);
 
-  const handleAddressSelect = (address: any) => {
-    setSelectedAddressId(address.id);
-  };
-
   const handleCheckout = async () => {
     if (!user || cartItems.length === 0) {
       toast.error("No items to checkout");
@@ -305,7 +299,8 @@ export default function Checkout() {
             user_id: user.id,
             purchase_id: purchase.id,
             type: 'review_request',
-            message: `Please rate and review your purchase: ${item.products?.product_name}`
+            message: `Please rate and review your purchase: ${item.products?.product_name}`,
+            product_id: item.product_id
           });
 
         if (notificationError) {
@@ -338,6 +333,7 @@ export default function Checkout() {
       queryClient.invalidateQueries({ queryKey: ['admin-sales-items'] });
       queryClient.invalidateQueries({ queryKey: ['user-purchases', user.id] });
       queryClient.invalidateQueries({ queryKey: ['user-addresses'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
       
       // Show order summary dialog
       setShowOrderSummaryDialog(true);
@@ -388,20 +384,7 @@ export default function Checkout() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-6">
-              <Card>
-                <CardHeader className="bg-gray-50">
-                  <CardTitle className="text-lg">Delivery Address</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <AddressManagement 
-                    onAddressSelect={handleAddressSelect} 
-                    selectedAddressId={selectedAddressId}
-                    showSelectionUI={true}
-                  />
-                </CardContent>
-              </Card>
-              
+            <div className="md:col-span-2 space-y-6">              
               <OrderItems 
                 cartItems={cartItems} 
                 inventoryData={inventoryData}

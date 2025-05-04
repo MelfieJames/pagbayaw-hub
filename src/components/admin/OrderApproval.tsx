@@ -77,7 +77,6 @@ export function OrderApproval() {
           transaction_details(*),
           purchase_items(*, products(*))
         `)
-        .in("status", ["pending", "approved", "processing", "delivering"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;

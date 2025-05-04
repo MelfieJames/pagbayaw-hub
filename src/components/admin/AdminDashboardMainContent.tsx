@@ -4,8 +4,7 @@ import { SalesCharts } from "./SalesCharts";
 import { PurchasesManagement } from "./PurchasesManagement";
 import { UserManagement } from "./UserManagement";
 import { AdminManagement } from "./AdminManagement";
-import { OrderApproval } from "./OrderApproval";
-import { LayoutDashboard, ShoppingBag, User, Shield, CheckCircle } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, User, Shield } from "lucide-react";
 
 export default function AdminDashboardMainContent() {
   return (
@@ -17,10 +16,6 @@ export default function AdminDashboardMainContent() {
       
       <div className="mb-8">
         <SalesCharts />
-      </div>
-
-      <div className="mb-8">
-        <OrderApproval />
       </div>
 
       <Tabs defaultValue="purchases" className="w-full">
