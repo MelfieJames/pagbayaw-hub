@@ -1,129 +1,292 @@
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Home,
-  Package,
+  Award,
   ShoppingBag,
+  LogOut,
+  Settings,
+  LayoutDashboard,
+  UserCircle,
+  MessageSquare,
+  PackageCheck,
+  Home,
   Users,
-  ChevronLeft,
-  MenuIcon,
-  CircleDollarSign,
-  Layers,
-  LogOut
+  CreditCard,
+  Bell,
+  PieChart,
+  BarChart3,
+  FileText
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
 interface AdminSidebarProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
+  isOpen?: boolean;
+  setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const navItems = [
-    {
-      name: "Dashboard",
-      href: "/admin",
-      icon: Home,
-    },
-    {
-      name: "Products",
-      href: "/admin/products",
-      icon: Package,
-    },
-    {
-      name: "Purchases",
-      href: "/admin/purchases",
-      icon: ShoppingBag,
-    },
-    {
-      name: "Inventory",
-      href: "/admin/inventory",
-      icon: Layers,
-    },
-  ];
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + "/");
+  };
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-10 bg-black/30 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
+    <div
+      className={cn(
+        "w-72 h-screen shadow-xl bg-[#fdfbf7] border-r flex flex-col transition-all duration-300 z-20 overflow-y-auto",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        "fixed md:relative"
       )}
+    >
+      {/* Header */}
+      <div className="p-6 flex items-center gap-4 border-b bg-[#f0e8d9] sticky top-0 z-10">
+        <UserCircle className="w-10 h-10 text-[#8B7355]" />
+        <h1 className="text-2xl font-bold text-[#8B7355] tracking-wide">
+          Admin Panel
+        </h1>
+      </div>
 
-      {/* Mobile toggle button */}
-      <div className="fixed top-16 left-2 z-50 lg:hidden">
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-6 space-y-6 text-[15px] overflow-y-auto">
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            Dashboard
+          </div>
+          <Link
+            to="/admin"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin") &&
+              !isActive("/admin/products") &&
+              !isActive("/admin/achievements") &&
+              !isActive("/admin/settings") &&
+              !isActive("/admin/send-notification") &&
+              !isActive("/admin/purchases")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            <span>Overview</span>
+          </Link>
+          
+          <Link
+            to="/"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <Home className="w-5 h-5" />
+            <span>View Website</span>
+          </Link>
+        </div>
+
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            Content Management
+          </div>
+          <Link
+            to="/admin/achievements"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/achievements")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <Award className="w-5 h-5" />
+            <span>Achievements</span>
+          </Link>
+          <Link
+            to="/admin/products"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/products")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span>Products</span>
+          </Link>
+        </div>
+
+        <Separator />
+
+        {/* Order Management */}
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            Order Management
+          </div>
+          <Link
+            to="/admin/purchases"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/purchases")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <PackageCheck className="w-5 h-5" />
+            <span>Purchases</span>
+          </Link>
+          
+          <Link
+            to="/admin/reports"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/reports")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <FileText className="w-5 h-5" />
+            <span>Order Reports</span>
+          </Link>
+        </div>
+
+        <Separator />
+
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            User Management
+          </div>
+          <Link
+            to="/admin/users"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/users")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <Users className="w-5 h-5" />
+            <span>Customers</span>
+          </Link>
+        </div>
+
+        <Separator />
+
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            Analytics
+          </div>
+          <Link
+            to="/admin/sales"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/sales")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Sales Analytics</span>
+          </Link>
+          <Link
+            to="/admin/stats"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/stats")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <PieChart className="w-5 h-5" />
+            <span>Product Statistics</span>
+          </Link>
+        </div>
+
+        <Separator />
+
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            Communication
+          </div>
+          <Link
+            to="/admin/send-notification"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/send-notification")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <Bell className="w-5 h-5" />
+            <span>Send Notification</span>
+          </Link>
+          <Link
+            to="/admin/messages"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/messages")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span>Customer Messages</span>
+          </Link>
+        </div>
+
+        <Separator />
+
+        <div>
+          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
+            Settings
+          </div>
+          <Link
+            to="/admin/settings"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/settings")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <Settings className="w-5 h-5" />
+            <span>System Settings</span>
+          </Link>
+          <Link
+            to="/admin/payment-settings"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+              isActive("/admin/payment-settings")
+                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
+                : "hover:bg-[#f3f3f3] text-gray-700"
+            )}
+          >
+            <CreditCard className="w-5 h-5" />
+            <span>Payment Settings</span>
+          </Link>
+        </div>
+      </nav>
+
+      {/* Footer */}
+      <div className="p-6 border-t bg-[#fdfbf7] sticky bottom-0 z-10">
         <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setIsOpen(!isOpen)}
-          className="rounded-full bg-white shadow-md"
+          onClick={handleLogout}
+          variant="destructive"
+          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
         >
-          <MenuIcon className="h-5 w-5" />
-          <span className="sr-only">Toggle Menu</span>
+          <LogOut className="w-5 h-5" />
+          <span>Logout</span>
         </Button>
       </div>
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-20 flex w-64 flex-col bg-white border-r shadow-sm transition-transform duration-200",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        )}
-      >
-        <div className="flex items-center justify-between h-16 px-4 border-b">
-          <Link to="/admin" className="flex items-center gap-2">
-            <Package className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">Admin Panel</span>
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsOpen(false)}
-            className="lg:hidden"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            <span className="sr-only">Close</span>
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-auto py-4 px-3">
-          <div className="space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  location.pathname === item.href
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                )}
-                onClick={() => window.innerWidth < 1024 && setIsOpen(false)}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {item.name}
-              </Link>
-            ))}
-          </div>
-
-          <Separator className="my-4" />
-        </div>
-
-        <div className="p-4 border-t">
-          <Link to="/">
-            <Button variant="outline" className="w-full flex items-center gap-2">
-              <LogOut className="h-4 w-4" />
-              Back to Store
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }
