@@ -1,21 +1,21 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Package,
   ShoppingBag,
+  Users,
   ChevronLeft,
   MenuIcon,
+  CircleDollarSign,
   Layers,
-  LogOut,
-  Bell
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-export interface AdminSidebarProps {
+interface AdminSidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
@@ -44,11 +44,6 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       href: "/admin/inventory",
       icon: Layers,
     },
-    {
-      name: "Notifications",
-      href: "/admin/notifications",
-      icon: Bell,
-    }
   ];
 
   return (
@@ -77,20 +72,20 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-20 flex w-64 flex-col bg-[#FDF5E6] border-r border-[#C4A484] shadow-sm transition-transform duration-200",
+          "fixed inset-y-0 left-0 z-20 flex w-64 flex-col bg-white border-r shadow-sm transition-transform duration-200",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-[#C4A484]">
+        <div className="flex items-center justify-between h-16 px-4 border-b">
           <Link to="/admin" className="flex items-center gap-2">
-            <Package className="h-6 w-6 text-[#8B7355]" />
-            <span className="font-semibold text-lg text-[#8B7355]">Admin Panel</span>
+            <Package className="h-6 w-6 text-primary" />
+            <span className="font-semibold text-lg">Admin Panel</span>
           </Link>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsOpen(false)}
-            className="lg:hidden text-[#8B7355] hover:bg-[#F5F5DC] hover:text-[#8B7355]"
+            className="lg:hidden"
           >
             <ChevronLeft className="h-5 w-5" />
             <span className="sr-only">Close</span>
@@ -106,8 +101,8 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   location.pathname === item.href
-                    ? "bg-[#C4A484] text-white"
-                    : "text-[#8B7355] hover:bg-[#F5F5DC] hover:text-[#8B7355]"
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
                 )}
                 onClick={() => window.innerWidth < 1024 && setIsOpen(false)}
               >
@@ -117,12 +112,12 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
             ))}
           </div>
 
-          <Separator className="my-4 bg-[#C4A484]" />
+          <Separator className="my-4" />
         </div>
 
-        <div className="p-4 border-t border-[#C4A484]">
+        <div className="p-4 border-t">
           <Link to="/">
-            <Button variant="outline" className="w-full flex items-center gap-2 border-[#C4A484] text-[#8B7355] hover:bg-[#F5F5DC] hover:text-[#8B7355]">
+            <Button variant="outline" className="w-full flex items-center gap-2">
               <LogOut className="h-4 w-4" />
               Back to Store
             </Button>
