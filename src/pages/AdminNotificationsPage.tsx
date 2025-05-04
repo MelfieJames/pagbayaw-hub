@@ -8,7 +8,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle, AlertTriangle, Package } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Notification {
   id: number;
@@ -97,60 +97,158 @@ export default function AdminNotificationsPage() {
       <div className="flex-1 p-6">
         <h2 className="text-2xl font-semibold text-[#8B7355]">Notifications Management</h2>
         
-        <Tabs defaultValue="notifications" className="w-full">
+        <Tabs defaultValue="all" className="w-full mt-6">
           <TabsList className="mb-4">
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="all">All Notifications</TabsTrigger>
+            <TabsTrigger value="tracking">Tracking Updates</TabsTrigger>
+            <TabsTrigger value="orders">Order Notifications</TabsTrigger>
           </TabsList>
           
-          <Card className="mt-6 border-2 border-[#C4A484]">
-            <CardHeader className="bg-[#F5F5DC]">
-              <CardTitle className="text-[#8B7355] flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                System Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {notifications.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">
-                  No notifications found
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {notifications.map((notification) => (
-                    <div 
-                      key={notification.id}
-                      className={`p-4 rounded-lg border ${notification.is_read ? 'bg-gray-50' : 'bg-white'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {notification.type === 'tracking_update' ? (
-                          <img 
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
-                            alt="JNT Logo" 
-                            className="h-10 w-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white`}>
-                            {getNotificationIcon(notification.type)}
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <p className="text-gray-800">{notification.message}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-gray-500">
-                              {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
-                            </span>
-                            <Badge variant="outline" className={getNotificationColor(notification.type) + " text-white"}>
-                              {notification.type === 'tracking_update' ? 'Tracking Update' : notification.type}
-                            </Badge>
+          <TabsContent value="all">
+            <Card className="border-2 border-[#C4A484]">
+              <CardHeader className="bg-[#F5F5DC]">
+                <CardTitle className="text-[#8B7355] flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  System Notifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">
+                    No notifications found
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {notifications.map((notification) => (
+                      <div 
+                        key={notification.id}
+                        className={`p-4 rounded-lg border ${notification.is_read ? 'bg-gray-50' : 'bg-white'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {notification.type === 'tracking_update' ? (
+                            <img 
+                              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                              alt="JNT Logo" 
+                              className="h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white`}>
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="text-gray-800">{notification.message}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs text-gray-500">
+                                {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
+                              </span>
+                              <Badge variant="outline" className={getNotificationColor(notification.type) + " text-white"}>
+                                {notification.type === 'tracking_update' ? 'Tracking Update' : notification.type}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="tracking">
+            <Card className="border-2 border-[#C4A484]">
+              <CardHeader className="bg-[#F5F5DC]">
+                <CardTitle className="text-[#8B7355] flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Tracking Updates
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {notifications.filter(n => n.type === 'tracking_update').length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">
+                    No tracking updates found
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {notifications
+                      .filter(notification => notification.type === 'tracking_update')
+                      .map((notification) => (
+                        <div 
+                          key={notification.id}
+                          className={`p-4 rounded-lg border ${notification.is_read ? 'bg-gray-50' : 'bg-white'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                              alt="JNT Logo" 
+                              className="h-10 w-10 rounded-full object-cover"
+                            />
+                            <div className="flex-1">
+                              <p className="text-gray-800">{notification.message}</p>
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-xs text-gray-500">
+                                  {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
+                                </span>
+                                <Badge variant="outline" className="bg-[#C4A484] text-white">
+                                  Tracking Update
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="orders">
+            <Card className="border-2 border-[#C4A484]">
+              <CardHeader className="bg-[#F5F5DC]">
+                <CardTitle className="text-[#8B7355] flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Order Notifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {notifications.filter(n => n.type === 'order').length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">
+                    No order notifications found
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {notifications
+                      .filter(notification => notification.type === 'order')
+                      .map((notification) => (
+                        <div 
+                          key={notification.id}
+                          className={`p-4 rounded-lg border ${notification.is_read ? 'bg-gray-50' : 'bg-white'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="bg-blue-500 p-2 rounded-full text-white">
+                              <CheckCircle className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-gray-800">{notification.message}</p>
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-xs text-gray-500">
+                                  {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
+                                </span>
+                                <Badge variant="outline" className="bg-blue-500 text-white">
+                                  Order
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </div>

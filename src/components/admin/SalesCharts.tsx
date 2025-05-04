@@ -13,40 +13,90 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { format, subDays } from "date-fns";
+import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth } from "date-fns";
+import { CalendarDays, Calendar, CalendarRange } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+type TimeFilter = "day" | "week" | "month";
 
 export function SalesCharts() {
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("day");
+
+  const getStartDate = () => {
+    const now = new Date();
+    switch (timeFilter) {
+      case "day":
+        return subDays(now, 30);
+      case "week":
+        return subWeeks(now, 12);
+      case "month":
+        return subMonths(now, 12);
+      default:
+        return subDays(now, 30);
+    }
+  };
+
+  const getGroupFormat = () => {
+    switch (timeFilter) {
+      case "day":
+        return "MMM dd";
+      case "week":
+        return "'Week' w, yyyy";
+      case "month":
+        return "MMM yyyy";
+      default:
+        return "MMM dd";
+    }
+  };
+
+  const getGroupingFunction = (dateStr: string) => {
+    const date = new Date(dateStr);
+    switch (timeFilter) {
+      case "day":
+        return format(date, "MMM dd");
+      case "week": {
+        const weekStart = startOfWeek(date);
+        return format(weekStart, "'Week' w, yyyy");
+      }
+      case "month":
+        return format(date, "MMM yyyy");
+      default:
+        return format(date, "MMM dd");
+    }
+  };
+
   const { data: salesData, isLoading } = useQuery({
-    queryKey: ["admin-sales-data"],
+    queryKey: ["admin-sales-data", timeFilter],
     queryFn: async () => {
-      const thirtyDaysAgo = subDays(new Date(), 30);
+      const startDate = getStartDate();
       
       const { data, error } = await supabase
         .from("purchases")
         .select("id, created_at, total_amount, status")
-        .gte("created_at", thirtyDaysAgo.toISOString())
+        .gte("created_at", startDate.toISOString())
         .neq("status", "cancelled")
         .order("created_at", { ascending: true });
         
       if (error) throw error;
       
-      // Group by day
-      const salesByDay = data.reduce((acc: any, curr: any) => {
-        const date = format(new Date(curr.created_at), "MMM dd");
-        if (!acc[date]) {
-          acc[date] = {
-            date: date,
+      // Group by day, week, or month based on the selected filter
+      const salesByPeriod = data.reduce((acc: any, curr: any) => {
+        const periodKey = getGroupingFunction(curr.created_at);
+        
+        if (!acc[periodKey]) {
+          acc[periodKey] = {
+            date: periodKey,
             sales: 0,
             orders: 0,
           };
         }
-        acc[date].sales += Number(curr.total_amount);
-        acc[date].orders += 1;
+        acc[periodKey].sales += Number(curr.total_amount);
+        acc[periodKey].orders += 1;
         return acc;
       }, {});
       
       return {
-        dailySales: Object.values(salesByDay),
+        dailySales: Object.values(salesByPeriod),
       };
     },
     refetchInterval: 60000, // Refresh every minute
@@ -77,8 +127,37 @@ export function SalesCharts() {
   return (
     <Card className="border-2 border-[#C4A484]">
       <CardHeader className="bg-[#F5F5DC]">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <CardTitle className="text-[#8B7355]">Sales Overview</CardTitle>
+          <div className="flex gap-2">
+            <Button 
+              variant={timeFilter === "day" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setTimeFilter("day")}
+              className={timeFilter === "day" ? "bg-[#8B7355] hover:bg-[#6b5941]" : "border-[#8B7355] text-[#8B7355]"}
+            >
+              <CalendarDays className="h-4 w-4 mr-1" />
+              Daily
+            </Button>
+            <Button 
+              variant={timeFilter === "week" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setTimeFilter("week")}
+              className={timeFilter === "week" ? "bg-[#8B7355] hover:bg-[#6b5941]" : "border-[#8B7355] text-[#8B7355]"}
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Weekly
+            </Button>
+            <Button 
+              variant={timeFilter === "month" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setTimeFilter("month")}
+              className={timeFilter === "month" ? "bg-[#8B7355] hover:bg-[#6b5941]" : "border-[#8B7355] text-[#8B7355]"}
+            >
+              <CalendarRange className="h-4 w-4 mr-1" />
+              Monthly
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -95,9 +174,18 @@ export function SalesCharts() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis dataKey="date" />
-              <YAxis tickFormatter={(value) => `₱${value}`} />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(value) => value}
+              />
+              <YAxis 
+                tickFormatter={(value) => `₱${value}`} 
+                domain={[0, 'dataMax + 1000']}
+              />
+              <Tooltip 
+                formatter={(value: number) => formatCurrency(value)} 
+                labelFormatter={(label) => `Period: ${label}`}
+              />
               <Area
                 type="monotone"
                 dataKey="sales"

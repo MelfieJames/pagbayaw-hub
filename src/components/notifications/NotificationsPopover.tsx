@@ -1,690 +1,356 @@
 
-import { useState, useRef, useEffect } from "react";
-import { Bell, Copy, Star, Image, Video, ExternalLink, Package, ShoppingBag, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
-import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
+import { Bell, CheckCircle, AlertTriangle, Package, ChevronRight, Copy, Eye } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Star as StarIcon, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import ErrorModal from "@/components/ErrorModal";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+interface Notification {
+  id: number;
+  message: string;
+  created_at: string;
+  type: string;
+  is_read: boolean;
+  purchase_id: number | null;
+  tracking_number: string | null;
+}
 
 export function NotificationsPopover() {
+  const [open, setOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [reviewProduct, setReviewProduct] = useState<{
-    id: number;
-    name: string;
-    purchaseId: number;
-    image: string | null;
-  } | null>(null);
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorModalOpen, setErrorModalOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState({
-    title: "",
-    message: ""
-  });
-  const [notificationDetailsOpen, setNotificationDetailsOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<any>(null);
-  
-  // Media upload state
-  const [reviewImage, setReviewImage] = useState<File | null>(null);
-  const [reviewVideo, setReviewVideo] = useState<File | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [previewVideo, setPreviewVideo] = useState<string | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  
   const queryClient = useQueryClient();
-  
-  // Rest of existing code for fetching notifications
-  const {
-    data: notifications = [],
-    refetch: refetchNotifications
-  } = useQuery({
+
+  const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      try {
-        const {
-          data: notificationData,
-          error: notificationError
-        } = await supabase.from('notifications').select('*, purchases(*)').eq('user_id', user.id).order('created_at', {
-          ascending: false
-        });
-        if (notificationError) {
-          console.error('Notifications fetch error:', notificationError);
-          return [];
-        }
-        const notificationsWithProducts = await Promise.all(notificationData.map(async notification => {
-          if (notification.type === 'review_request') {
-            const {
-              data: purchaseItems,
-              error: purchaseItemsError
-            } = await supabase.from('purchase_items').select('*, products(*)').eq('purchase_id', notification.purchase_id);
-            if (purchaseItemsError) {
-              console.error('Purchase items fetch error:', purchaseItemsError);
-              return notification;
-            }
-            return {
-              ...notification,
-              products: purchaseItems
-            };
-          }
-          return notification;
-        }));
-        return notificationsWithProducts;
-      } catch (error) {
-        console.error('Unexpected error fetching notifications:', error);
-        return [];
-      }
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data as Notification[];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
   });
-
-  // Get user's existing reviews to check if they've already reviewed products
-  const {
-    data: userReviews = []
-  } = useQuery({
-    queryKey: ['user-reviews', user?.id],
+  
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unread-notification-count', user?.id],
     queryFn: async () => {
-      if (!user) return [];
-      try {
-        const {
-          data,
-          error
-        } = await supabase.from('reviews').select('product_id, purchase_item_id').eq('user_id', user.id);
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.error('Error fetching user reviews:', error);
-        return [];
-      }
+      if (!user?.id) return 0;
+      
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+        
+      if (error) throw error;
+      return count || 0;
     },
-    enabled: !!user
+    enabled: !!user?.id,
   });
   
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+        
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['unread-notification-count', user?.id] });
+    },
+  });
   
-  const markAsRead = async (notificationId: number) => {
-    if (!user?.id) return;
-    try {
-      await supabase.from('notifications').update({
-        is_read: true
-      }).eq('id', notificationId);
-
-      // Refetch notifications to update the unread count
-      refetchNotifications();
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) return;
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['unread-notification-count', user?.id] });
+    },
+  });
   
-  const handleNotificationClick = async (notification: any) => {
-    // Mark notification as read when clicked
+  const handleNotificationClick = (notification: Notification) => {
     if (!notification.is_read) {
-      await markAsRead(notification.id);
+      markAsReadMutation.mutate(notification.id);
     }
-    
-    if (notification.type === 'tracking_update') {
-      setSelectedNotification(notification);
-      setNotificationDetailsOpen(true);
-      return;
-    }
-    
-    if (notification.type === 'review_request' && notification.products?.length > 0) {
-      const firstProduct = notification.products[0];
+  };
 
-      // Check if user has already reviewed this product
-      const hasReviewed = userReviews.some(review => review.product_id === firstProduct.product_id && review.purchase_item_id === notification.purchase_id);
-      if (hasReviewed) {
-        setErrorMessage({
-          title: "Already Reviewed",
-          message: "You have already reviewed this product. You can only review a product once."
-        });
-        setErrorModalOpen(true);
-        return;
-      }
-      setReviewProduct({
-        id: firstProduct.product_id,
-        name: firstProduct.products?.product_name || 'Product',
-        purchaseId: notification.purchase_id,
-        image: firstProduct.products?.image || null
-      });
+  const viewNotificationDetails = (notification: Notification) => {
+    setSelectedNotification(notification);
+    setDetailsOpen(true);
+    if (!notification.is_read) {
+      markAsReadMutation.mutate(notification.id);
     }
   };
   
-  const copyTrackingNumber = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Tracking number copied to clipboard");
+  const copyTrackingNumber = (trackingNumber: string) => {
+    navigator.clipboard.writeText(trackingNumber);
+    toast.success("Tracking number copied to clipboard!");
   };
-  
-  const navigateToMyRatings = () => {
-    navigate('/my-ratings');
-  };
-  
-  // Function to get notification icon based on type
+
   const getNotificationIcon = (type: string) => {
     switch (type?.toLowerCase()) {
       case 'order':
-        return <ShoppingBag className="h-5 w-5 text-blue-500" />;
-      case 'tracking_update':
-        return <Package className="h-5 w-5 text-[#C4A484]" />;
+        return <CheckCircle className="h-5 w-5" />;
       case 'alert':
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+        return <AlertTriangle className="h-5 w-5" />;
+      case 'tracking_update':
+        return <Package className="h-5 w-5" />;
       default:
-        return <Bell className="h-5 w-5 text-gray-500" />;
+        return <Bell className="h-5 w-5" />;
     }
   };
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setReviewImage(file);
-      const objectUrl = URL.createObjectURL(file);
-      setPreviewImage(objectUrl);
+  const getNotificationColor = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'order':
+        return 'bg-blue-500';
+      case 'system':
+        return 'bg-purple-500';
+      case 'inventory':
+        return 'bg-amber-500';
+      case 'alert':
+        return 'bg-red-500';
+      case 'tracking_update':
+        return 'bg-[#C4A484]';
+      default:
+        return 'bg-gray-500';
     }
   };
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setReviewVideo(file);
-      const objectUrl = URL.createObjectURL(file);
-      setPreviewVideo(objectUrl);
-    }
-  };
-
-  const resetMediaFiles = () => {
-    if (previewImage) {
-      URL.revokeObjectURL(previewImage);
-    }
-    if (previewVideo) {
-      URL.revokeObjectURL(previewVideo);
-    }
-    setReviewImage(null);
-    setReviewVideo(null);
-    setPreviewImage(null);
-    setPreviewVideo(null);
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
-    if (videoInputRef.current) {
-      videoInputRef.current.value = "";
-    }
-  };
-  
-  const uploadMedia = async () => {
-    let imageUrl = null;
-    let videoUrl = null;
-
-    if (reviewImage) {
-      const fileExt = reviewImage.name.split('.').pop();
-      const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(filePath, reviewImage);
-
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        throw new Error('Error uploading image');
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('products')
-        .getPublicUrl(filePath);
-
-      imageUrl = publicUrl;
-    }
-
-    if (reviewVideo) {
-      const fileExt = reviewVideo.name.split('.').pop();
-      const filePath = `reviews/${crypto.randomUUID()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(filePath, reviewVideo);
-
-      if (uploadError) {
-        console.error('Error uploading video:', uploadError);
-        throw new Error('Error uploading video');
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('products')
-        .getPublicUrl(filePath);
-
-      videoUrl = publicUrl;
-    }
-
-    return { imageUrl, videoUrl };
-  };
-  
-  const handleSubmitReview = async () => {
-    if (!user?.id || !reviewProduct || rating === 0) {
-      toast("Please select a rating before submitting");
-      return;
-    }
-    try {
-      setIsSubmitting(true);
-
-      // Check one more time if user has already reviewed this product
-      const hasReviewed = userReviews.some(review => review.product_id === reviewProduct.id && review.purchase_item_id === reviewProduct.purchaseId);
-      if (hasReviewed) {
-        setErrorMessage({
-          title: "Already Reviewed",
-          message: "You have already reviewed this product. You can only review a product once."
-        });
-        setErrorModalOpen(true);
-        setReviewProduct(null);
-        setRating(0);
-        setComment("");
-        resetMediaFiles();
-        return;
-      }
-      
-      // Upload media files if any
-      const { imageUrl, videoUrl } = await uploadMedia();
-      
-      const {
-        error
-      } = await supabase.from('reviews').insert({
-        user_id: user.id,
-        product_id: reviewProduct.id,
-        rating,
-        comment,
-        purchase_item_id: reviewProduct.purchaseId,
-        image_url: imageUrl,
-        video_url: videoUrl
-      });
-      
-      if (error) {
-        console.error("Error submitting review:", error);
-        if (error.code === '23505') {
-          setErrorMessage({
-            title: "Already Reviewed",
-            message: "You have already reviewed this product. You can only review a product once."
-          });
-          setErrorModalOpen(true);
-        } else {
-          toast("Failed to submit review: " + error.message);
-        }
-        return;
-      }
-      
-      toast("Review submitted successfully!");
-      queryClient.invalidateQueries({
-        queryKey: ['product-reviews']
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['all-reviews']
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['my-reviews', user.id]
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['user-reviews', user.id]
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['notifications', user.id]
-      });
-      
-      setReviewProduct(null);
-      setRating(0);
-      setComment("");
-      resetMediaFiles();
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      toast("Failed to submit review");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  return <>
-      <Popover>
+  return (
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative mx-[5px]">
+          <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            {unreadCount > 0 && <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 h-4 w-4 text-xs flex items-center justify-center rounded-full bg-red-500 text-white">
                 {unreadCount}
-              </Badge>}
+              </span>
+            )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-80">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="font-semibold">Notifications</h4>
-            {user && <Button variant="ghost" size="sm" onClick={navigateToMyRatings}>
-                My Ratings
-              </Button>}
+        <PopoverContent className="w-[350px] p-0" align="end">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="font-medium">Notifications</h3>
+            {unreadCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => markAllAsReadMutation.mutate()}
+                disabled={markAllAsReadMutation.isPending}
+              >
+                Mark all as read
+              </Button>
+            )}
           </div>
-          <ScrollArea className="h-[300px]">
-            {!user ? <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Please log in to view your notifications
-                </p>
-                <Button className="w-full" onClick={() => navigate('/login')}>
-                  Log In
-                </Button>
-              </div> : notifications.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
-                No notifications yet
-              </p> : <div className="space-y-2">
-                {notifications.map(notification => {
-              const isReviewRequest = notification.type === 'review_request';
-              const isTrackingUpdate = notification.type === 'tracking_update';
-              let productDetails = null;
-              let trackingNumber = null;
-              
-              if (isReviewRequest && notification.products?.length > 0) {
-                productDetails = notification.products[0].products;
-              }
-              
-              if (isTrackingUpdate) {
-                // Extract tracking number from the message using regex
-                const trackingRegex = /TRACKING NUMBER:\s*([A-Za-z0-9]+)/;
-                const match = notification.message.match(trackingRegex);
-                if (match && match[1]) {
-                  trackingNumber = match[1];
-                }
-              }
-              
-              return <div key={notification.id} className={`p-3 rounded-lg border ${!notification.is_read ? 'bg-muted/50' : ''}`} role="button" tabIndex={0} onClick={() => handleNotificationClick(notification)} onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  handleNotificationClick(notification);
-                }
-              }}>
-                      <div className="flex gap-3">
-                        {isTrackingUpdate ? (
-                          <img 
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
-                            alt="JNT Express" 
-                            className="w-12 h-12 object-cover rounded-md border" 
-                          />
-                        ) : productDetails?.image ? (
-                          <img 
-                            src={productDetails.image} 
-                            alt={productDetails.product_name} 
-                            className="w-12 h-12 object-cover rounded-md"
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center w-12 h-12 rounded-md bg-gray-100">
-                            {getNotificationIcon(notification.type)}
+          
+          <ScrollArea className="h-[350px]">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <LoadingSpinner size="md" />
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32 text-center p-4">
+                <Bell className="h-8 w-8 text-gray-300 mb-2" />
+                <p className="text-gray-500">No notifications yet</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {notifications.map((notification) => (
+                  <div 
+                    key={notification.id} 
+                    className={`p-4 hover:bg-gray-50 cursor-pointer ${!notification.is_read ? 'bg-blue-50' : ''}`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {notification.type === 'tracking_update' ? (
+                        <img 
+                          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                          alt="JNT Express" 
+                          className="h-10 w-10 rounded-full object-contain border p-1"
+                        />
+                      ) : (
+                        <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white`}>
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                      )}
+                      
+                      <div className="flex-1">
+                        <p className={`text-sm ${!notification.is_read ? 'font-semibold' : ''}`}>
+                          {notification.message}
+                        </p>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
+                        </div>
+                        
+                        {notification.tracking_number && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyTrackingNumber(notification.tracking_number!);
+                              }}
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              Copy Tracking
+                            </Button>
+                            
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-7 text-xs bg-[#F5F5DC] border-[#C4A484] text-[#8B7355] hover:bg-[#C4A484] hover:text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                viewNotificationDetails(notification);
+                              }}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              See Details
+                            </Button>
                           </div>
                         )}
-                        
-                        <div className="flex-1">
-                          <p className="text-sm">{notification.message}</p>
-                          
-                          <div className="flex justify-between items-center mt-2">
-                            {isReviewRequest ? (
-                              <Button size="sm" variant="outline" onClick={e => {
-                                e.stopPropagation();
-                                handleNotificationClick(notification);
-                              }}>
-                                Rate Now
-                              </Button>
-                            ) : isTrackingUpdate && trackingNumber ? (
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="flex items-center gap-1 text-xs"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    copyTrackingNumber(trackingNumber);
-                                  }}
-                                >
-                                  <Copy className="h-3 w-3" /> Copy
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="flex items-center gap-1 text-xs bg-[#C4A484] hover:bg-[#8B7355]"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedNotification(notification);
-                                    setNotificationDetailsOpen(true);
-                                  }}
-                                >
-                                  <ExternalLink className="h-3 w-3" /> See All
-                                </Button>
-                              </div>
-                            ) : (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-700">
-                                {notification.purchases?.status || 'Notification'}
-                              </Badge>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(notification.created_at), 'PP')}
-                            </span>
-                          </div>
-                        </div>
                       </div>
-                    </div>;
-            })}
-              </div>}
-          </ScrollArea>
-        </PopoverContent>
-      </Popover>
-
-      {/* Review Dialog */}
-      <Dialog open={!!reviewProduct} onOpenChange={() => {
-        setReviewProduct(null);
-        resetMediaFiles();
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rate & Review {reviewProduct?.name}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[70vh] pr-4">
-            <div className="space-y-4">
-              {reviewProduct?.image && <div className="flex justify-center">
-                  <img src={reviewProduct.image} alt={reviewProduct.name} className="w-32 h-32 object-cover rounded-md" />
-                </div>}
-              <div className="flex gap-1 justify-center">
-                {[1, 2, 3, 4, 5].map(star => <button key={star} onClick={() => setRating(star)} className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}>
-                    <Star className="h-8 w-8" fill={rating >= star ? "currentColor" : "none"} />
-                  </button>)}
-              </div>
-              <p className="text-center text-sm text-muted-foreground">
-                {rating === 1 && "Poor"}
-                {rating === 2 && "Fair"}
-                {rating === 3 && "Good"}
-                {rating === 4 && "Very Good"}
-                {rating === 5 && "Excellent"}
-              </p>
-              <Textarea placeholder="Share your experience with this product..." value={comment} onChange={e => setComment(e.target.value)} className="min-h-[100px]" />
-              
-              {/* Media Upload Section */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="review-image">Add Image (optional)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      ref={imageInputRef}
-                      id="review-image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {previewImage && (
-                    <div className="mt-2">
-                      <img
-                        src={previewImage}
-                        alt="Preview"
-                        className="h-32 object-cover rounded-md"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-1 text-red-500"
-                        onClick={() => {
-                          URL.revokeObjectURL(previewImage);
-                          setPreviewImage(null);
-                          setReviewImage(null);
-                          if (imageInputRef.current) imageInputRef.current.value = "";
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="review-video">Add Video (optional)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      ref={videoInputRef}
-                      id="review-video"
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoUpload}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => videoInputRef.current?.click()}
-                    >
-                      <VideoIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {previewVideo && (
-                    <div className="mt-2">
-                      <video
-                        src={previewVideo}
-                        controls
-                        className="h-32 w-full rounded-md"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-1 text-red-500"
-                        onClick={() => {
-                          URL.revokeObjectURL(previewVideo);
-                          setPreviewVideo(null);
-                          setReviewVideo(null);
-                          if (videoInputRef.current) videoInputRef.current.value = "";
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-          <Button onClick={handleSubmitReview} disabled={rating === 0 || isSubmitting} className="w-full">
-            {isSubmitting ? "Submitting..." : "Submit Review"}
-          </Button>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Tracking Details Dialog */}
-      <Dialog open={notificationDetailsOpen} onOpenChange={setNotificationDetailsOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-[#C4A484]" />
-              Tracking Details
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex flex-col space-y-4">
-            {selectedNotification && (
-              <>
-                <div className="flex items-center space-x-4 mb-4">
-                  <img 
-                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
-                    alt="JNT Express" 
-                    className="w-16 h-16 object-cover rounded-md border" 
-                  />
-                  <div>
-                    <h3 className="text-lg font-medium">JNT Express</h3>
-                    <p className="text-sm text-gray-500">Package Delivery Service</p>
-                  </div>
-                </div>
-                
-                <div className="border rounded-md p-4 bg-[#fdfbf7]">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Tracking Number:</span>
-                    <div className="flex items-center gap-2">
-                      {selectedNotification.message.match(/TRACKING NUMBER:\s*([A-Za-z0-9]+)/) && (
-                        <>
-                          <span className="font-bold text-[#C4A484]">
-                            {selectedNotification.message.match(/TRACKING NUMBER:\s*([A-Za-z0-9]+)/)[1]}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => copyTrackingNumber(selectedNotification.message.match(/TRACKING NUMBER:\s*([A-Za-z0-9]+)/)[1])}
-                            className="h-7 p-2"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </>
+                      
+                      {!notification.tracking_number && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            viewNotificationDetails(notification);
+                          }}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
                   </div>
-                  
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium mb-2">Message:</h4>
-                    <p className="text-sm p-3 bg-white rounded border">
-                      {selectedNotification.message}
-                    </p>
-                  </div>
-                  
-                  <div className="mt-4 flex justify-between text-sm text-gray-500">
-                    <span>Date Received:</span>
-                    <span>{format(new Date(selectedNotification.created_at), "MMM d, yyyy • h:mm a")}</span>
-                  </div>
-                </div>
-                
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">
-                    Note: You may need to visit the JNT Express website to get detailed tracking information.
-                  </p>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button
-                    onClick={() => setNotificationDetailsOpen(false)}
-                  >
-                    Close
-                  </Button>
-                </div>
-              </>
+                ))}
+              </div>
             )}
+          </ScrollArea>
+          
+          <div className="p-2 border-t">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => setOpen(false)}
+            >
+              Close
+            </Button>
           </div>
+        </PopoverContent>
+      </Popover>
+      
+      {/* Notification Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedNotification?.type === 'tracking_update' ? (
+                <img 
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                  alt="JNT Express" 
+                  className="h-6 w-6 rounded-full object-contain"
+                />
+              ) : (
+                getNotificationIcon(selectedNotification?.type || '')
+              )}
+              {selectedNotification?.type === 'tracking_update' ? 'Tracking Update' : 'Notification'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedNotification && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-md">
+                <div className="mb-3 font-medium">{selectedNotification.message}</div>
+                <div className="text-xs text-gray-500">
+                  {format(new Date(selectedNotification.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                </div>
+              </div>
+              
+              {selectedNotification.tracking_number && (
+                <div className="p-4 border rounded-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium">Tracking Information</div>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => copyTrackingNumber(selectedNotification.tracking_number!)}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Number
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 mt-3">
+                    <img 
+                      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                      alt="JNT Express" 
+                      className="h-12 w-12 rounded-full object-contain border p-1"
+                    />
+                    <div>
+                      <div className="font-medium">J&T Express</div>
+                      <div className="text-sm font-mono bg-gray-100 p-1 rounded mt-1">
+                        {selectedNotification.tracking_number}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-4" />
+                  
+                  <div className="text-sm text-gray-500">
+                    You can track your package by visiting the J&T Express website and entering this tracking number.
+                  </div>
+                </div>
+              )}
+              
+              {selectedNotification.purchase_id && (
+                <div className="text-sm text-gray-500">
+                  Related to Order #{selectedNotification.purchase_id}
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
-
-      {/* Error Modal */}
-      <ErrorModal isOpen={errorModalOpen} onClose={() => setErrorModalOpen(false)} title={errorMessage.title} message={errorMessage.message} />
-    </>;
+    </>
+  );
 }
