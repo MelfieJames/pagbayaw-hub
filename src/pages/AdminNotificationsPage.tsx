@@ -22,6 +22,7 @@ interface CustomerData {
   id: string;
   email: string;
   full_name: string;
+  purchase_id: string; // Add purchase_id property to the interface
 }
 
 export default function AdminNotificationsPage() {
@@ -57,12 +58,18 @@ export default function AdminNotificationsPage() {
         }
 
         if (data) {
-          const formattedCustomers = data.map(purchase => ({
-            id: purchase.user_id,
-            email: purchase.email || '',
-            full_name: `${purchase.profiles?.first_name || ''} ${purchase.profiles?.last_name || ''}`.trim() || purchase.email || 'Unknown',
-            purchase_id: purchase.id
-          }));
+          const formattedCustomers = data.map(purchase => {
+            // Correctly access properties from the purchase.profiles object
+            const firstName = purchase.profiles?.first_name || '';
+            const lastName = purchase.profiles?.last_name || '';
+            
+            return {
+              id: purchase.user_id,
+              email: purchase.email || '',
+              full_name: `${firstName} ${lastName}`.trim() || purchase.email || 'Unknown',
+              purchase_id: purchase.id
+            };
+          });
 
           setCustomers(formattedCustomers);
           setFilteredCustomers(formattedCustomers);
