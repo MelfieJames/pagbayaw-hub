@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -290,28 +291,22 @@ export default function Checkout() {
         }
       }
 
-      // Create notifications - We'll only create these when product details are available
-      for (const item of cartItems) {
-        // Skip creating notifications if the product_id column isn't available
-        try {
-          const { error: notificationError } = await supabase
-            .from('notifications')
-            .insert({
-              user_id: user.id,
-              purchase_id: purchase.id,
-              type: 'review_request',
-              message: `Please rate and review your purchase: ${item.products?.product_name}`,
-              product_id: item.product_id
-            });
+      // Create notifications - Fix: Remove product_id from notifications
+      try {
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            purchase_id: purchase.id,
+            type: 'review_request',
+            message: `Please rate and review your recent purchase.`
+          });
 
-          if (notificationError) {
-            console.error('Notification creation error:', notificationError);
-            // Don't throw the error, just log it and continue with the checkout
-          }
-        } catch (notificationError) {
-          console.error('Failed to create notification:', notificationError);
-          // Continue with checkout even if notification creation fails
+        if (notificationError) {
+          console.error('Notification creation error:', notificationError);
         }
+      } catch (notificationError) {
+        console.error('Failed to create notification:', notificationError);
       }
       
       // Clear cart only if this was a cart purchase (not Buy Now)
@@ -340,8 +335,14 @@ export default function Checkout() {
       queryClient.invalidateQueries({ queryKey: ['user-addresses'] });
       queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
       
-      // Show order summary dialog
-      setShowOrderSummaryDialog(true);
+      // Show the success dialog or order summary dialog based on address existence
+      if (selectedAddressId) {
+        // We have an address, so we can skip to success dialog
+        setShowSuccessDialog(true);
+      } else {
+        // No address selected, so show order summary to collect shipping details
+        setShowOrderSummaryDialog(true);
+      }
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error("Failed to process order. Please try again.");

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,6 +78,7 @@ export default function OrderSummaryDialog({
 
     setIsSubmitting(true);
     try {
+      // Remove the on_conflict parameter that was causing issues
       const { error } = await supabase
         .from('transaction_details')
         .insert({

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
-import { User, Mail, Lock } from "lucide-react"; // Using lucide icons
+import { User, Mail, Lock, Eye, EyeOff } from "lucide-react"; // Using lucide icons
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { resendConfirmationEmail } = useAuth();
@@ -62,6 +63,10 @@ const LoginPage = () => {
       setIsConfirmationAlertOpen(false);
       toast.success("Confirmation email resent successfully!");
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -199,14 +204,25 @@ const LoginPage = () => {
                   <div className="relative">
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full pl-10"
+                      className="w-full pl-10 pr-10"
                     />
                     <Lock className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -242,18 +258,25 @@ const LoginPage = () => {
         </div>
 
         <AlertDialog open={isConfirmationAlertOpen} onOpenChange={setIsConfirmationAlertOpen}>
-          <AlertDialogContent className="duration-[1800ms]">
+          <AlertDialogContent className="max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Email Not Confirmed</AlertDialogTitle>
-              <AlertDialogDescription>
-                Your email address has not been confirmed yet. Please check your inbox for the confirmation email or click below to resend the confirmation email.
+              <AlertDialogTitle className="text-xl text-center">Email Verification Required</AlertDialogTitle>
+              <AlertDialogDescription className="text-center">
+                <div className="flex justify-center my-4">
+                  <Mail className="h-16 w-16 text-primary" />
+                </div>
+                <p className="mb-2">Your email address <strong>{confirmationEmail}</strong> has not been verified yet.</p>
+                <p>Please check your inbox for the verification email. If you can't find it, you can request a new one.</p>
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleResendConfirmation}>
-                Resend Confirmation Email
+            <AlertDialogFooter className="flex-col space-y-2">
+              <AlertDialogAction 
+                onClick={handleResendConfirmation}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                Resend Verification Email
               </AlertDialogAction>
+              <AlertDialogCancel className="w-full mt-2">Close</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
