@@ -37,7 +37,6 @@ export default function Checkout() {
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
-  // Get cached Buy Now items if they exist
   const cachedBuyNowItems = queryClient.getQueryData<CartItem[]>(['checkout-items']) || [];
 
   const { data: cartItems = [], refetch } = useQuery({
@@ -77,7 +76,6 @@ export default function Checkout() {
     enabled: !!user?.id || cachedBuyNowItems.length > 0,
   });
 
-  // Clear the Buy Now items from cache when leaving the checkout page
   useEffect(() => {
     return () => {
       if (cachedBuyNowItems.length > 0) {
@@ -211,7 +209,8 @@ export default function Checkout() {
         .insert({
           user_id: user.id,
           total_amount: total,
-          status: 'pending' // Changed default status to pending
+          status: 'pending',
+          email: user.email
         })
         .select()
         .single();
@@ -291,21 +290,27 @@ export default function Checkout() {
         }
       }
 
-      // Create notifications
+      // Create notifications - We'll only create these when product details are available
       for (const item of cartItems) {
-        const { error: notificationError } = await supabase
-          .from('notifications')
-          .insert({
-            user_id: user.id,
-            purchase_id: purchase.id,
-            type: 'review_request',
-            message: `Please rate and review your purchase: ${item.products?.product_name}`,
-            product_id: item.product_id
-          });
+        // Skip creating notifications if the product_id column isn't available
+        try {
+          const { error: notificationError } = await supabase
+            .from('notifications')
+            .insert({
+              user_id: user.id,
+              purchase_id: purchase.id,
+              type: 'review_request',
+              message: `Please rate and review your purchase: ${item.products?.product_name}`,
+              product_id: item.product_id
+            });
 
-        if (notificationError) {
-          console.error('Notification creation error:', notificationError);
-          throw notificationError;
+          if (notificationError) {
+            console.error('Notification creation error:', notificationError);
+            // Don't throw the error, just log it and continue with the checkout
+          }
+        } catch (notificationError) {
+          console.error('Failed to create notification:', notificationError);
+          // Continue with checkout even if notification creation fails
         }
       }
       

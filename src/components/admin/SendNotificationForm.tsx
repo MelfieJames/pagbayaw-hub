@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { BellRing, UserSearch, Hash, Pencil, User, Clipboard } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
 
@@ -25,7 +24,6 @@ export default function SendNotificationForm() {
   const [message, setMessage] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -85,7 +83,7 @@ export default function SendNotificationForm() {
       console.error("Error sending notification:", error);
       toast.error("Something went wrong. Please try again later.");
     } else {
-      toast.success("Notification sent successfully!");
+      toast.success("Tracking notification sent successfully!");
       setMessage("");
       setTrackingNumber("");
       setSearchTerm("");
@@ -102,104 +100,95 @@ export default function SendNotificationForm() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f4f1ed]">
-      <AdminSidebar 
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
-      />
+    <Card className="max-w-xl mx-auto shadow-lg bg-[#fdfbf7] border-[#e5e2dd]">
+      <CardContent className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <img 
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+            alt="JNT Logo" 
+            className="h-10 w-10 rounded-full object-cover"
+          />
+          <h2 className="text-xl font-bold text-[#8B7355]">Send Tracking Update</h2>
+        </div>
 
-      <main className="flex-1 p-10">
-        <Card className="max-w-xl mx-auto shadow-lg bg-[#fdfbf7] border-[#e5e2dd]">
-          <CardContent className="p-6 space-y-6">
-            <div className="flex items-center gap-3">
-              <img 
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
-                alt="JNT Logo" 
-                className="h-10 w-10 rounded-full object-cover"
-              />
-              <h2 className="text-xl font-bold text-[#8B7355]">Send Tracking Update</h2>
-            </div>
-
-            <div>
-              <Label className="text-[#8B7355] flex items-center gap-2">
-                <UserSearch className="w-4 h-4" />
-                Search User
-              </Label>
-              <Input
-                placeholder="Enter name to search..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="mt-1"
-              />
-              {searchTerm && (
-                <div className="border mt-2 rounded-md max-h-40 overflow-y-auto bg-white shadow">
-                  {filteredUsers.length > 0 &&
-                    filteredUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className={`px-4 py-2 cursor-pointer flex items-center gap-2 hover:bg-[#f5f5dc] ${
-                          selectedUserId === user.id ? "bg-[#f5f5dc] font-semibold" : ""
-                        }`}
-                        onClick={() => {
-                          setSelectedUserId(user.id);
-                          setSearchTerm(getFullName(user));
-                          setFilteredUsers([]);
-                        }}
-                      >
-                        <User className="w-4 h-4 text-gray-600" />
-                        <span>{getFullName(user)} ({user.email})</span>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label className="text-[#8B7355] flex items-center gap-2">
-                <Hash className="w-4 h-4" />
-                Tracking Number
-              </Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Enter tracking number"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  className="mt-1 flex-1"
-                />
-                {trackingNumber && (
-                  <button
-                    onClick={() => copyToClipboard(trackingNumber)}
-                    className="text-blue-500 hover:text-blue-700"
+        <div>
+          <Label className="text-[#8B7355] flex items-center gap-2">
+            <UserSearch className="w-4 h-4" />
+            Search User
+          </Label>
+          <Input
+            placeholder="Enter name to search..."
+            value={searchTerm}
+            onChange={handleSearch}
+            className="mt-1"
+          />
+          {searchTerm && (
+            <div className="border mt-2 rounded-md max-h-40 overflow-y-auto bg-white shadow">
+              {filteredUsers.length > 0 &&
+                filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className={`px-4 py-2 cursor-pointer flex items-center gap-2 hover:bg-[#f5f5dc] ${
+                      selectedUserId === user.id ? "bg-[#f5f5dc] font-semibold" : ""
+                    }`}
+                    onClick={() => {
+                      setSelectedUserId(user.id);
+                      setSearchTerm(getFullName(user));
+                      setFilteredUsers([]);
+                    }}
                   >
-                    <Clipboard className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
+                    <User className="w-4 h-4 text-gray-600" />
+                    <span>{getFullName(user)} ({user.email})</span>
+                  </div>
+                ))}
             </div>
+          )}
+        </div>
 
-            <div>
-              <Label className="text-[#8B7355] flex items-center gap-2">
-                <Pencil className="w-4 h-4" />
-                Message
-              </Label>
-              <Textarea
-                placeholder="Write your message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="mt-1"
-              />
-            </div>
+        <div>
+          <Label className="text-[#8B7355] flex items-center gap-2">
+            <Hash className="w-4 h-4" />
+            Tracking Number
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Enter tracking number"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              className="mt-1 flex-1"
+            />
+            {trackingNumber && (
+              <button
+                onClick={() => copyToClipboard(trackingNumber)}
+                className="text-blue-500 hover:text-blue-700"
+              >
+                <Clipboard className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
 
-            <Button
-              onClick={handleSend}
-              disabled={loading}
-              className="w-full bg-[#8B7355] hover:bg-[#7a624d] text-white"
-            >
-              {loading ? "Sending..." : "Send Tracking Update"}
-            </Button>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+        <div>
+          <Label className="text-[#8B7355] flex items-center gap-2">
+            <Pencil className="w-4 h-4" />
+            Message
+          </Label>
+          <Textarea
+            placeholder="Write tracking update message here..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="mt-1"
+          />
+        </div>
+
+        <Button
+          onClick={handleSend}
+          disabled={loading}
+          className="w-full bg-[#8B7355] hover:bg-[#7a624d] text-white"
+        >
+          {loading ? "Sending..." : "Send Tracking Update"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
