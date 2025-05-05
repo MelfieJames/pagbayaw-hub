@@ -269,7 +269,7 @@ export function NotificationsPopover() {
                           </div>
                         )}
 
-                        {/* Add Review button for review_request notifications */}
+                        {/* Review button for review_request notifications */}
                         {notification.type === 'review_request' && notification.product_id && (
                           <div className="mt-2">
                             <Button 
@@ -385,6 +385,7 @@ export function NotificationsPopover() {
                 </div>
               )}
 
+              {/* Add Review Button for review requests */}
               {selectedNotification.type === 'review_request' && selectedNotification.product_id && (
                 <div className="text-center">
                   <Button

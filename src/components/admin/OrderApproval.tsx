@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { AlertCircle, CheckCircle, X, Clock, Truck, Package, AlertTriangle } from "lucide-react";
+import { AlertCircle, CheckCircle, X, Clock, Truck, Package, AlertTriangle, User, Phone, Mail, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type OrderStatus = "pending" | "approved" | "processing" | "delivering" | "completed" | "cancelled";
 
@@ -65,10 +66,11 @@ export function OrderApproval() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("all");
   const queryClient = useQueryClient();
 
-  const { data: pendingOrders = [], isLoading } = useQuery({
-    queryKey: ["pending-orders"],
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ["all-orders"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("purchases")
@@ -159,7 +161,7 @@ export function OrderApproval() {
       return { orderId, newStatus };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["pending-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["all-orders"] });
       
       let successMessage = '';
       switch (data.newStatus) {
@@ -327,11 +329,22 @@ export function OrderApproval() {
     }
   };
 
+  // Filter orders based on active tab
+  const filteredOrders = orders.filter(order => {
+    if (activeTab === "all") return true;
+    if (activeTab === "pending") return order.status === "pending";
+    if (activeTab === "processing") return order.status === "approved" || order.status === "processing";
+    if (activeTab === "shipping") return order.status === "delivering";
+    if (activeTab === "completed") return order.status === "completed";
+    if (activeTab === "cancelled") return order.status === "cancelled";
+    return true;
+  });
+
   if (isLoading) {
     return (
       <Card className="border-2 border-[#C4A484]">
         <CardHeader className="bg-[#F5F5DC]">
-          <CardTitle className="text-[#8B7355]">Order Approval</CardTitle>
+          <CardTitle className="text-[#8B7355]">Customer Orders</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center items-center h-[200px]">
           <LoadingSpinner />
@@ -345,66 +358,79 @@ export function OrderApproval() {
       <CardHeader className="bg-[#F5F5DC]">
         <CardTitle className="text-[#8B7355] flex items-center gap-2">
           <Package className="h-5 w-5" />
-          Order Management
+          Customer Orders Management
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {pendingOrders.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
-            <Package className="mx-auto h-12 w-12 opacity-20 mb-3" />
-            <p>No orders requiring action at the moment</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingOrders.map((purchase) => (
-                  <TableRow key={purchase.id} className="hover:bg-gray-50">
-                    <TableCell className="font-semibold">#{purchase.id}</TableCell>
-                    <TableCell className="text-sm text-gray-500">
-                      {format(new Date(purchase.created_at), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{purchase.customerName}</div>
-                      <div className="text-xs text-gray-500">{purchase.customerEmail}</div>
-                    </TableCell>
-                    <TableCell>
-                      ₱{Number(purchase.total_amount).toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(purchase.status)}
-                        {getStatusBadge(purchase.status)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => viewOrderDetails(purchase)}
-                        >
-                          Details
-                        </Button>
-                        {getNextActionButton(purchase)}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="all">All Orders</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="processing">Processing</TabsTrigger>
+            <TabsTrigger value="shipping">Shipping</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={activeTab}>
+            {filteredOrders.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                <Package className="mx-auto h-12 w-12 opacity-20 mb-3" />
+                <p>No orders in this category</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((purchase) => (
+                      <TableRow key={purchase.id} className="hover:bg-gray-50">
+                        <TableCell className="font-semibold">#{purchase.id}</TableCell>
+                        <TableCell className="text-sm text-gray-500">
+                          {format(new Date(purchase.created_at), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{purchase.customerName}</div>
+                          <div className="text-xs text-gray-500">{purchase.customerEmail}</div>
+                        </TableCell>
+                        <TableCell>
+                          ₱{Number(purchase.total_amount).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(purchase.status)}
+                            {getStatusBadge(purchase.status)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => viewOrderDetails(purchase)}
+                            >
+                              Details
+                            </Button>
+                            {getNextActionButton(purchase)}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* View Order Details Dialog */}
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
@@ -423,16 +449,28 @@ export function OrderApproval() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-md border">
-                    <h3 className="font-medium mb-2">Customer Information</h3>
+                    <h3 className="font-medium mb-2 flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-500" />
+                      Customer Information
+                    </h3>
                     <p className="text-sm">Name: {selectedPurchase.customerName}</p>
-                    <p className="text-sm">Email: {selectedPurchase.customerEmail}</p>
+                    <p className="text-sm flex items-center gap-1">
+                      <Mail className="h-3 w-3 text-gray-500" />
+                      {selectedPurchase.customerEmail}
+                    </p>
                     {selectedPurchase.transaction_details?.[0]?.phone_number && (
-                      <p className="text-sm">Phone: {selectedPurchase.transaction_details[0].phone_number}</p>
+                      <p className="text-sm flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-gray-500" />
+                        {selectedPurchase.transaction_details[0].phone_number}
+                      </p>
                     )}
                   </div>
 
                   <div className="bg-gray-50 p-4 rounded-md border">
-                    <h3 className="font-medium mb-2">Shipping Information</h3>
+                    <h3 className="font-medium mb-2 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      Shipping Information
+                    </h3>
                     {selectedPurchase.transaction_details?.[0]?.address ? (
                       <p className="text-sm whitespace-pre-wrap">{selectedPurchase.transaction_details[0].address}</p>
                     ) : (

@@ -400,13 +400,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_email"
-            columns: ["email"]
-            isOneToOne: false
-            referencedRelation: "transaction_details"
-            referencedColumns: ["email"]
-          },
-          {
             foreignKeyName: "fk_transaction_details"
             columns: ["transaction_details_id"]
             isOneToOne: false
