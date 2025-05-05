@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { supabase } from "@/services/supabase/client";
@@ -59,9 +58,14 @@ export default function AdminNotificationsPage() {
 
         if (data) {
           const formattedCustomers = data.map(purchase => {
-            // Correctly access properties from the purchase.profiles object
-            const firstName = purchase.profiles?.first_name || '';
-            const lastName = purchase.profiles?.last_name || '';
+            // Correctly access properties from the profiles object
+            // Check if profiles exists and handle it as the first item if it's an array
+            const profileData = Array.isArray(purchase.profiles) 
+              ? purchase.profiles[0] 
+              : purchase.profiles;
+              
+            const firstName = profileData?.first_name || '';
+            const lastName = profileData?.last_name || '';
             
             return {
               id: purchase.user_id,
