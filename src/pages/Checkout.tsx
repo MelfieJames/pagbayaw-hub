@@ -298,8 +298,8 @@ export default function Checkout() {
           .insert({
             user_id: user.id,
             purchase_id: purchase.id,
-            type: 'review_request',
-            message: `Please rate and review your recent purchase.`
+            type: 'order',
+            message: `Your order #${purchase.id} has been received and is pending approval.`
           });
 
         if (notificationError) {

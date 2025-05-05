@@ -1,16 +1,14 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Minus, Plus, Trash } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { CartItem } from "@/types/product";
-import { MinusCircle, PlusCircle, Trash2, ShoppingBag } from "lucide-react";
-import { toast } from "sonner";
 
 interface OrderItemsProps {
   cartItems: CartItem[];
   inventoryData: any[];
-  updateQuantity: (productId: number, quantity: number) => Promise<void>;
-  removeFromCart: (productId: number) => Promise<void>;
+  updateQuantity: (productId: number, newQuantity: number) => void;
+  removeFromCart: (productId: number) => void;
 }
 
 export default function OrderItems({
@@ -19,74 +17,98 @@ export default function OrderItems({
   updateQuantity,
   removeFromCart
 }: OrderItemsProps) {
+  const getMaxQuantity = (productId: number) => {
+    const inventoryItem = inventoryData.find(item => item.product_id === productId);
+    return inventoryItem?.quantity || 0;
+  };
+
   return (
-    <>
-      <h2 className="text-xl font-semibold mb-2 flex items-center gap-2 text-gray-800">
-        <ShoppingBag className="h-5 w-5 text-primary" /> Order Items
-      </h2>
+    <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+      <div className="p-4 border-b bg-gray-50">
+        <h2 className="text-lg font-medium">Order Items ({cartItems.length})</h2>
+      </div>
       
-      <ScrollArea className="h-[calc(100vh-400px)] pr-4">
+      <div className="divide-y">
         {cartItems.map((item) => (
-          <div 
-            key={item.product_id}
-            className="flex items-center gap-4 p-4 border rounded-lg mb-4 bg-white shadow-sm hover:shadow-md transition-shadow"
-          >
-            <img
-              src={item.products?.image || "/placeholder.svg"}
-              alt={item.products?.product_name}
-              className="w-24 h-24 object-cover rounded-md"
-            />
-            <div className="flex-1">
-              <h3 className="font-medium text-gray-800">{item.products?.product_name}</h3>
-              <p className="text-primary font-semibold mt-1">
-                ₱{item.products?.product_price.toFixed(2)}
+          <div key={item.product_id} className="p-4 flex flex-col sm:flex-row gap-4">
+            <div className="flex-shrink-0">
+              <img 
+                src={item.products?.image || "/placeholder.svg"}
+                alt={item.products?.product_name}
+                className="w-20 h-20 object-cover rounded-md"
+              />
+            </div>
+            
+            <div className="flex-grow min-w-0">
+              <h3 className="font-medium truncate">{item.products?.product_name}</h3>
+              <p className="text-gray-500 text-sm mt-1">
+                Unit Price: ₱{item.products?.product_price.toFixed(2)}
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                  disabled={item.quantity <= 1}
-                >
-                  <MinusCircle className="h-4 w-4" />
-                </Button>
-                <span className="w-8 text-center">{item.quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
-                    const maxQuantity = inventoryItem?.quantity || 0;
-                    if (item.quantity < maxQuantity) {
-                      updateQuantity(item.product_id, item.quantity + 1);
-                    } else {
-                      toast.error("Cannot exceed available stock");
-                    }
-                  }}
-                >
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="ml-auto text-gray-500 hover:text-red-500"
-                  onClick={() => removeFromCart(item.product_id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              
+              <div className="mt-3 flex items-center">
+                <div className="flex items-center border rounded overflow-hidden">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-none text-gray-500 hover:text-gray-700"
+                    onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                    disabled={item.quantity <= 1}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  
+                  <Input
+                    type="number"
+                    min="1"
+                    max={getMaxQuantity(item.product_id)}
+                    className="w-12 h-8 text-center border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (!isNaN(value) && value > 0) {
+                        updateQuantity(item.product_id, value);
+                      }
+                    }}
+                  />
+                  
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-none text-gray-500 hover:text-gray-700"
+                    onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                    disabled={item.quantity >= getMaxQuantity(item.product_id)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                <div className="ml-2 text-sm text-gray-600">
+                  {getMaxQuantity(item.product_id) > 0 && (
+                    <span>{getMaxQuantity(item.product_id)} in stock</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="font-semibold text-gray-800">
-                ₱{(item.products?.product_price * item.quantity).toFixed(2)}
+            
+            <div className="flex flex-col items-end justify-between">
+              <div className="font-medium">
+                ₱{(item.quantity * (item.products?.product_price || 0)).toFixed(2)}
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {inventoryData.find(inv => inv.product_id === item.product_id)?.quantity || 0} in stock
-              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-500 hover:text-red-500"
+                onClick={() => removeFromCart(item.product_id)}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         ))}
-      </ScrollArea>
-    </>
+      </div>
+    </div>
   );
 }

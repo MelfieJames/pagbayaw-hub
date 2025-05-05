@@ -29,10 +29,10 @@ export default function OrderSuccessDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-green-600">
             <Check className="h-6 w-6" />
-            Order Successful!
+            Order Placed Successfully!
           </DialogTitle>
           <DialogDescription>
-            Your order has been successfully processed. Please check your notifications to rate your purchases.
+            Your order has been submitted and is pending approval. You'll be notified of status changes and can rate products once delivery is completed.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-2 sm:gap-0 mt-4">

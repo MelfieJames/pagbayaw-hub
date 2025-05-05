@@ -1,149 +1,212 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Star, MessageSquare } from "lucide-react";
-import { format } from "date-fns";
-
-interface Review {
-  id: number;
-  product_id: number;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  profiles: {
-    email: string;
-  };
-  products: {
-    product_name: string;
-    category: string;
-    image: string | null;
-  };
-}
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/services/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Star, StarIcon } from "lucide-react";
+import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ReviewSectionProps {
-  reviews: Review[];
+  productId: number;
+  purchaseId?: number | null;
+  purchaseItemId?: number | null;
+  onSubmitReview?: () => void;
+  isCompleted?: boolean;
 }
 
-export const ReviewSection = ({ reviews }: ReviewSectionProps) => {
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+export default function ReviewSection({
+  productId,
+  purchaseId,
+  purchaseItemId,
+  onSubmitReview,
+  isCompleted = false,
+}: ReviewSectionProps) {
+  const { user } = useAuth();
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const queryClient = useQueryClient();
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [existingReview, setExistingReview] = useState<any>(null);
 
-  // Group reviews by product to calculate averages
-  const productStats = reviews.reduce((acc, review) => {
-    if (!acc[review.product_id]) {
-      acc[review.product_id] = {
-        count: 0,
-        totalRating: 0
-      };
+  // Check if the user has already reviewed this product for this purchase
+  useEffect(() => {
+    const checkExistingReview = async () => {
+      if (!user || !purchaseItemId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("reviews")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("product_id", productId)
+          .eq("purchase_item_id", purchaseItemId)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Error checking existing review:", error);
+          return;
+        }
+
+        if (data) {
+          setHasReviewed(true);
+          setExistingReview(data);
+          setRating(data.rating);
+          setComment(data.comment || "");
+        }
+      } catch (error) {
+        console.error("Error checking review:", error);
+      }
+    };
+
+    checkExistingReview();
+  }, [user, productId, purchaseItemId]);
+
+  const createReviewMutation = useMutation({
+    mutationFn: async (reviewData: any) => {
+      if (existingReview) {
+        // Update existing review
+        const { error } = await supabase
+          .from("reviews")
+          .update({
+            rating: reviewData.rating,
+            comment: reviewData.comment,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingReview.id);
+
+        if (error) throw error;
+        return { ...existingReview, ...reviewData };
+      } else {
+        // Create new review
+        const { data, error } = await supabase
+          .from("reviews")
+          .insert([
+            {
+              user_id: reviewData.user_id,
+              product_id: reviewData.product_id,
+              purchase_item_id: reviewData.purchase_item_id,
+              rating: reviewData.rating,
+              comment: reviewData.comment,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      toast.success(
+        existingReview ? "Review updated successfully!" : "Review submitted successfully!"
+      );
+      setHasReviewed(true);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["product-reviews", productId] });
+      queryClient.invalidateQueries({ queryKey: ["user-reviews"] });
+      
+      if (onSubmitReview) {
+        onSubmitReview();
+      }
+    },
+    onError: (error) => {
+      console.error("Error submitting review:", error);
+      toast.error("Failed to submit review. Please try again.");
+    },
+  });
+
+  const handleSubmitReview = () => {
+    if (!user) {
+      toast.error("Please log in to submit a review");
+      return;
     }
-    acc[review.product_id].count++;
-    acc[review.product_id].totalRating += review.rating;
-    return acc;
-  }, {} as Record<number, { count: number; totalRating: number }>);
+
+    if (rating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    if (!isCompleted) {
+      toast.error("You can only review completed orders");
+      return;
+    }
+
+    createReviewMutation.mutate({
+      user_id: user.id,
+      product_id: productId,
+      purchase_item_id: purchaseItemId,
+      rating,
+      comment,
+    });
+  };
+
+  if (!user) {
+    return (
+      <div className="my-4 p-4 bg-gray-50 rounded-lg border text-center">
+        <p className="text-gray-600 mb-2">Please log in to leave a review</p>
+      </div>
+    );
+  }
+
+  if (!isCompleted) {
+    return (
+      <div className="my-4 p-4 bg-amber-50 rounded-lg border border-amber-200 text-center">
+        <p className="text-amber-700">You can review this product once your order is completed</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-12 mb-8">
-      <h2 className="text-2xl font-semibold mb-6">Recent Reviews</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reviews.map((review) => (
-          <Card key={review.id} className="overflow-hidden">
-            <div className="flex items-start p-4">
-              <div className="w-24 h-24 flex-shrink-0 mr-4">
-                <img
-                  src={review.products.image || "/placeholder.svg"}
-                  alt={review.products.product_name}
-                  className="w-full h-full object-cover rounded"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <CardHeader className="p-0">
-                  <CardTitle className="text-base truncate">
-                    {review.products.product_name}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="mt-1 mb-2">
-                      {review.products.category}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {productStats[review.product_id].count} reviews
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="flex space-x-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`h-4 w-4 ${
-                          review.rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  {review.comment && (
-                    <>
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {review.comment}
-                      </p>
-                      {review.comment.length > 150 && (
-                        <button
-                          onClick={() => setSelectedReview(review)}
-                          className="text-sm text-blue-600 hover:text-blue-800 mt-1 flex items-center"
-                        >
-                          See More
-                          <MessageSquare className="h-4 w-4 ml-1" />
-                        </button>
-                      )}
-                    </>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {format(new Date(review.created_at), 'PP')} by {review.profiles.email}
-                  </p>
-                </CardContent>
-              </div>
-            </div>
-          </Card>
+    <div className="my-4 p-4 bg-gray-50 rounded-lg border">
+      <h3 className="font-medium mb-2">
+        {hasReviewed ? "Edit your review" : "Leave a review"}
+      </h3>
+      
+      <div className="flex mb-3">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => setRating(star)}
+            onMouseEnter={() => setHoverRating(star)}
+            onMouseLeave={() => setHoverRating(0)}
+            className="text-2xl text-gray-300 hover:text-yellow-400 focus:outline-none"
+          >
+            {star <= (hoverRating || rating) ? (
+              <StarIcon className="h-6 w-6 fill-yellow-400 text-yellow-400" />
+            ) : (
+              <Star className="h-6 w-6" />
+            )}
+          </button>
         ))}
+        <span className="ml-2 text-sm text-gray-600 self-center">
+          {rating > 0 ? `${rating} star${rating > 1 ? "s" : ""}` : "Select rating"}
+        </span>
       </div>
-
-      <Dialog open={!!selectedReview} onOpenChange={() => setSelectedReview(null)}>
-        <DialogContent className="max-w-2xl">
-          {selectedReview && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedReview.products.product_name}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <div className="flex items-start space-x-4">
-                  <img
-                    src={selectedReview.products.image || "/placeholder.svg"}
-                    alt={selectedReview.products.product_name}
-                    className="w-32 h-32 object-cover rounded"
-                  />
-                  <div>
-                    <Badge variant="secondary">{selectedReview.products.category}</Badge>
-                    <div className="flex space-x-1 mt-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-4 w-4 ${
-                            selectedReview.rating >= star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {format(new Date(selectedReview.created_at), 'PPP')} by {selectedReview.profiles.email}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-gray-600">{selectedReview.comment}</p>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      
+      <Textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Write your review here (optional)"
+        rows={3}
+        className="mb-3"
+      />
+      
+      <Button 
+        onClick={handleSubmitReview}
+        disabled={rating === 0 || createReviewMutation.isPending}
+        className="w-full md:w-auto"
+      >
+        {createReviewMutation.isPending
+          ? "Submitting..."
+          : hasReviewed
+          ? "Update Review"
+          : "Submit Review"}
+      </Button>
     </div>
   );
-};
+}
