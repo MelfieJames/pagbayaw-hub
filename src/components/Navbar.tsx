@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,11 +31,6 @@ export default function Navbar() {
 
   const getInitials = (email: string) => {
     return email ? email[0].toUpperCase() : "U";
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/login");
   };
 
   const NavItems = () => (
@@ -109,7 +103,7 @@ export default function Navbar() {
                         Dashboard
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={handleSignOut}>
+                    <DropdownMenuItem onClick={() => signOut()}>
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -168,3 +162,4 @@ export default function Navbar() {
     </nav>
   );
 }
+// Test change for Git push

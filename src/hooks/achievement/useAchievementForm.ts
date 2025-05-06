@@ -1,180 +1,173 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { createAchievement, updateAchievement, AchievementData } from "@/utils/achievementOperations";
+import { CustomUser } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { Achievement } from "@/types/achievement";
 
-interface AchievementFormState {
-  title: string;
-  description: string;
-  points: number;
-  image_url: string;
-  is_active: boolean;
+interface UseAchievementFormProps {
+  initialData?: AchievementData & { id?: number };
+  mode: 'add' | 'edit';
+  onSuccess: (achievementId?: number) => void;
+  onError: (error: Error) => void;
+  user: CustomUser | null;
 }
 
-export const useAchievementForm = (achievementId?: number) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const [formState, setFormState] = useState<AchievementFormState>({
-    title: "",
-    description: "",
-    points: 0,
-    image_url: "",
-    is_active: true,
+export const useAchievementForm = ({ initialData, mode, onSuccess, onError, user }: UseAchievementFormProps) => {
+  const [formData, setFormData] = useState<AchievementData>({
+    achievement_name: initialData?.achievement_name || "",
+    description: initialData?.description || "",
+    date: initialData?.date || "",
+    venue: initialData?.venue || "",
+    image: initialData?.image || "",
+    about_text: initialData?.about_text || ""
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (achievementId) {
-      fetchAchievement(achievementId);
-    }
-  }, [achievementId]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
 
-  const fetchAchievement = async (id: number) => {
-    try {
-      const { data, error } = await supabase
-        .from("achievements")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to fetch achievement: ${error.message}`);
-      }
-
-      setFormState({
-        title: data.title,
-        description: data.description,
-        points: data.points,
-        image_url: data.image_url,
-        is_active: data.is_active,
-      });
-      setImagePreview(data.image_url);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch achievement");
-      toast({
-        title: "Error",
-        description: err.message || "Failed to fetch achievement",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value, type } = e.target;
-    const target = e.target as HTMLInputElement; // Cast to access the checked property
-    
-    setFormState((prev) => ({
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? target.checked : value,
+      [name]: value
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    setSelectedFile(file);
+
+    // Clean up old preview
+    if (imagePreview && !initialData?.image) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    
+    const preview = URL.createObjectURL(file);
+    setImagePreview(preview);
+  };
+
+  const removeImage = () => {
+    setSelectedFile(null);
+    
+    if (imagePreview && !initialData?.image) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    
+    setImagePreview(null);
+    
+    if (initialData?.image) {
+      setFormData(prev => ({
+        ...prev,
+        image: ""
+      }));
+    }
+  };
+
+  const uploadImage = async (achievementId: number): Promise<string | null> => {
+    if (!selectedFile) return null;
+    
+    console.log(`Starting upload of image for achievement ID ${achievementId}`);
+    
+    try {
+      // Generate a safe filename
+      const fileExt = selectedFile.name.split('.').pop();
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      
+      console.log(`Uploading file: ${filePath}`);
+
+      // Upload to Supabase storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('achievements')
+        .upload(filePath, selectedFile);
+
+      if (uploadError) {
+        console.error(`Error uploading file:`, uploadError);
+        throw uploadError;
+      }
+
+      console.log(`File uploaded successfully, getting public URL`);
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('achievements')
+        .getPublicUrl(filePath);
+
+      console.log(`Public URL for file:`, publicUrl);
+
+      return publicUrl;
+    } catch (error) {
+      console.error(`Error processing file:`, error);
+      throw error;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+    console.log("Submitting form", { formData, user });
+
+    if (!user?.isAdmin) {
+      onError(new Error("Only admin users can manage achievements"));
+      return;
+    }
 
     try {
-      if (!user) {
-        throw new Error("You must be logged in to create an achievement.");
+      // Validate required fields
+      if (!formData.achievement_name || !formData.date || !formData.venue) {
+        throw new Error("Please fill in all required fields");
       }
 
-      const uploadPath = `achievements/${user.id}/${Date.now()}-${
-        imageFile?.name || "default.png"
-      }`;
-      let publicURL = formState.image_url;
+      let achievementId: number;
+      let imageUrl = formData.image;
+      console.log("Mode:", mode);
 
-      if (imageFile) {
-        const { error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(uploadPath, imageFile, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw new Error(`Failed to upload image: ${uploadError.message}`);
+      // Upload image if selected
+      if (selectedFile) {
+        if (mode === 'edit' && initialData?.id) {
+          // For edit mode, upload image first
+          imageUrl = await uploadImage(initialData.id) || imageUrl;
+          
+          // Update achievement with new image
+          const updatedData = { ...formData, image: imageUrl };
+          await updateAchievement(initialData.id, updatedData);
+          achievementId = initialData.id;
+        } else {
+          // For add mode, create achievement first, then upload image
+          const result = await createAchievement(formData, user);
+          achievementId = result.id;
+          
+          // Upload image and update achievement with image URL
+          imageUrl = await uploadImage(achievementId) || imageUrl;
+          if (imageUrl) {
+            await updateAchievement(achievementId, { ...formData, image: imageUrl });
+          }
         }
-
-        publicURL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${uploadPath}`;
-      }
-
-      const achievementData = {
-        ...formState,
-        image_url: publicURL,
-      };
-
-      if (achievementId) {
-        const { error: updateError } = await supabase
-          .from("achievements")
-          .update(achievementData)
-          .eq("id", achievementId);
-
-        if (updateError) {
-          throw new Error(`Failed to update achievement: ${updateError.message}`);
-        }
-        toast({
-          title: "Success",
-          description: "Achievement updated successfully",
-        });
       } else {
-        const { error: insertError } = await supabase
-          .from("achievements")
-          .insert([
-            {
-              ...achievementData,
-              created_by: user.id,
-            },
-          ]);
-
-        if (insertError) {
-          throw new Error(`Failed to create achievement: ${insertError.message}`);
+        // No new image selected, just update or create achievement with existing data
+        if (mode === 'edit' && initialData?.id) {
+          await updateAchievement(initialData.id, formData);
+          achievementId = initialData.id;
+        } else {
+          const result = await createAchievement(formData, user);
+          achievementId = result.id;
         }
-
-        toast({
-          title: "Success",
-          description: "Achievement created successfully",
-        });
       }
 
-      navigate("/admin/achievements");
-    } catch (err: any) {
-      setError(err.message || "Failed to save achievement");
-      toast({
-        title: "Error",
-        description: err.message || "Failed to save achievement",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      console.log("Success! Calling onSuccess callback");
+      onSuccess(achievementId);
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      onError(error instanceof Error ? error : new Error('An unexpected error occurred'));
     }
   };
 
   return {
-    formState,
+    formData,
     imagePreview,
-    isSubmitting,
-    error,
     handleInputChange,
-    handleImageChange,
+    handleFileChange,
     handleSubmit,
+    removeImage
   };
 };

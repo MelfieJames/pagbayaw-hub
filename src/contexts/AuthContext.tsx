@@ -1,20 +1,14 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
-
-// Extended user type with isAdmin property
-export interface CustomUser extends User {
-  isAdmin?: boolean;
-}
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   session: Session | null;
-  user: CustomUser | null;
+  user: Session['user'] | null;
   isLoading: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
-  resendConfirmationEmail: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,63 +23,25 @@ export const useAuth = () => {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<CustomUser | null>(null);
+  const [user, setUser] = useState<Session['user'] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       setSession(session);
-      if (session?.user) {
-        // Check if user is admin
-        const { data } = await supabase
-          .from('admins')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        // Set the extended user with isAdmin property
-        const extendedUser: CustomUser = {
-          ...session.user,
-          isAdmin: !!data
-        };
-        
-        setUser(extendedUser);
-      } else {
-        setUser(null);
-      }
+      setUser(session?.user || null);
       setIsLoading(false);
     };
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      
-      if (session?.user) {
-        // Check if user is admin
-        const { data } = await supabase
-          .from('admins')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        // Set the extended user with isAdmin property
-        const extendedUser: CustomUser = {
-          ...session.user,
-          isAdmin: !!data
-        };
-        
-        setUser(extendedUser);
-      } else {
-        setUser(null);
-      }
+      setUser(session?.user || null);
     });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const signIn = async (email: string) => {
@@ -95,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: email,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/profile`,
+           emailRedirectTo: `${window.location.origin}/profile`,
         }
       });
       if (error) throw error;
@@ -112,11 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      // Clear user and session on signout
-      setUser(null);
-      setSession(null);
-      // Note: We don't use navigate here anymore
-      // The app will redirect based on route protection elsewhere
     } catch (error: any) {
       alert(error.error_description || error.message);
     } finally {
@@ -124,25 +75,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Add the resendConfirmationEmail function
-  const resendConfirmationEmail = async (email: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-      });
-      
-      if (error) {
-        console.error('Error resending confirmation email:', error);
-        return false;
+  useEffect(() => {
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/login');
       }
-      
-      return true;
-    } catch (error) {
-      console.error('Unexpected error resending confirmation:', error);
-      return false;
-    }
-  };
+    });
+  }, [navigate]);
 
   const value: AuthContextType = {
     session,
@@ -150,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     signIn,
     signOut,
-    resendConfirmationEmail,
   };
 
   return (
