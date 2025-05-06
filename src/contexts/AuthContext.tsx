@@ -1,14 +1,19 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
-import { useNavigate } from 'react-router-dom';
+
+export interface CustomUser extends User {
+  isAdmin?: boolean;
+}
 
 interface AuthContextType {
   session: Session | null;
-  user: Session['user'] | null;
+  user: CustomUser | null;
   isLoading: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resendConfirmationEmail?: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,25 +28,28 @@ export const useAuth = () => {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<Session['user'] | null>(null);
+  const [user, setUser] = useState<CustomUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       setSession(session);
-      setUser(session?.user || null);
+      setUser(session?.user as CustomUser || null);
       setIsLoading(false);
     };
 
     getSession();
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user || null);
+      setUser(session?.user as CustomUser || null);
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string) => {
@@ -51,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: email,
         options: {
           shouldCreateUser: false,
-           emailRedirectTo: `${window.location.origin}/profile`,
+          emailRedirectTo: `${window.location.origin}/profile`,
         }
       });
       if (error) throw error;
@@ -68,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      // Don't use navigate here - components using this context will handle navigation
     } catch (error: any) {
       alert(error.error_description || error.message);
     } finally {
@@ -75,13 +84,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/login');
-      }
-    });
-  }, [navigate]);
+  const resendConfirmationEmail = async (email: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/profile`,
+        },
+      });
+      
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
+      alert(error.error_description || error.message);
+      return false;
+    }
+  };
 
   const value: AuthContextType = {
     session,
@@ -89,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     signIn,
     signOut,
+    resendConfirmationEmail,
   };
 
   return (
