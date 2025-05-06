@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import { Product } from "@/types/product";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { SimilarProducts } from "./SimilarProducts";
 import { useState, useEffect } from "react";
-import { ShoppingCart, Plus, Minus, Star, Image, Video, Edit, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Star, Edit, Trash2, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -56,15 +57,20 @@ export function ProductDetailsModal({
     setQuantity(1);
   }, [product?.id]);
 
-  const { data: reviews = [], refetch: refetchReviews, isLoading: reviewsLoading } = useQuery({
-    queryKey: ['product-reviews', product?.id],
+  // Extract query-related logic to ensure consistent hook calls
+  const productId = product?.id;
+  const userId = user?.id;
+  
+  // Always call useQuery regardless of conditional checks
+  const reviewsQuery = useQuery({
+    queryKey: ['product-reviews', productId],
     queryFn: async () => {
-      if (!product?.id) return [];
+      if (!productId) return [];
       
       const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
         .select('*')
-        .eq('product_id', product.id)
+        .eq('product_id', productId)
         .order('created_at', { ascending: false });
 
       if (reviewsError) throw reviewsError;
@@ -100,8 +106,41 @@ export function ProductDetailsModal({
       
       return reviewsWithUserInfo;
     },
-    enabled: !!product?.id,
+    enabled: !!productId, // This is safe as it doesn't affect hook execution order
   });
+
+  const reviews = reviewsQuery.data || [];
+  const refetchReviews = reviewsQuery.refetch;
+  const reviewsLoading = reviewsQuery.isLoading;
+
+  // Always call this useQuery hook regardless of conditional checks
+  const purchaseQuery = useQuery({
+    queryKey: ['completed-purchase', productId, userId],
+    queryFn: async () => {
+      if (!productId || !userId) return false;
+      
+      const { data } = await supabase
+        .from('purchases')
+        .select(`
+          id,
+          status,
+          purchase_items!inner(
+            id,
+            product_id
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .eq('purchase_items.product_id', productId)
+        .single();
+        
+      return !!data;
+    },
+    enabled: !!productId && !!userId, // This is safe as it doesn't affect hook execution order
+  });
+
+  const hasPurchase = purchaseQuery.data;
+  const canReview = hasPurchase && user;
 
   const calculateProductRating = () => {
     if (!reviews || reviews.length === 0) {
@@ -157,33 +196,6 @@ export function ProductDetailsModal({
   const getAvatarLetter = (name: string) => {
     return name ? name.charAt(0).toUpperCase() : 'A';
   };
-
-  const { data: hasPurchase } = useQuery({
-    queryKey: ['completed-purchase', product?.id, user?.id],
-    queryFn: async () => {
-      if (!product?.id || !user?.id) return false;
-      
-      const { data } = await supabase
-        .from('purchases')
-        .select(`
-          id,
-          status,
-          purchase_items!inner(
-            id,
-            product_id
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .eq('purchase_items.product_id', product.id)
-        .single();
-        
-      return !!data;
-    },
-    enabled: !!product?.id && !!user?.id,
-  });
-
-  const canReview = hasPurchase && user;
 
   return (
     <>
