@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 // Extended user type with isAdmin property
 export interface CustomUser extends User {
@@ -32,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<CustomUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const getSession = async () => {
@@ -117,8 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear user and session on signout
       setUser(null);
       setSession(null);
-      // Navigate to login page
-      navigate('/login');
+      // Note: We don't use navigate here anymore
+      // The app will redirect based on route protection elsewhere
     } catch (error: any) {
       alert(error.error_description || error.message);
     } finally {
