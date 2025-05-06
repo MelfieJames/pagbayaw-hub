@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { supabase } from "@/services/supabase/client";
@@ -48,42 +49,61 @@ export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Fetch customers who have pending or approved orders
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         setIsLoading(true);
-        // First, get profiles with pending/approved purchases
-        const { data: purchasesData, error: purchasesError } = await supabase
-          .from('profiles')
+        const { data, error } = await supabase
+          .from('purchases')
           .select(`
             id,
+            user_id,
             email,
-            first_name,
-            last_name,
-            purchases!inner(
-              id,
-              status
+            profiles(
+              first_name,
+              last_name
             )
           `)
-          .in('purchases.status', ['pending', 'approved']);
+          .in('status', ['pending', 'approved']);
 
-        if (purchasesError) throw purchasesError;
+        if (error) {
+          throw error;
+        }
 
-        if (purchasesData) {
-          const formattedCustomers = purchasesData.map(profile => ({
-            id: profile.id,
-            email: profile.email || '',
-            full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'Unknown',
-            purchase_id: profile.purchases[0]?.id
-          }));
+        if (data) {
+          const formattedCustomers = data.map(purchase => {
+            // Safely handle profiles data
+            let firstName = '';
+            let lastName = '';
+            
+            if (purchase.profiles) {
+              // Check if profiles is an array or an object
+              if (Array.isArray(purchase.profiles) && purchase.profiles.length > 0) {
+                firstName = purchase.profiles[0]?.first_name || '';
+                lastName = purchase.profiles[0]?.last_name || '';
+              } else {
+                // If it's a direct object
+                firstName = purchase.profiles?.first_name || '';
+                lastName = purchase.profiles?.last_name || '';
+              }
+            }
+            
+            return {
+              id: purchase.user_id,
+              email: purchase.email || '',
+              full_name: `${firstName} ${lastName}`.trim() || purchase.email || 'Unknown',
+              purchase_id: purchase.id
+            };
+          });
 
           setCustomers(formattedCustomers);
           setFilteredCustomers(formattedCustomers);
         }
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching customers:", error);
         toast.error("Failed to load customers");
-      } finally {
         setIsLoading(false);
       }
     };

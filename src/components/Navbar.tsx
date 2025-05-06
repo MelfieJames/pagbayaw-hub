@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,8 +23,6 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useEffect } from "react";
-import { supabase } from "@/services/supabase/client";
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -34,24 +31,6 @@ export default function Navbar() {
 
   const getInitials = (email: string) => {
     return email ? email[0].toUpperCase() : "U";
-  };
-
-  // Handle auth state changes for navigation
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/login');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
   };
 
   const NavItems = () => (
@@ -124,7 +103,7 @@ export default function Navbar() {
                         Dashboard
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={handleSignOut}>
+                    <DropdownMenuItem onClick={() => signOut()}>
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -164,9 +143,6 @@ export default function Navbar() {
                           <Clock className="h-4 w-4" />
                           <span>Purchase History</span>
                         </Link>
-                        <Button onClick={handleSignOut} variant="destructive" className="mt-4">
-                          Logout
-                        </Button>
                       </>
                     )}
                     {!user && (
@@ -186,3 +162,4 @@ export default function Navbar() {
     </nav>
   );
 }
+// Test change for Git push
