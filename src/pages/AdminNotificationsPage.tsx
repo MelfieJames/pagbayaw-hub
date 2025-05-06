@@ -53,6 +53,7 @@ export default function AdminNotificationsPage() {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('purchases')
           .select(`
@@ -72,13 +73,21 @@ export default function AdminNotificationsPage() {
 
         if (data) {
           const formattedCustomers = data.map(purchase => {
-            // Correctly access properties from the profiles object
-            const profileData = Array.isArray(purchase.profiles) 
-              ? purchase.profiles[0] 
-              : purchase.profiles;
-              
-            const firstName = profileData?.first_name || '';
-            const lastName = profileData?.last_name || '';
+            // Safely handle profiles data
+            let firstName = '';
+            let lastName = '';
+            
+            if (purchase.profiles) {
+              // Check if profiles is an array or an object
+              if (Array.isArray(purchase.profiles) && purchase.profiles.length > 0) {
+                firstName = purchase.profiles[0]?.first_name || '';
+                lastName = purchase.profiles[0]?.last_name || '';
+              } else {
+                // If it's a direct object
+                firstName = purchase.profiles?.first_name || '';
+                lastName = purchase.profiles?.last_name || '';
+              }
+            }
             
             return {
               id: purchase.user_id,
@@ -91,9 +100,11 @@ export default function AdminNotificationsPage() {
           setCustomers(formattedCustomers);
           setFilteredCustomers(formattedCustomers);
         }
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching customers:", error);
         toast.error("Failed to load customers");
+        setIsLoading(false);
       }
     };
 

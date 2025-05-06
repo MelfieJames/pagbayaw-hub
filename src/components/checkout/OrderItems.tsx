@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CartItem } from "@/types/product";
-import { useEffect } from "react";
 
 interface OrderItemsProps {
   cartItems: CartItem[];
