@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { CartItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShoppingBag, ArrowLeft } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Info } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,16 @@ import OrderItems from "@/components/checkout/OrderItems";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import OrderSuccessDialog from "@/components/checkout/OrderSuccessDialog";
 import OrderSummaryDialog from "@/components/checkout/OrderSummaryDialog";
+import AddressManagement from "@/components/checkout/AddressManagement";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -35,6 +44,7 @@ export default function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
+  const [showAddressRequiredDialog, setShowAddressRequiredDialog] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
@@ -137,6 +147,16 @@ export default function Checkout() {
     }
 
     try {
+      // For cached buy now items, update locally
+      if (cachedBuyNowItems.length > 0) {
+        const updatedItems = cachedBuyNowItems.map(item => 
+          item.product_id === productId ? { ...item, quantity: newQuantity } : item
+        );
+        queryClient.setQueryData(['checkout-items'], updatedItems);
+        return;
+      }
+
+      // For regular cart items, update in database
       const { error } = await supabase
         .from('cart')
         .update({ quantity: newQuantity })
@@ -157,6 +177,14 @@ export default function Checkout() {
   const removeFromCart = async (productId: number) => {
     if (!user?.id) return;
 
+    // For cached buy now items, remove locally
+    if (cachedBuyNowItems.length > 0) {
+      const updatedItems = cachedBuyNowItems.filter(item => item.product_id !== productId);
+      queryClient.setQueryData(['checkout-items'], updatedItems);
+      return;
+    }
+
+    // For regular cart items, remove from database
     try {
       const { error } = await supabase
         .from('cart')
@@ -183,6 +211,12 @@ export default function Checkout() {
   const handleCheckout = async () => {
     if (!user || cartItems.length === 0) {
       toast.error("No items to checkout");
+      return;
+    }
+
+    // Check if user has an address
+    if (userAddresses.length === 0) {
+      setShowAddressRequiredDialog(true);
       return;
     }
 
@@ -291,7 +325,7 @@ export default function Checkout() {
         }
       }
 
-      // Create notifications - Fix: Remove product_id from notifications
+      // Create notifications
       try {
         const { error: notificationError } = await supabase
           .from('notifications')
@@ -335,14 +369,8 @@ export default function Checkout() {
       queryClient.invalidateQueries({ queryKey: ['user-addresses'] });
       queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
       
-      // Show the success dialog or order summary dialog based on address existence
-      if (selectedAddressId) {
-        // We have an address, so we can skip to success dialog
-        setShowSuccessDialog(true);
-      } else {
-        // No address selected, so show order summary to collect shipping details
-        setShowOrderSummaryDialog(true);
-      }
+      // Show the success dialog
+      setShowSuccessDialog(true);
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error("Failed to process order. Please try again.");
@@ -354,6 +382,10 @@ export default function Checkout() {
   const handleDetailsSubmitted = () => {
     setShowOrderSummaryDialog(false);
     setShowSuccessDialog(true);
+  };
+
+  const handleAddressSelect = (address: any) => {
+    setSelectedAddressId(address.id);
   };
 
   if (!user) {
@@ -397,12 +429,30 @@ export default function Checkout() {
                 updateQuantity={updateQuantity}
                 removeFromCart={removeFromCart}
               />
+              
+              <Card className="bg-white border rounded-xl shadow-sm">
+                <CardHeader className="p-4 border-b bg-gray-50">
+                  <CardTitle className="text-lg font-medium flex items-center gap-2">
+                    Shipping Address
+                    <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      Required
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <AddressManagement 
+                    onAddressSelect={handleAddressSelect}
+                    selectedAddressId={selectedAddressId}
+                    showSelectionUI={true}
+                  />
+                </CardContent>
+              </Card>
             </div>
             
             <div className="md:col-span-1">
               <OrderSummary 
                 total={total}
-                isComplete={true} 
+                isComplete={selectedAddressId !== null} 
                 cartItems={cartItems}
                 isProcessing={isProcessing}
                 handleCheckout={handleCheckout}
@@ -436,6 +486,27 @@ export default function Checkout() {
         total={total}
         onDetailsSubmitted={handleDetailsSubmitted}
       />
+
+      {/* Address Required Dialog */}
+      <Dialog open={showAddressRequiredDialog} onOpenChange={setShowAddressRequiredDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <Info className="h-5 w-5" />
+              Address Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to add at least one shipping address before completing your checkout.
+            </DialogDescription>
+          </DialogHeader>
+          <AddressManagement />
+          <DialogFooter>
+            <Button onClick={() => setShowAddressRequiredDialog(false)}>
+              Continue Shopping
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

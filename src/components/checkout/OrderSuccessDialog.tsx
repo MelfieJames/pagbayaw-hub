@@ -32,7 +32,7 @@ export default function OrderSuccessDialog({
             Order Placed Successfully!
           </DialogTitle>
           <DialogDescription>
-            Your order has been submitted and is pending approval. You'll be notified of status changes and can rate products once delivery is completed.
+            Your order has been submitted and is awaiting admin approval. You'll receive notifications about status changes and can rate products once delivery is completed.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-2 sm:gap-0 mt-4">
@@ -40,7 +40,7 @@ export default function OrderSuccessDialog({
             className="flex-1 bg-primary hover:bg-primary/90"
             onClick={navigateToOrders}
           >
-            View My Orders
+            View Purchase History
           </Button>
           <Button
             variant="outline"

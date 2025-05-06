@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CartItem } from "@/types/product";
+import { useEffect } from "react";
 
 interface OrderItemsProps {
   cartItems: CartItem[];
@@ -52,7 +53,11 @@ export default function OrderItems({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-none text-gray-500 hover:text-gray-700"
-                    onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                    onClick={() => {
+                      if (item.quantity > 1) {
+                        updateQuantity(item.product_id, item.quantity - 1);
+                      }
+                    }}
                     disabled={item.quantity <= 1}
                   >
                     <Minus className="h-3 w-3" />
@@ -66,7 +71,7 @@ export default function OrderItems({
                     value={item.quantity}
                     onChange={(e) => {
                       const value = parseInt(e.target.value);
-                      if (!isNaN(value) && value > 0) {
+                      if (!isNaN(value) && value > 0 && value <= getMaxQuantity(item.product_id)) {
                         updateQuantity(item.product_id, value);
                       }
                     }}
@@ -77,7 +82,11 @@ export default function OrderItems({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-none text-gray-500 hover:text-gray-700"
-                    onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                    onClick={() => {
+                      if (item.quantity < getMaxQuantity(item.product_id)) {
+                        updateQuantity(item.product_id, item.quantity + 1);
+                      }
+                    }}
                     disabled={item.quantity >= getMaxQuantity(item.product_id)}
                   >
                     <Plus className="h-3 w-3" />
@@ -85,8 +94,10 @@ export default function OrderItems({
                 </div>
                 
                 <div className="ml-2 text-sm text-gray-600">
-                  {getMaxQuantity(item.product_id) > 0 && (
+                  {getMaxQuantity(item.product_id) > 0 ? (
                     <span>{getMaxQuantity(item.product_id)} in stock</span>
+                  ) : (
+                    <span className="text-red-500">Out of stock</span>
                   )}
                 </div>
               </div>
