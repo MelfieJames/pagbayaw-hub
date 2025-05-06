@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,10 +20,12 @@ import {
   Info,
   Star,
   User,
-  Clock
+  Clock,
+  LogOut
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useEffect } from "react";
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -32,6 +35,24 @@ export default function Navbar() {
   const getInitials = (email: string) => {
     return email ? email[0].toUpperCase() : "U";
   };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
+  // Redirect to login if logged out
+  useEffect(() => {
+    if (!user) {
+      // Use setTimeout to avoid immediate redirect during initial load
+      const timer = setTimeout(() => {
+        if (!user && window.location.pathname !== "/login") {
+          navigate("/login");
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [user, navigate]);
 
   const NavItems = () => (
     <>
@@ -103,7 +124,8 @@ export default function Navbar() {
                         Dashboard
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => signOut()}>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-2" />
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -143,6 +165,13 @@ export default function Navbar() {
                           <Clock className="h-4 w-4" />
                           <span>Purchase History</span>
                         </Link>
+                        <button 
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 hover:text-red-500 transition-colors text-left"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Logout</span>
+                        </button>
                       </>
                     )}
                     {!user && (
@@ -162,4 +191,3 @@ export default function Navbar() {
     </nav>
   );
 }
-// Test change for Git push
