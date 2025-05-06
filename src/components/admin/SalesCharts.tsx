@@ -14,7 +14,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth } from "date-fns";
-import { CalendarDays, Calendar, CalendarRange } from "lucide-react";
+import { CalendarDays, Calendar, CalendarRange, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type TimeFilter = "day" | "week" | "month";
@@ -70,10 +70,12 @@ export function SalesCharts() {
     queryFn: async () => {
       const startDate = getStartDate();
       
+      // Only get completed purchases (explicitly exclude cancelled)
       const { data, error } = await supabase
         .from("purchases")
         .select("id, created_at, total_amount, status")
         .gte("created_at", startDate.toISOString())
+        .eq("status", "completed")
         .neq("status", "cancelled")
         .order("created_at", { ascending: true });
         
@@ -115,7 +117,10 @@ export function SalesCharts() {
     return (
       <Card className="border-2 border-[#C4A484]">
         <CardHeader className="bg-[#F5F5DC]">
-          <CardTitle className="text-[#8B7355]">Sales Overview</CardTitle>
+          <CardTitle className="text-[#8B7355] flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Sales Overview
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center items-center h-[400px]">
           <LoadingSpinner />
@@ -128,7 +133,10 @@ export function SalesCharts() {
     <Card className="border-2 border-[#C4A484]">
       <CardHeader className="bg-[#F5F5DC]">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <CardTitle className="text-[#8B7355]">Sales Overview</CardTitle>
+          <CardTitle className="text-[#8B7355] flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Sales Overview
+          </CardTitle>
           <div className="flex gap-2">
             <Button 
               variant={timeFilter === "day" ? "default" : "outline"} 

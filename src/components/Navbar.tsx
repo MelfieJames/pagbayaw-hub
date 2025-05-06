@@ -37,8 +37,13 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
+    try {
+      await signOut();
+      navigate("/login"); // Always redirect to login after logout
+      window.location.href = "/login"; // Ensure full page refresh if needed
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   // Redirect to login if logged out

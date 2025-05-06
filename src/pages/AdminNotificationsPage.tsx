@@ -3,6 +3,8 @@ import { useState } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { TrackingNotificationForm } from "@/components/admin/TrackingNotificationForm";
 import { NotificationManagement } from "@/components/admin/NotificationManagement";
+import { TopRevenueProducts } from "@/components/admin/TopRevenueProducts";
+import { SalesCharts } from "@/components/admin/SalesCharts";
 
 export default function AdminNotificationsPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -12,9 +14,9 @@ export default function AdminNotificationsPage() {
     <div className="flex">
       <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div className="flex-1 p-6">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-semibold text-[#8B7355] mb-2">Notification Management</h2>
-          <p className="text-gray-600 mb-6">Send and manage customer notifications</p>
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-semibold text-[#8B7355] mb-2">Notification & Revenue Management</h2>
+          <p className="text-gray-600 mb-6">Send notifications, manage customer communications, and view revenue metrics</p>
           
           <div className="flex border-b mb-6">
             <button
@@ -29,9 +31,22 @@ export default function AdminNotificationsPage() {
             >
               Manage Notifications
             </button>
+            <button
+              className={`px-4 py-2 font-medium ${activeTab === 'overview' ? 'border-b-2 border-[#8B7355] text-[#8B7355]' : 'text-gray-500'}`}
+              onClick={() => setActiveTab('overview')}
+            >
+              Revenue Overview
+            </button>
           </div>
           
-          {activeTab === 'send' ? <TrackingNotificationForm /> : <NotificationManagement />}
+          {activeTab === 'send' && <TrackingNotificationForm />}
+          {activeTab === 'manage' && <NotificationManagement />}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <SalesCharts />
+              <TopRevenueProducts />
+            </div>
+          )}
         </div>
       </div>
     </div>

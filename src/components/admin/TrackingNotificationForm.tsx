@@ -25,6 +25,7 @@ export function TrackingNotificationForm() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [purchaseId, setPurchaseId] = useState<string>("");
   const [filteredCustomers, setFilteredCustomers] = useState<CustomerData[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Fetch customers who have pending or approved orders
   useEffect(() => {
@@ -73,6 +74,7 @@ export function TrackingNotificationForm() {
     
     if (!value.trim()) {
       setFilteredCustomers(customers);
+      setShowDropdown(false);
       return;
     }
     
@@ -81,6 +83,14 @@ export function TrackingNotificationForm() {
     );
     
     setFilteredCustomers(filtered);
+    setShowDropdown(true);
+  };
+
+  const handleSelectCustomer = (customer: CustomerData) => {
+    setSelectedCustomerId(customer.id);
+    setSearchTerm(customer.email);
+    setPurchaseId(customer.purchase_id);
+    setShowDropdown(false);
   };
 
   const handleSendNotification = async () => {
@@ -137,6 +147,9 @@ export function TrackingNotificationForm() {
       setCustomers(prev => prev.filter(customer => customer.purchase_id !== purchaseId));
       setFilteredCustomers(prev => prev.filter(customer => customer.purchase_id !== purchaseId));
       
+      // Show alert
+      alert("Notification has been successfully sent to the customer!");
+      
     } catch (error) {
       console.error("Error sending notification:", error);
       toast.error("Something went wrong. Please try again later.");
@@ -171,18 +184,15 @@ export function TrackingNotificationForm() {
               value={searchTerm}
               onChange={handleSearch}
               className="mb-2"
+              onFocus={() => setShowDropdown(true)}
             />
-            {searchTerm && filteredCustomers.length > 0 && (
+            {showDropdown && searchTerm && filteredCustomers.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
                 {filteredCustomers.map((customer) => (
                   <div
                     key={customer.id + customer.purchase_id}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
-                    onClick={() => {
-                      setSelectedCustomerId(customer.id);
-                      setSearchTerm(customer.email);
-                      setPurchaseId(customer.purchase_id);
-                    }}
+                    onClick={() => handleSelectCustomer(customer)}
                   >
                     <div>
                       <div className="font-medium">{customer.email}</div>
