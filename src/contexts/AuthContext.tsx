@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      // Don't use navigate here - components using this context will handle navigation
+      // Don't navigate here - components using this context should handle navigation
     } catch (error: any) {
       alert(error.error_description || error.message);
     } finally {

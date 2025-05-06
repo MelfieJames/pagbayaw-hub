@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -163,6 +164,9 @@ export default function Navbar() {
                           <Clock className="h-4 w-4" />
                           <span>Purchase History</span>
                         </Link>
+                        <Button onClick={handleSignOut} variant="destructive" className="mt-4">
+                          Logout
+                        </Button>
                       </>
                     )}
                     {!user && (
