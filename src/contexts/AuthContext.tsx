@@ -1,11 +1,11 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 // Extended user type with isAdmin property
-export interface CustomUser extends Session['user'] {
+export interface CustomUser extends User {
   isAdmin?: boolean;
 }
 
