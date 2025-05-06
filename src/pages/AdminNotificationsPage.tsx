@@ -78,14 +78,15 @@ export default function AdminNotificationsPage() {
             let lastName = '';
             
             if (purchase.profiles) {
-              // Check if profiles is an array or an object
-              if (Array.isArray(purchase.profiles) && purchase.profiles.length > 0) {
+              // Handle profiles data - could be array or object
+              if (Array.isArray(purchase.profiles)) {
+                // If it's an array, get the first item
                 firstName = purchase.profiles[0]?.first_name || '';
                 lastName = purchase.profiles[0]?.last_name || '';
               } else {
-                // If it's a direct object
-                firstName = purchase.profiles?.first_name || '';
-                lastName = purchase.profiles?.last_name || '';
+                // If it's an object with direct properties
+                firstName = purchase.profiles.first_name || '';
+                lastName = purchase.profiles.last_name || '';
               }
             }
             
