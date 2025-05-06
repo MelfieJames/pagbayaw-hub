@@ -158,6 +158,33 @@ export function ProductDetailsModal({
     return name ? name.charAt(0).toUpperCase() : 'A';
   };
 
+  const { data: hasPurchase } = useQuery({
+    queryKey: ['completed-purchase', product?.id, user?.id],
+    queryFn: async () => {
+      if (!product?.id || !user?.id) return false;
+      
+      const { data } = await supabase
+        .from('purchases')
+        .select(`
+          id,
+          status,
+          purchase_items!inner(
+            id,
+            product_id
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .eq('purchase_items.product_id', product.id)
+        .single();
+        
+      return !!data;
+    },
+    enabled: !!product?.id && !!user?.id,
+  });
+
+  const canReview = hasPurchase && user;
+
   return (
     <>
       <Dialog open={!!product} onOpenChange={onClose}>
@@ -330,6 +357,12 @@ export function ProductDetailsModal({
                   </div>
                 </div>
               </div>
+
+              {user && !canReview && (
+                <div className="text-sm text-muted-foreground text-center">
+                  You can review this product once your order is completed
+                </div>
+              )}
 
               <DialogFooter className="flex-col sm:flex-row gap-2">
                 <Button

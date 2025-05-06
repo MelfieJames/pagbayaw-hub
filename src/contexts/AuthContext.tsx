@@ -1,121 +1,99 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/services/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { toast } from "sonner";
-
-export interface CustomUser extends User {
-  isAdmin: boolean;
-  name: string;
-}
+import { createContext, useContext, useState, useEffect } from 'react';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/services/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
-  user: CustomUser | null;
-  login: (user: CustomUser) => void;
+  session: Session | null;
+  user: Session['user'] | null;
+  isLoading: boolean;
+  signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
-  resendConfirmationEmail: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<CustomUser | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<Session['user'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Check active session
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const email = session.user.email;
-          const isAdmin = email === "admin@unvas.com";
-          setUser({
-            ...session.user,
-            isAdmin,
-            name: isAdmin ? "Admin" : email?.split('@')[0] || "User"
-          });
-        }
-        setIsInitialized(true);
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        setIsInitialized(true);
-      }
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      setSession(session);
+      setUser(session?.user || null);
+      setIsLoading(false);
     };
 
-    initializeAuth();
+    getSession();
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const email = session.user.email;
-        const isAdmin = email === "admin@unvas.com";
-        setUser({
-          ...session.user,
-          isAdmin,
-          name: isAdmin ? "Admin" : email?.split('@')[0] || "User"
-        });
-      } else {
-        setUser(null);
-      }
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user || null);
     });
-
-    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (userData: CustomUser) => {
-    setUser(userData);
+  const signIn = async (email: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false,
+           emailRedirectTo: `${window.location.origin}/profile`,
+        }
+      });
+      if (error) throw error;
+      alert('Check your email for the login link!');
+    } catch (error: any) {
+      alert(error.error_description || error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signOut = async () => {
+    setIsLoading(true);
     try {
-      await supabase.auth.signOut();
-      setUser(null);
-      // Don't automatically redirect after logout
-    } catch (error) {
-      console.error("Error during logout:", error);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error: any) {
+      alert(error.error_description || error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const resendConfirmationEmail = async (email: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-      });
-      
-      if (error) {
-        console.error('Error resending confirmation email:', error);
-        toast.error("Failed to resend confirmation email");
-        return false;
+  useEffect(() => {
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/login');
       }
-      
-      toast.success("Confirmation email resent. Please check your inbox.");
-      return true;
-    } catch (error) {
-      console.error('Error resending confirmation email:', error);
-      toast.error("Failed to resend confirmation email");
-      return false;
-    }
-  };
+    });
+  }, [navigate]);
 
-  if (!isInitialized) {
-    return <div>Loading...</div>;
-  }
+  const value: AuthContextType = {
+    session,
+    user,
+    isLoading,
+    signIn,
+    signOut,
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, signOut, resendConfirmationEmail }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!isLoading && children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }
