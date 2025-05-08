@@ -67,6 +67,7 @@ export function TopRevenueProducts() {
       
       purchaseItems.forEach(item => {
         const productId = item.product_id?.toString() || '';
+        // Fix TypeScript error by accessing products object properly
         const productName = item.products?.product_name || 'Unknown Product';
         const revenue = Number(item.price_at_time || 0) * Number(item.quantity || 0);
         
