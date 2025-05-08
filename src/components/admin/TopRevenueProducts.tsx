@@ -26,6 +26,7 @@ interface PurchaseItem {
   quantity: number;
   price_at_time: number;
   product_id: number;
+  // Update the products property to match what Supabase actually returns
   products: {
     product_name: string;
   } | null;
@@ -74,7 +75,8 @@ export function TopRevenueProducts() {
       // Calculate revenue per product
       const productRevenue: Record<string, RevenueProduct> = {};
       
-      (purchaseItems as PurchaseItem[]).forEach(item => {
+      // Cast as unknown first and then as PurchaseItem[] to avoid the TypeScript error
+      (purchaseItems as unknown as PurchaseItem[]).forEach(item => {
         const productId = item.product_id?.toString() || '';
         
         // Correctly access the product_name from the nested products object
