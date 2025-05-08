@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -67,8 +66,11 @@ export function TopRevenueProducts() {
       
       purchaseItems.forEach(item => {
         const productId = item.product_id?.toString() || '';
-        // Fix TypeScript error by accessing products object properly
+        
+        // Fix TypeScript error - correctly access the product_name from the nested products object
+        // The foreign key relationship returns products as an object, not an array
         const productName = item.products?.product_name || 'Unknown Product';
+        
         const revenue = Number(item.price_at_time || 0) * Number(item.quantity || 0);
         
         if (!productRevenue[productId]) {
