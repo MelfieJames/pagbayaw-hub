@@ -15,14 +15,6 @@ import OrderSuccessDialog from "@/components/checkout/OrderSuccessDialog";
 import OrderSummaryDialog from "@/components/checkout/OrderSummaryDialog";
 import AddressManagement from "@/components/checkout/AddressManagement";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -43,7 +35,6 @@ export default function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
-  const [showAddressRequiredDialog, setShowAddressRequiredDialog] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
@@ -212,28 +203,24 @@ export default function Checkout() {
       toast.error("No items to checkout");
       return;
     }
-
-    // If user has no addresses but we need to proceed anyway
-    if (userAddresses.length === 0) {
-      toast.info("Proceeding without shipping address");
-    }
-    
-    // Automatically select the first address if available and none selected
-    if (!selectedAddressId && userAddresses.length > 0) {
-      setSelectedAddressId(userAddresses[0].id);
-    }
     
     setIsProcessing(true);
 
     try {
+      // Check inventory before proceeding
+      let hasInventoryError = false;
       for (const item of cartItems) {
         const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
         
         if (!inventoryItem || inventoryItem.quantity < item.quantity) {
           toast.error(`Not enough stock for ${item.products?.product_name}`);
-          setIsProcessing(false);
-          return;
+          hasInventoryError = true;
         }
+      }
+
+      if (hasInventoryError) {
+        setIsProcessing(false);
+        return;
       }
 
       const { data: purchase, error: purchaseError } = await supabase
@@ -297,6 +284,22 @@ export default function Checkout() {
           if (transactionError) {
             console.error("Transaction details error:", transactionError);
           }
+        }
+      } else {
+        // Even if no address is selected, create a minimal transaction record
+        const { error: transactionError } = await supabase
+          .from('transaction_details')
+          .insert({
+            purchase_id: purchase.id,
+            first_name: user.name || user.email?.split('@')[0] || 'Customer',
+            last_name: '',
+            email: user.email,
+            phone_number: '',
+            address: 'Not provided'
+          });
+            
+        if (transactionError) {
+          console.error("Transaction details error:", transactionError);
         }
       }
 
@@ -463,10 +466,6 @@ export default function Checkout() {
       <OrderSuccessDialog 
         open={showSuccessDialog}
         onOpenChange={setShowSuccessDialog}
-        navigateToOrders={() => {
-          setShowSuccessDialog(false);
-          navigate('/purchases');
-        }}
         navigateToProducts={() => {
           setShowSuccessDialog(false);
           navigate('/products');

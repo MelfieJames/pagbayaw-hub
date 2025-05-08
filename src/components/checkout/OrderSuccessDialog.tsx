@@ -3,49 +3,48 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Check } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 interface OrderSuccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  navigateToOrders: () => void;
   navigateToProducts: () => void;
 }
 
 export default function OrderSuccessDialog({
   open,
   onOpenChange,
-  navigateToOrders,
-  navigateToProducts
+  navigateToProducts,
 }: OrderSuccessDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-md text-center">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-green-600">
-            <Check className="h-6 w-6" />
-            Order Placed Successfully!
-          </DialogTitle>
-          <DialogDescription>
-            Your order has been submitted and is awaiting admin approval. You'll receive notifications about status changes and can rate products once delivery is completed.
-          </DialogDescription>
+          <div className="flex justify-center my-4">
+            <div className="rounded-full bg-green-100 p-3">
+              <CheckCircle className="h-12 w-12 text-green-600" />
+            </div>
+          </div>
+          <DialogTitle className="text-2xl font-semibold">Order Successful!</DialogTitle>
         </DialogHeader>
-        <DialogFooter className="flex gap-2 sm:gap-0 mt-4">
+        
+        <div className="py-4">
+          <p className="text-gray-600">
+            Thank you for your purchase. Your order has been received and is being processed.
+          </p>
+          <p className="text-gray-600 mt-2">
+            You will receive a confirmation email shortly.
+          </p>
+        </div>
+
+        <DialogFooter className="sm:justify-center">
           <Button
-            className="flex-1 bg-primary hover:bg-primary/90"
-            onClick={navigateToOrders}
-          >
-            View Purchase History
-          </Button>
-          <Button
-            variant="outline"
-            className="flex-1"
             onClick={navigateToProducts}
+            className="w-full bg-primary hover:bg-primary/90"
           >
             Continue Shopping
           </Button>

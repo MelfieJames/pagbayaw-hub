@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,11 +25,14 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useEffect } from "react";
+
+// Define public routes that don't require authentication
+const PUBLIC_ROUTES = ['/', '/about', '/achievements', '/products', '/contact', '/login'];
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const getInitials = (email: string) => {
@@ -39,25 +42,25 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate("/login"); // Always redirect to login after logout
-      window.location.href = "/login"; // Ensure full page refresh if needed
+      navigate("/login"); // Redirect to login after logout
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
-  // Redirect to login if logged out
+  // Only redirect on protected routes
   useEffect(() => {
-    if (!user) {
-      // Use setTimeout to avoid immediate redirect during initial load
-      const timer = setTimeout(() => {
-        if (!user && window.location.pathname !== "/login") {
-          navigate("/login");
-        }
-      }, 100);
-      return () => clearTimeout(timer);
+    const isPublicRoute = PUBLIC_ROUTES.some(route => 
+      location.pathname === route || location.pathname.startsWith(route + '/')
+    );
+    
+    // Only redirect if not on a public route and user is not authenticated
+    if (!user && !isPublicRoute && location.pathname !== "/login") {
+      navigate("/login", { 
+        state: { redirectAfterLogin: location.pathname, message: "Please log in to access this page" } 
+      });
     }
-  }, [user, navigate]);
+  }, [user, location.pathname, navigate]);
 
   const NavItems = () => (
     <>

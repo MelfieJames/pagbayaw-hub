@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,9 +7,10 @@ import { CartItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Minus, Plus, ShoppingCart, X } from "lucide-react";
+import { Minus, Plus, ShoppingCart, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 type SupabaseCartResponse = {
   quantity: number;
@@ -90,26 +92,33 @@ export function CartPopover() {
       });
       return;
     }
+    
     const inventoryItem = inventoryData.find(item => item.product_id === productId);
     const maxQuantity = inventoryItem?.quantity || 0;
+    
     if (newQuantity > maxQuantity) {
-      toast("Cannot exceed available stock");
+      toast.error("Cannot exceed available stock");
       return;
     }
+    
     if (newQuantity < 1) return;
+    
     try {
       const {
         error
       } = await supabase.from('cart').update({
         quantity: newQuantity
       }).eq('user_id', user.id).eq('product_id', productId);
+      
       if (error) throw error;
+      
       queryClient.invalidateQueries({
         queryKey: ['cart-details']
       });
+      
     } catch (error) {
       console.error('Error updating quantity:', error);
-      toast("Failed to update quantity");
+      toast.error("Failed to update quantity");
     }
   };
   
@@ -124,19 +133,23 @@ export function CartPopover() {
       });
       return;
     }
+    
     try {
       const {
         error
       } = await supabase.from('cart').delete().eq('user_id', user.id).eq('product_id', productId);
+      
       if (error) throw error;
+      
       setSelectedItems(prev => prev.filter(id => id !== productId));
       queryClient.invalidateQueries({
         queryKey: ['cart-details']
       });
+      
       toast("Item removed from cart");
     } catch (error) {
       console.error('Error removing from cart:', error);
-      toast("Failed to remove item from cart");
+      toast.error("Failed to remove item from cart");
     }
   };
   
@@ -153,9 +166,14 @@ export function CartPopover() {
     return acc;
   }, {} as Record<string, CartItem[]>);
 
-  const selectedTotal = cartItems
-    .filter(item => selectedItems.includes(item.product_id))
-    .reduce((sum, item) => sum + item.quantity * (item.products?.product_price || 0), 0);
+  // Calculate selected total and check inventory status
+  const selectedItems2 = cartItems.filter(item => selectedItems.includes(item.product_id));
+  const selectedTotal = selectedItems2.reduce((sum, item) => sum + item.quantity * (item.products?.product_price || 0), 0);
+
+  const hasInventoryError = selectedItems2.some(item => {
+    const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+    return !inventoryItem || inventoryItem.quantity < item.quantity;
+  });
 
   const handleCheckout = () => {
     if (!user) {
@@ -168,22 +186,27 @@ export function CartPopover() {
       });
       return;
     }
+    
     if (selectedItems.length === 0) {
       toast("Please select items to checkout");
       return;
     }
-    const quantities = cartItems
-      .filter(item => selectedItems.includes(item.product_id))
-      .reduce((acc, item) => ({
-        ...acc,
-        [item.product_id]: item.quantity
-      }), {});
-    navigate('/checkout', {
-      state: {
-        selectedItems,
-        quantities
-      }
+
+    // Check if there's enough inventory for selected items
+    const itemWithInsufficientStock = selectedItems2.find(item => {
+      const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+      return !inventoryItem || inventoryItem.quantity < item.quantity;
     });
+
+    if (itemWithInsufficientStock) {
+      const productName = itemWithInsufficientStock.products?.product_name;
+      toast.error(`Insufficient stock for ${productName}. Please adjust quantity.`);
+      return;
+    }
+
+    // Set selected items for checkout
+    queryClient.setQueryData(['checkout-items'], selectedItems2);
+    navigate('/checkout');
   };
 
   const handleNavigateToProducts = () => {
@@ -244,54 +267,69 @@ export function CartPopover() {
                 {Object.entries(groupedCartItems).map(([category, items]) => (
                   <div key={category} className="space-y-2">
                     <h5 className="font-medium text-sm text-muted-foreground">{category}</h5>
-                    {items.map(item => (
-                      <div key={item.product_id} className="flex items-start gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95">
-                        <Checkbox 
-                          checked={selectedItems.includes(item.product_id)} 
-                          onCheckedChange={() => toggleItemSelection(item.product_id)} 
-                          className="mt-2" 
-                        />
-                        <img 
-                          src={item.products?.image || "/placeholder.svg"} 
-                          alt={item.products?.product_name} 
-                          className="w-12 h-12 object-cover rounded" 
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {item.products?.product_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            ₱{item.products?.product_price.toFixed(2)}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              className="h-6 w-6" 
-                              onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="text-sm w-8 text-center">{item.quantity}</span>
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              className="h-6 w-6" 
-                              onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
+                    {items.map(item => {
+                      const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+                      const hasStockIssue = !inventoryItem || inventoryItem.quantity < item.quantity;
+                      
+                      return (
+                        <div key={item.product_id} className="flex items-start gap-2 p-2 border rounded-lg animate-in fade-in-0 zoom-in-95">
+                          <Checkbox 
+                            checked={selectedItems.includes(item.product_id)} 
+                            onCheckedChange={() => toggleItemSelection(item.product_id)} 
+                            className="mt-2" 
+                            disabled={hasStockIssue}
+                          />
+                          <img 
+                            src={item.products?.image || "/placeholder.svg"} 
+                            alt={item.products?.product_name} 
+                            className="w-12 h-12 object-cover rounded" 
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {item.products?.product_name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              ₱{item.products?.product_price.toFixed(2)}
+                            </p>
+                            
+                            {hasStockIssue && (
+                              <Badge variant="destructive" className="text-[10px] mt-1 py-0 h-5 flex items-center gap-1">
+                                <AlertCircle size={12} /> 
+                                {inventoryItem ? 'Exceeds stock' : 'Out of stock'}
+                              </Badge>
+                            )}
+                            
+                            <div className="flex items-center gap-2 mt-1">
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-6 w-6" 
+                                onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="text-sm w-8 text-center">{item.quantity}</span>
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-6 w-6" 
+                                onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                                disabled={inventoryItem && item.quantity >= inventoryItem.quantity}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => removeFromCart(item.product_id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => removeFromCart(item.product_id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ))}
               </div>
@@ -300,10 +338,16 @@ export function CartPopover() {
                   <span className="font-medium">Selected Total:</span>
                   <span className="font-medium">₱{selectedTotal.toFixed(2)}</span>
                 </div>
+                {hasInventoryError && (
+                  <div className="mb-2 p-2 text-sm bg-red-50 text-red-700 rounded-md flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    <span>Some items exceed available stock</span>
+                  </div>
+                )}
                 <Button 
                   className="w-full" 
                   onClick={handleCheckout} 
-                  disabled={selectedItems.length === 0}
+                  disabled={selectedItems.length === 0 || hasInventoryError}
                 >
                   Proceed to Checkout ({selectedItems.length} items)
                 </Button>
