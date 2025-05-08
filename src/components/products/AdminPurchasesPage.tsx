@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, X, Info, Search, AlertCircle } from "lucide-react";
+import { ShoppingBag, X, Info, Search, AlertCircle, RefreshCw, Check } from "lucide-react";
 import { TransactionDetailsRow } from "@/types/supabase";
 import { 
   Dialog,
@@ -93,6 +94,28 @@ const AdminPurchasesPage = () => {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
+  // Status change mutations
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ purchaseId, status }: { purchaseId: number, status: string }) => {
+      const { error } = await supabase
+        .from('purchases')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', purchaseId);
+
+      if (error) throw error;
+      return purchaseId;
+    },
+    onSuccess: (_, variables) => {
+      toast.success(`Order ${variables.status === 'approved' ? 'approved' : 'rejected'} successfully`);
+      queryClient.invalidateQueries({ queryKey: ['admin-purchases-detailed'] });
+      setDetailsOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order. Please try again.');
+    }
+  });
+
   // Cancel order mutation
   const cancelOrderMutation = useMutation({
     mutationFn: async (purchaseId: number) => {
@@ -162,6 +185,14 @@ const AdminPurchasesPage = () => {
     setCancelDialogOpen(true);
   };
 
+  const approveOrder = (purchaseId: number) => {
+    updateOrderStatusMutation.mutate({ purchaseId, status: 'approved' });
+  };
+
+  const rejectOrder = (purchaseId: number) => {
+    updateOrderStatusMutation.mutate({ purchaseId, status: 'rejected' });
+  };
+
   const confirmCancelOrder = () => {
     if (selectedPurchase) {
       cancelOrderMutation.mutate(selectedPurchase.id);
@@ -191,6 +222,7 @@ const AdminPurchasesPage = () => {
           There was a problem loading the purchase data. This might be due to a network issue or database connection problem.
         </p>
         <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-purchases-detailed'] })}>
+          <RefreshCw className="h-4 w-4 mr-2" />
           Try Again
         </Button>
       </div>
@@ -221,12 +253,14 @@ const AdminPurchasesPage = () => {
     switch (status?.toLowerCase()) {
       case "completed":
         return "bg-green-500 hover:bg-green-600 text-white";
+      case "approved":
+        return "bg-blue-500 hover:bg-blue-600 text-white";
       case "pending":
         return "bg-yellow-500 hover:bg-yellow-600 text-white";
       case "cancelled":
         return "bg-red-500 hover:bg-red-600 text-white";
-      case "processing":
-        return "bg-blue-500 hover:bg-blue-600 text-white";
+      case "rejected":
+        return "bg-gray-500 hover:bg-gray-600 text-white";
       default:
         return "bg-gray-500 hover:bg-gray-600 text-white";
     }
@@ -375,6 +409,37 @@ const AdminPurchasesPage = () => {
                       </Button>
                     )}
                   </div>
+                  
+                  {/* Order status action buttons for pending orders */}
+                  {selectedPurchase.status === 'pending' && (
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                        onClick={() => rejectOrder(selectedPurchase.id)}
+                        disabled={updateOrderStatusMutation.isPending}
+                      >
+                        {updateOrderStatusMutation.isPending && updateOrderStatusMutation.variables?.status === 'rejected' ? (
+                          <LoadingSpinner size="sm" className="mr-2" />
+                        ) : (
+                          <X className="h-4 w-4 mr-1" />
+                        )}
+                        Reject Order
+                      </Button>
+                      <Button 
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={() => approveOrder(selectedPurchase.id)}
+                        disabled={updateOrderStatusMutation.isPending}
+                      >
+                        {updateOrderStatusMutation.isPending && updateOrderStatusMutation.variables?.status === 'approved' ? (
+                          <LoadingSpinner size="sm" className="mr-2" />
+                        ) : (
+                          <Check className="h-4 w-4 mr-1" />
+                        )}
+                        Approve Order
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
                 <div>

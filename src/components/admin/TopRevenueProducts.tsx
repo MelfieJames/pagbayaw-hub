@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -26,7 +27,7 @@ interface PurchaseItem {
   quantity: number;
   price_at_time: number;
   product_id: number;
-  // Update the products property to match what Supabase actually returns
+  // The products property is an object, not an array
   products: {
     product_name: string;
   } | null;
@@ -75,7 +76,7 @@ export function TopRevenueProducts() {
       // Calculate revenue per product
       const productRevenue: Record<string, RevenueProduct> = {};
       
-      // Cast as unknown first and then as PurchaseItem[] to avoid the TypeScript error
+      // Cast to unknown first to avoid TypeScript errors
       (purchaseItems as unknown as PurchaseItem[]).forEach(item => {
         const productId = item.product_id?.toString() || '';
         

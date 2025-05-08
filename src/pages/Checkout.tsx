@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -214,16 +213,14 @@ export default function Checkout() {
       return;
     }
 
-    // Check if user has an address
+    // If user has no addresses but we need to proceed anyway
     if (userAddresses.length === 0) {
-      setShowAddressRequiredDialog(true);
-      return;
+      toast.info("Proceeding without shipping address");
     }
-
-    // Check if a delivery address is selected
+    
+    // Automatically select the first address if available and none selected
     if (!selectedAddressId && userAddresses.length > 0) {
-      toast.error("Please select a delivery address");
-      return;
+      setSelectedAddressId(userAddresses[0].id);
     }
     
     setIsProcessing(true);
@@ -435,7 +432,7 @@ export default function Checkout() {
                   <CardTitle className="text-lg font-medium flex items-center gap-2">
                     Shipping Address
                     <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      Required
+                      Optional
                     </div>
                   </CardTitle>
                 </CardHeader>
@@ -452,7 +449,7 @@ export default function Checkout() {
             <div className="md:col-span-1">
               <OrderSummary 
                 total={total}
-                isComplete={selectedAddressId !== null} 
+                isComplete={true} // Always allow checkout
                 cartItems={cartItems}
                 isProcessing={isProcessing}
                 handleCheckout={handleCheckout}
@@ -486,27 +483,6 @@ export default function Checkout() {
         total={total}
         onDetailsSubmitted={handleDetailsSubmitted}
       />
-
-      {/* Address Required Dialog */}
-      <Dialog open={showAddressRequiredDialog} onOpenChange={setShowAddressRequiredDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-amber-600 flex items-center gap-2">
-              <Info className="h-5 w-5" />
-              Address Required
-            </DialogTitle>
-            <DialogDescription>
-              You need to add at least one shipping address before completing your checkout.
-            </DialogDescription>
-          </DialogHeader>
-          <AddressManagement />
-          <DialogFooter>
-            <Button onClick={() => setShowAddressRequiredDialog(false)}>
-              Continue Shopping
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

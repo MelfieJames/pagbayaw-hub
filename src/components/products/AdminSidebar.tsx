@@ -9,7 +9,6 @@ import {
   Home,
   PackageCheck,
   Bell,
-  CheckCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -73,19 +72,6 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
           >
             <LayoutDashboard className="w-5 h-5" />
             <span>Overview</span>
-          </Link>
-          
-          <Link
-            to="/admin/order-approval"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/order-approval")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <CheckCircle className="w-5 h-5" />
-            <span>Order Approval</span>
           </Link>
           
           <Link

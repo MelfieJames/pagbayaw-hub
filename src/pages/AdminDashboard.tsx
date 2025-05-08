@@ -39,7 +39,8 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    if (!user) {
+    // Immediate redirect if not logged in
+    if (!user && !isLoading) {
       toast.error("You must be logged in to access the admin dashboard");
       navigate("/login", { 
         state: { redirectAfterLogin: "/admin", message: "Please log in to access the admin dashboard" }
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
     }
 
     // Wait for admin check to complete
-    if (!isLoading && isAdmin === false) {
+    if (!isLoading && isAdmin === false && user) {
       toast.error("You don't have permission to access the admin dashboard");
       navigate("/");
     }
@@ -58,7 +59,7 @@ export default function AdminDashboard() {
     }
   }, [user, isAdmin, isLoading, navigate]);
 
-  if (!user || isCheckingAdmin) {
+  if (isCheckingAdmin || isLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />
