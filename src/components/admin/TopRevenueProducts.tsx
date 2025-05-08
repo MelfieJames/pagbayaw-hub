@@ -21,6 +21,16 @@ interface RevenueProduct {
   units_sold: number;
 }
 
+// Define the expected structure of the purchase item from Supabase
+interface PurchaseItem {
+  quantity: number;
+  price_at_time: number;
+  product_id: number;
+  products: {
+    product_name: string;
+  } | null;
+}
+
 export function TopRevenueProducts() {
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -64,11 +74,10 @@ export function TopRevenueProducts() {
       // Calculate revenue per product
       const productRevenue: Record<string, RevenueProduct> = {};
       
-      purchaseItems.forEach(item => {
+      (purchaseItems as PurchaseItem[]).forEach(item => {
         const productId = item.product_id?.toString() || '';
         
-        // Fix TypeScript error - correctly access the product_name from the nested products object
-        // The foreign key relationship returns products as an object, not an array
+        // Correctly access the product_name from the nested products object
         const productName = item.products?.product_name || 'Unknown Product';
         
         const revenue = Number(item.price_at_time || 0) * Number(item.quantity || 0);
