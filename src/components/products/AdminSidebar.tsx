@@ -155,7 +155,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
             )}
           >
             <Bell className="w-5 h-5" />
-            <span>Send Notification</span>
+            <span>Notifications</span>
           </Link>
         </div>
       </nav>

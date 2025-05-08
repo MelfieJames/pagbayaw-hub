@@ -161,9 +161,9 @@ export function ProductDetailsModal({
   return (
     <>
       <Dialog open={!!product} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl h-[90vh]">
+        <DialogContent className="max-w-4xl h-[90vh] bg-gradient-to-br from-white to-gray-50 border border-gray-200/60 shadow-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl">{product.product_name}</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-800">{product.product_name}</DialogTitle>
             <DialogDescription className="sr-only">Product details for {product.product_name}</DialogDescription>
           </DialogHeader>
 
@@ -171,46 +171,52 @@ export function ProductDetailsModal({
             <div className="space-y-8">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <ProductImageCarousel
-                    mainImage={product.image}
-                    productName={product.product_name}
-                    isOutOfStock={stockQuantity === 0}
-                  />
-                  <Badge variant="secondary" className="w-fit">
-                    {product.category}
-                  </Badge>
-                  <p className="text-2xl font-bold">₱{product.product_price.toFixed(2)}</p>
+                  <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+                    <ProductImageCarousel
+                      mainImage={product.image}
+                      productName={product.product_name}
+                      isOutOfStock={stockQuantity === 0}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="w-fit">
+                      {product.category}
+                    </Badge>
+                    <p className="text-2xl font-bold text-gray-800">₱{product.product_price.toFixed(2)}</p>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Description</p>
-                    <div className="w-full rounded-md border p-4">
-                      <p className="text-sm text-muted-foreground">{product.description}</p>
+                    <p className="text-sm font-medium text-gray-700">Description</p>
+                    <div className="w-full rounded-md border bg-white/80 p-4 shadow-sm">
+                      <p className="text-sm text-gray-600">{product.description}</p>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Quantity</p>
-                    <div className="flex items-center space-x-2">
+                    <p className="text-sm font-medium text-gray-700">Quantity</p>
+                    <div className="flex items-center space-x-2 bg-white/80 p-3 rounded-md border shadow-sm">
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
                         disabled={quantity <= 1 || stockQuantity === 0}
+                        className="hover:bg-gray-100 transition-colors"
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="w-12 text-center">{quantity}</span>
+                      <span className="w-12 text-center font-medium">{quantity}</span>
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => setQuantity(prev => Math.min(stockQuantity, prev + 1))}
                         disabled={quantity >= stockQuantity || stockQuantity === 0}
+                        className="hover:bg-gray-100 transition-colors"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-gray-500 ml-2">
                         {stockQuantity} pieces available
                       </span>
                     </div>
@@ -218,7 +224,7 @@ export function ProductDetailsModal({
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between border-t pt-4">
-                      <p className="text-sm font-medium">Product Ratings ({ratingCount})</p>
+                      <p className="text-sm font-medium text-gray-700">Product Ratings ({ratingCount})</p>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
@@ -228,7 +234,7 @@ export function ProductDetailsModal({
                             }`}
                           />
                         ))}
-                        <span className="text-sm ml-1">
+                        <span className="text-sm ml-1 font-medium">
                           {averageRating ? averageRating.toFixed(1) : "No ratings"}
                         </span>
                       </div>
@@ -240,12 +246,12 @@ export function ProductDetailsModal({
                           <LoadingSpinner />
                         </div>
                       ) : reviews.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-2">No reviews yet</p>
+                        <p className="text-sm text-gray-500 text-center py-2">No reviews yet</p>
                       ) : (
                         visibleReviews.map((review) => (
-                          <div key={review.id} className="border rounded-lg p-4">
+                          <div key={review.id} className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex items-start gap-3">
-                              <Avatar className="h-10 w-10">
+                              <Avatar className="h-10 w-10 border border-gray-200">
                                 <AvatarFallback className="bg-primary/10 text-primary">
                                   {getAvatarLetter(review.user_name)}
                                 </AvatarFallback>
@@ -253,7 +259,7 @@ export function ProductDetailsModal({
                               <div className="flex-1">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <p className="font-medium">{review.user_name}</p>
+                                    <p className="font-medium text-gray-800">{review.user_name}</p>
                                     <div className="flex mt-1">
                                       {[1, 2, 3, 4, 5].map((star) => (
                                         <Star
@@ -266,7 +272,7 @@ export function ProductDetailsModal({
                                     </div>
                                   </div>
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-xs text-gray-500">
                                       {format(new Date(review.created_at), 'PP')}
                                     </span>
                                     {user && user.id === review.user_id && (
@@ -297,7 +303,7 @@ export function ProductDetailsModal({
                                     <img
                                       src={review.image_url}
                                       alt="Review Image"
-                                      className="rounded-md max-h-40 object-cover"
+                                      className="rounded-md max-h-40 object-cover border border-gray-200"
                                     />
                                   </div>
                                 )}
@@ -306,7 +312,7 @@ export function ProductDetailsModal({
                                     <video
                                       src={review.video_url}
                                       controls
-                                      className="rounded-md max-h-40 w-full"
+                                      className="rounded-md max-h-40 w-full border border-gray-200"
                                     />
                                   </div>
                                 )}
@@ -319,7 +325,7 @@ export function ProductDetailsModal({
                       {hasMoreReviews && (
                         <Button 
                           variant="ghost" 
-                          className="w-full text-primary" 
+                          className="w-full text-primary hover:bg-primary/5" 
                           onClick={toggleReviewsModal}
                         >
                           See all reviews 
@@ -334,14 +340,14 @@ export function ProductDetailsModal({
               <DialogFooter className="flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto transition-all hover:shadow-md"
                   onClick={() => onBuyNow(product.id, quantity)}
                   disabled={stockQuantity === 0}
                 >
                   Buy Now
                 </Button>
                 <Button
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 transition-all hover:shadow-md"
                   onClick={() => onAddToCart(product.id, quantity)}
                   disabled={stockQuantity === 0}
                 >
@@ -351,7 +357,7 @@ export function ProductDetailsModal({
               </DialogFooter>
 
               <div>
-                <h3 className="text-lg font-semibold mb-4">Similar Products</h3>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Similar Products</h3>
                 <SimilarProducts
                   products={products}
                   currentProductId={product.id}

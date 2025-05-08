@@ -18,36 +18,36 @@ export function ProductCard({ product, inventory, rating, onProductClick }: Prod
   return (
     <Card
       onClick={onProductClick}
-      className={`relative overflow-hidden transition-all ${
-        isOutOfStock 
+      className={`relative overflow-hidden transition-all duration-300 transform border border-gray-200 
+        ${isOutOfStock 
           ? 'opacity-60 cursor-not-allowed' 
-          : 'hover:shadow-lg cursor-pointer'
-      }`}
+          : 'hover:shadow-xl hover:scale-[1.02] cursor-pointer hover:border-primary/20'
+        } rounded-xl`}
       data-product-id={product.id}
     >
-      <div className="aspect-square relative">
+      <div className="aspect-square relative overflow-hidden">
         <img 
           src={product.image || "/placeholder.svg"} 
           alt={product.product_name} 
-          className={`w-full h-full object-cover ${isOutOfStock ? 'blur-[2px]' : ''}`}
+          className={`w-full h-full object-cover transition-transform duration-500 ${isOutOfStock ? 'blur-[2px]' : 'hover:scale-105'}`}
         />
         {isOutOfStock && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Badge variant="destructive" className="text-lg">
+            <Badge variant="destructive" className="text-lg shadow-md">
               Out of Stock
             </Badge>
           </div>
         )}
       </div>
-      <CardHeader className="space-y-1">
+      <CardHeader className="space-y-1 bg-gradient-to-r from-white to-gray-50 pb-2">
         <Badge variant="secondary" className="w-fit">
           {product.category}
         </Badge>
-        <CardTitle className="text-lg">{product.product_name}</CardTitle>
+        <CardTitle className="text-lg line-clamp-2">{product.product_name}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="bg-gradient-to-r from-white to-gray-50">
         <div className="flex items-center justify-between">
-          <span>₱{product.product_price.toFixed(2)}</span>
+          <span className="font-medium text-lg text-gray-900">₱{product.product_price.toFixed(2)}</span>
           <div className="flex flex-col items-end gap-1">
             {rating && (
               <span className="text-xs flex items-center gap-1">

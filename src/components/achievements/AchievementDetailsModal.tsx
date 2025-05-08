@@ -37,18 +37,20 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
   return (
     <>
       <Dialog open={!!achievement} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-white to-green-50 border-2 border-green-100 shadow-lg">
           <DialogHeader>
-            <DialogTitle>Achievement Details</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-green-800">Achievement Details</DialogTitle>
           </DialogHeader>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="flex flex-col justify-start">
-              <img 
-                src={achievement.image || "/placeholder.svg"} 
-                alt={achievement.achievement_name}
-                className="max-w-full max-h-[400px] object-contain rounded-md mb-4"
-              />
-              <h2 className="text-xl font-bold text-center">{achievement.achievement_name}</h2>
+              <div className="rounded-lg overflow-hidden border-2 border-green-200 shadow-md transition-all duration-300 hover:shadow-lg">
+                <img 
+                  src={achievement.image || "/placeholder.svg"} 
+                  alt={achievement.achievement_name}
+                  className="max-w-full max-h-[400px] object-contain rounded-md mb-4 transition-transform duration-500 hover:scale-105"
+                />
+              </div>
+              <h2 className="text-xl font-bold text-center mt-4 text-green-800">{achievement.achievement_name}</h2>
             </div>
             <div className="achievement-details-wrapper">
               <style>
@@ -61,7 +63,10 @@ export const AchievementDetailsModal = ({ achievement, onClose }: AchievementDet
           </div>
           <div className="mt-4 flex justify-center">
             <Link to={`/achievements/${achievement.id}`}>
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                className="border-green-600 text-green-700 hover:bg-green-50 transition-all duration-300 transform hover:scale-105"
+              >
                 View Full Details
               </Button>
             </Link>

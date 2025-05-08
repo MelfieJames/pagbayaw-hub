@@ -53,7 +53,7 @@ const AchievementManagement = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <Navbar />
 
       <div className="flex pt-16">
@@ -73,14 +73,14 @@ const AchievementManagement = () => {
               {/* Add Button */}
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-[#8B7355] hover:bg-[#a48b69] text-white font-medium shadow-md">
+                  <Button className="bg-[#8B7355] hover:bg-[#a48b69] text-white font-medium shadow-md transition-all hover:scale-105">
                     <Plus className="w-5 h-5 mr-2" />
                     Add Achievement
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-gray-50 border border-gray-200">
                   <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+                    <DialogTitle className="flex items-center gap-2 text-[#8B7355]">
                       <Plus className="w-5 h-5" />
                       Add New Achievement
                     </DialogTitle>
@@ -111,9 +111,9 @@ const AchievementManagement = () => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-gray-50 border border-gray-200">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-[#8B7355]">
               <Pencil className="w-5 h-5" />
               Edit Achievement
             </DialogTitle>

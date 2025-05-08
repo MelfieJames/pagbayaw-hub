@@ -61,22 +61,24 @@ export default function AdminDashboard() {
 
   if (isCheckingAdmin || isLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-100">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <Navbar />
       <div className="flex pt-16">
         <AdminSidebar 
           isOpen={isSidebarOpen} 
           setIsOpen={setIsSidebarOpen} 
         />
-        <main className={`flex-1 transition-all ${isSidebarOpen ? "md:ml-64" : "ml-0"}`}>
-          <AdminDashboardMainContent />
+        <main className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "ml-0"}`}>
+          <div className="bg-white rounded-xl shadow-md border border-gray-200">
+            <AdminDashboardMainContent />
+          </div>
         </main>
       </div>
     </div>
