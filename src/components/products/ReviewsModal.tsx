@@ -2,8 +2,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { Star, Edit, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Star } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface ReviewsModalProps {
@@ -20,8 +19,6 @@ export function ReviewsModal({
   onClose,
   reviews,
   user,
-  onEditReview,
-  onDeleteReview
 }: ReviewsModalProps) {
   const getAvatarLetter = (name: string) => {
     return name ? name.charAt(0).toUpperCase() : 'A';
@@ -29,9 +26,9 @@ export function ReviewsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl h-[80vh]">
+      <DialogContent className="max-w-3xl h-[80vh] bg-gradient-to-b from-white to-purple-50 border border-purple-100">
         <DialogHeader>
-          <DialogTitle className="text-xl">All Reviews</DialogTitle>
+          <DialogTitle className="text-xl text-purple-800">All Reviews</DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-full max-h-[calc(80vh-100px)] pr-4 overflow-y-auto">
           <div className="space-y-4">
@@ -39,9 +36,9 @@ export function ReviewsModal({
               <p className="text-sm text-muted-foreground text-center py-2">No reviews yet</p>
             ) : (
               reviews.map((review) => (
-                <div key={review.id} className="border rounded-lg p-4">
+                <div key={review.id} className="border rounded-lg p-4 bg-white hover:shadow-md transition-all duration-300">
                   <div className="flex items-start gap-3">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 border border-purple-100">
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {getAvatarLetter(review.user_name)}
                       </AvatarFallback>
@@ -61,28 +58,10 @@ export function ReviewsModal({
                             ))}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center">
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(review.created_at), 'PP')}
                           </span>
-                          {user && user.id === review.user_id && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onEditReview(review)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onDeleteReview(review.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
                         </div>
                       </div>
                       {review.comment && (
@@ -93,7 +72,7 @@ export function ReviewsModal({
                           <img
                             src={review.image_url}
                             alt="Review Image"
-                            className="rounded-md max-h-60 object-cover"
+                            className="rounded-md max-h-60 object-cover border border-gray-100 shadow-sm"
                           />
                         </div>
                       )}
@@ -102,7 +81,7 @@ export function ReviewsModal({
                           <video
                             src={review.video_url}
                             controls
-                            className="rounded-md max-h-60 w-full"
+                            className="rounded-md max-h-60 w-full border border-gray-100 shadow-sm"
                           />
                         </div>
                       )}

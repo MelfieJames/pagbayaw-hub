@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
@@ -53,6 +54,11 @@ export default function Products() {
   useEffect(() => {
     if (location.state?.openReview && location.state?.reviewProduct) {
       const product = location.state.reviewProduct;
+      
+      // Reset any previous states
+      setErrorModalOpen(false);
+      setErrorMessage({ title: "", message: "" });
+      
       // Check if user has already reviewed this product
       if (user && !product.isEditing && hasUserReviewedProduct(product.id)) {
         setErrorMessage({
@@ -60,7 +66,8 @@ export default function Products() {
           message: "You have already reviewed this product. You can only review a product once."
         });
         setErrorModalOpen(true);
-        // Clear location state
+        
+        // Clear location state to prevent repeating errors
         window.history.replaceState({}, document.title);
         return;
       }
@@ -79,6 +86,15 @@ export default function Products() {
       window.history.replaceState({}, document.title);
     }
   }, [location.state, user, hasUserReviewedProduct, getUserReviewForProduct]);
+
+  // Force query invalidation on mount to ensure fresh data
+  useEffect(() => {
+    if (user) {
+      queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
+    }
+  }, [queryClient, user]);
 
   const productRatings = productReviews.reduce((acc, review) => {
     if (!acc[review.product_id]) {
@@ -210,11 +226,11 @@ export default function Products() {
 
         if (error) {
           console.error("Error updating review:", error);
-          toast("Failed to update review: " + error.message);
+          toast.error("Failed to update review: " + error.message);
           return;
         }
 
-        toast("Review updated successfully!");
+        toast.success("Review updated successfully!");
       } else {
         const reviewData: any = {
           user_id: user.id,
@@ -225,8 +241,8 @@ export default function Products() {
           video_url: videoUrl
         };
         
-        if (reviewProduct.purchaseId) {
-          reviewData.purchase_item_id = reviewProduct.purchaseId;
+        if (reviewProduct.purchaseItemId) {
+          reviewData.purchase_item_id = reviewProduct.purchaseItemId;
         }
 
         const { error } = await supabase
@@ -242,14 +258,15 @@ export default function Products() {
             });
             setErrorModalOpen(true);
           } else {
-            toast("Failed to submit review: " + error.message);
+            toast.error("Failed to submit review: " + error.message);
           }
           return;
         }
 
-        toast("Review submitted successfully!");
+        toast.success("Review submitted successfully!");
       }
       
+      // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['product-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['all-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['my-reviews', user.id] });
@@ -260,7 +277,7 @@ export default function Products() {
       resetReviewState();
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast("Failed to submit review");
+      toast.error("Failed to submit review");
     } finally {
       setIsSubmitting(false);
     }
@@ -274,7 +291,7 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white animate-fade-in">
       <Navbar />
       <div className="container mx-auto px-4 pt-24 flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -321,10 +338,10 @@ export default function Products() {
           setReviewDialogOpen(open);
           if (!open) resetReviewState();
         }}>
-          <DialogContent>
+          <DialogContent className="bg-gradient-to-b from-white to-purple-50 border border-purple-100 shadow-lg">
             <DialogHeader>
-              <DialogTitle>
-                {reviewProduct?.isEditing ? "Edit Review" : "Rate & Review"} {reviewProduct?.product_name}
+              <DialogTitle className="text-purple-800">
+                {reviewProduct?.isEditing ? "Edit Review" : "Rate & Review"} {reviewProduct?.name}
               </DialogTitle>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-4 overflow-y-auto">
@@ -333,8 +350,8 @@ export default function Products() {
                   <div className="flex justify-center">
                     <img 
                       src={reviewProduct.image} 
-                      alt={reviewProduct.product_name}
-                      className="w-32 h-32 object-cover rounded-md"
+                      alt={reviewProduct.name}
+                      className="w-32 h-32 object-cover rounded-md border-2 border-purple-200 shadow-md"
                     />
                   </div>
                 )}
@@ -344,7 +361,7 @@ export default function Products() {
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className={`p-2 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}
+                      className={`p-2 transition-all duration-300 transform hover:scale-110 ${rating >= star ? "text-yellow-400" : "text-gray-300"}`}
                     >
                       <Star className="h-8 w-8" fill={rating >= star ? "currentColor" : "none"} />
                     </button>
@@ -361,7 +378,7 @@ export default function Products() {
                   placeholder="Share your experience with this product..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="min-h-[100px]"
+                  className="min-h-[100px] border-purple-200 focus:ring-purple-400"
                 />
                 
                 <div className="space-y-4">
@@ -374,13 +391,14 @@ export default function Products() {
                         type="file"
                         accept="image/*"
                         onChange={handleImageUpload}
-                        className="flex-1"
+                        className="flex-1 border-purple-200"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="icon"
                         onClick={() => imageInputRef.current?.click()}
+                        className="border-purple-300 text-purple-700"
                       >
                         <ImageIcon className="h-4 w-4" />
                       </Button>
@@ -390,7 +408,7 @@ export default function Products() {
                         <img
                           src={previewImage}
                           alt="Preview"
-                          className="h-32 object-cover rounded-md"
+                          className="h-32 object-cover rounded-md border border-purple-200"
                         />
                         <Button
                           variant="ghost"
@@ -418,13 +436,14 @@ export default function Products() {
                         type="file"
                         accept="video/*"
                         onChange={handleVideoUpload}
-                        className="flex-1"
+                        className="flex-1 border-purple-200"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="icon"
                         onClick={() => videoInputRef.current?.click()}
+                        className="border-purple-300 text-purple-700"
                       >
                         <Video className="h-4 w-4" />
                       </Button>
@@ -434,7 +453,7 @@ export default function Products() {
                         <video
                           src={previewVideo}
                           controls
-                          className="h-32 w-full rounded-md"
+                          className="h-32 w-full rounded-md border border-purple-200"
                         />
                         <Button
                           variant="ghost"
@@ -458,7 +477,7 @@ export default function Products() {
             <Button 
               onClick={handleSubmitReviewWithMedia} 
               disabled={rating === 0 || isSubmitting} 
-              className="w-full mt-4"
+              className="w-full mt-4 bg-purple-600 hover:bg-purple-700 transition-colors"
             >
               {isSubmitting ? "Submitting..." : reviewProduct?.isEditing ? "Update Review" : "Submit Review"}
             </Button>
@@ -467,7 +486,10 @@ export default function Products() {
 
         <ErrorModal
           isOpen={errorModalOpen}
-          onClose={() => setErrorModalOpen(false)}
+          onClose={() => {
+            setErrorModalOpen(false);
+            setErrorMessage({ title: "", message: "" });
+          }}
           title={errorMessage.title}
           message={errorMessage.message}
         />

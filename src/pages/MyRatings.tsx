@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 export default function MyRatings() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pending");
 
   useEffect(() => {
@@ -27,6 +28,14 @@ export default function MyRatings() {
       });
     }
   }, [user, navigate]);
+
+  // Use query client to reset cached data
+  useEffect(() => {
+    if (user) {
+      queryClient.invalidateQueries({ queryKey: ['user-reviews', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-purchases', user?.id] });
+    }
+  }, [queryClient, user]);
 
   const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
     queryKey: ['notifications', user?.id],
@@ -86,6 +95,7 @@ export default function MyRatings() {
       }
     },
     enabled: !!user?.id,
+    staleTime: 0, // Don't use cached data
   });
 
   // Fetch all purchases with their transaction details
@@ -117,6 +127,7 @@ export default function MyRatings() {
       }
     },
     enabled: !!user?.id,
+    staleTime: 0, // Don't use cached data
   });
 
   const { data: userReviews = [], isLoading: reviewsLoading } = useQuery({
@@ -154,31 +165,35 @@ export default function MyRatings() {
       }
     },
     enabled: !!user?.id,
+    staleTime: 0, // Don't use cached data
   });
 
-  // Create a unique list of all purchased products that need reviews
-  const allPurchasedProducts = purchases.flatMap(purchase => 
-    purchase.purchase_items?.map(item => ({
-      ...item,
-      purchaseId: purchase.id,
-      transactionDetails: purchase.transaction_details
-    })) || []
-  );
-  
+  // Get all reviewed product IDs
+  const reviewedProductIds = userReviews.map(review => review.product_id);
+
   // Create a unique list of products that need reviews
-  // Group by product ID to avoid duplicates and filter out already reviewed products
+  // Filter out already reviewed products using the reviewedProductIds array
   const pendingProductMap = new Map();
   
-  allPurchasedProducts.forEach(item => {
-    // Skip products that have already been reviewed
-    if (userReviews.some(review => review.product_id === item.product_id)) {
-      return;
-    }
+  purchases.forEach(purchase => {
+    // Only process if purchase items exist
+    if (!purchase.purchase_items) return;
     
-    // Only add if not already in the map
-    if (!pendingProductMap.has(item.product_id)) {
-      pendingProductMap.set(item.product_id, item);
-    }
+    purchase.purchase_items.forEach(item => {
+      // Skip products that have already been reviewed
+      if (reviewedProductIds.includes(item.product_id)) {
+        return;
+      }
+      
+      // Only add if not already in the map
+      if (!pendingProductMap.has(item.product_id)) {
+        pendingProductMap.set(item.product_id, {
+          ...item,
+          purchaseId: purchase.id,
+          transactionDetails: purchase.transaction_details
+        });
+      }
+    });
   });
   
   // Convert map to array
@@ -192,7 +207,8 @@ export default function MyRatings() {
           id: productItem.product_id,
           name: productItem.products?.product_name,
           image: productItem.products?.image,
-          purchaseId: productItem.purchase_id
+          purchaseId: productItem.purchase_id,
+          purchaseItemId: productItem.id // Add this to prevent double reviews
         }
       } 
     });
@@ -205,50 +221,54 @@ export default function MyRatings() {
   const isLoading = notificationsLoading || reviewsLoading || purchasesLoading;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white">
       <Navbar />
-      <div className="container mx-auto px-4 pt-20 flex-grow">
-        <h1 className="text-3xl font-bold mb-6">My Product Ratings</h1>
+      <div className="container mx-auto px-4 pt-20 flex-grow animate-fade-in">
+        <h1 className="text-3xl font-bold mb-6 text-purple-800">My Product Ratings</h1>
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="pending">Pending Reviews ({pendingReviews.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed Reviews ({userReviews.length})</TabsTrigger>
+            <TabsTrigger value="pending" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800">
+              Pending Reviews ({pendingReviews.length})
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800">
+              Completed Reviews ({userReviews.length})
+            </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="pending" className="space-y-4">
+          <TabsContent value="pending" className="space-y-4 transition-all duration-300 animate-scale-in">
             {isLoading ? (
-              <Card>
+              <Card className="border-purple-100 shadow-md">
                 <CardContent className="pt-6 text-center py-8">
                   <LoadingSpinner size="lg" />
                 </CardContent>
               </Card>
             ) : pendingReviews.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center">
+              <Card className="border-purple-100 shadow-md bg-white">
+                <CardContent className="pt-6 text-center py-10">
                   <p className="text-muted-foreground">No pending reviews. Great job!</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pendingReviews.map((productItem) => (
-                  <Card key={`pending-${productItem.product_id}`}>
-                    <CardHeader className="pb-2">
+                  <Card key={`pending-${productItem.product_id}-${productItem.id}`} className="overflow-hidden border-purple-100 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
+                    <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
                       <div className="flex items-center gap-3">
                         <img 
                           src={productItem.products?.image || "/placeholder.svg"} 
                           alt={productItem.products?.product_name}
-                          className="w-16 h-16 object-cover rounded-md"
+                          className="w-16 h-16 object-cover rounded-md border-2 border-purple-200 shadow-sm"
                         />
                         <div>
-                          <CardTitle className="text-lg">{productItem.products?.product_name}</CardTitle>
+                          <CardTitle className="text-lg text-purple-900">{productItem.products?.product_name}</CardTitle>
                           <CardDescription>Ready to review</CardDescription>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <Button 
-                        className="w-full mt-2" 
+                        className="w-full mt-2 bg-purple-600 hover:bg-purple-700 transition-all" 
                         onClick={() => handleRateNow(productItem)}
                       >
                         Rate Now
@@ -260,32 +280,32 @@ export default function MyRatings() {
             )}
           </TabsContent>
           
-          <TabsContent value="completed" className="space-y-4">
+          <TabsContent value="completed" className="space-y-4 transition-all duration-300 animate-scale-in">
             {isLoading ? (
-              <Card>
+              <Card className="border-purple-100 shadow-md">
                 <CardContent className="pt-6 text-center py-8">
                   <LoadingSpinner size="lg" />
                 </CardContent>
               </Card>
             ) : userReviews.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center">
+              <Card className="border-purple-100 shadow-md bg-white">
+                <CardContent className="pt-6 text-center py-10">
                   <p className="text-muted-foreground">You haven't submitted any reviews yet.</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {userReviews.map((review) => (
-                  <Card key={review.id}>
-                    <CardHeader className="pb-2">
+                  <Card key={review.id} className="overflow-hidden border-purple-100 shadow-md hover:shadow-lg transition-all duration-300">
+                    <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
                       <div className="flex items-center gap-3">
                         <img 
                           src={review.products?.image || "/placeholder.svg"} 
                           alt={review.products?.product_name}
-                          className="w-16 h-16 object-cover rounded-md"
+                          className="w-16 h-16 object-cover rounded-md border-2 border-purple-200 shadow-sm"
                         />
                         <div>
-                          <CardTitle className="text-lg">{review.products?.product_name}</CardTitle>
+                          <CardTitle className="text-lg text-purple-900">{review.products?.product_name}</CardTitle>
                           <CardDescription>Reviewed on {new Date(review.created_at).toLocaleDateString()}</CardDescription>
                         </div>
                       </div>

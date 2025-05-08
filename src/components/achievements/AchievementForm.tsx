@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +22,9 @@ import { supabase } from "@/services/supabase/client";
 import { FileInput } from "@/components/ui/file-input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { AchievementImageUploader } from "./AchievementImageUploader";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   achievement_name: z.string().min(2, {
@@ -45,6 +48,8 @@ interface AchievementFormProps {
 export const AchievementForm = ({ mode, initialData, onSuccess, onClose }: AchievementFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [achievementId, setAchievementId] = useState<number | null>(initialData?.id || null);
+  const [existingImages, setExistingImages] = useState<{ id: number; image_url: string }[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,8 +66,27 @@ export const AchievementForm = ({ mode, initialData, onSuccess, onClose }: Achie
   useEffect(() => {
     if (initialData) {
       form.reset(initialData);
+      if (initialData.id) {
+        setAchievementId(initialData.id);
+        fetchExistingImages(initialData.id);
+      }
     }
   }, [initialData, form]);
+
+  const fetchExistingImages = async (id: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('achievement_images')
+        .select('*')
+        .eq('achievement_id', id)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      setExistingImages(data || []);
+    } catch (error) {
+      console.error('Error fetching achievement images:', error);
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -122,6 +146,12 @@ export const AchievementForm = ({ mode, initialData, onSuccess, onClose }: Achie
           title: "Success",
           description: `Achievement ${mode === "edit" ? "updated" : "created"} successfully.`,
         });
+        
+        // If this is a new achievement, set the ID for additional images
+        if (mode === "add" && response.data && response.data[0]) {
+          setAchievementId(response.data[0].id);
+        }
+        
         onSuccess();
       }
     } catch (error: any) {
@@ -136,107 +166,138 @@ export const AchievementForm = ({ mode, initialData, onSuccess, onClose }: Achie
     }
   };
 
+  const handleImagesAdded = () => {
+    fetchExistingImages(achievementId as number);
+  };
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="achievement_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Achievement Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Achievement Name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Date</FormLabel>
-              <DatePicker
-                className={cn(
-                  "border-input bg-background text-foreground ring-offset-background focus-visible:ring-ring focus-visible:ring-offset-2",
-                  "w-full"
-                )}
-                onSelect={field.onChange}
-                defaultMonth={field.value}
-                value={field.value}
-                dateFormat="MM/dd/yyyy"
+    <ScrollArea className="max-h-[70vh] px-1">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="achievement_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Achievement Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Achievement Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Date</FormLabel>
+                <DatePicker
+                  className={cn(
+                    "border-input bg-background text-foreground ring-offset-background focus-visible:ring-ring focus-visible:ring-offset-2",
+                    "w-full"
+                  )}
+                  onSelect={field.onChange}
+                  defaultMonth={field.value}
+                  value={field.value}
+                  dateFormat="MM/dd/yyyy"
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="venue"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Venue</FormLabel>
+                <FormControl>
+                  <Input placeholder="Venue" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="about_text"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>About</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Tell us more about this achievement"
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="image"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title Image</FormLabel>
+                <FormControl>
+                  <FileInput
+                    onChange={(file: File | null) => {
+                      field.onChange(file);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <Separator className="my-6" />
+          
+          <div className="space-y-4">
+            <h3 className="font-medium text-lg">Additional Images</h3>
+            <p className="text-sm text-muted-foreground">
+              You can add multiple additional images after saving the achievement.
+            </p>
+            
+            {achievementId ? (
+              <AchievementImageUploader
+                achievementId={achievementId}
+                onImagesAdded={handleImagesAdded}
+                existingImages={existingImages}
               />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="venue"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Venue</FormLabel>
-              <FormControl>
-                <Input placeholder="Venue" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="about_text"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>About</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Tell us more about this achievement"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="image"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image</FormLabel>
-              <FormControl>
-                <FileInput
-                  onChange={(file: File | null) => {
-                    field.onChange(file);
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex justify-end space-x-2">
-          <DialogClose asChild>
+            ) : (
+              mode === "add" && (
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-md text-amber-800 text-sm">
+                  You can add additional images after creating the achievement.
+                </div>
+              )
+            )}
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
             <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
+              type="submit"
+              disabled={isLoading}
+              className="bg-purple-600 hover:bg-purple-700"
             >
-              Cancel
+              {isLoading ? "Saving..." : mode === "edit" ? "Update" : "Create"}
             </Button>
-          </DialogClose>
-          <Button
-            type="submit"
-            disabled={isLoading}
-          >
-            {mode === "edit" ? "Update" : "Create"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          </div>
+        </form>
+      </Form>
+    </ScrollArea>
   );
 };
