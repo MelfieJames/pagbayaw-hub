@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useEffect } from "react"; // Added the missing useEffect import
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = ['/', '/about', '/achievements', '/products', '/contact', '/login'];
