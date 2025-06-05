@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -13,9 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/services/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { useEffect, useState } from "react";
-import { Heart, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { showCartAddNotification } from "./CartAddNotification";
 
 interface ProductCardProps {
@@ -29,82 +28,6 @@ export function ProductCard({ product, inventoryData, rating, onProductClick }: 
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      if (user) {
-        setIsLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from('user_favorites')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('product_id', product.id);
-
-          if (error) {
-            console.error('Error fetching favorite status:', error);
-          } else {
-            setIsFavorite(data && data.length > 0);
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    checkFavoriteStatus();
-  }, [user, product.id]);
-
-  const toggleFavorite = async () => {
-    if (!user) {
-      toast("Please log in to add items to your favorites");
-      navigate('/login', {
-        state: {
-          redirectAfterLogin: '/products',
-          message: "Please log in to add items to your favorites"
-        }
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      if (isFavorite) {
-        const { error } = await supabase
-          .from('user_favorites')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('product_id', product.id);
-
-        if (error) {
-          console.error('Error removing from favorites:', error);
-          toast.error("Failed to remove from favorites");
-        } else {
-          setIsFavorite(false);
-          toast.success("Removed from favorites");
-        }
-      } else {
-        const { error } = await supabase
-          .from('user_favorites')
-          .insert([{
-            user_id: user.id,
-            product_id: product.id
-          }]);
-
-        if (error) {
-          console.error('Error adding to favorites:', error);
-          toast.error("Failed to add to favorites");
-        } else {
-          setIsFavorite(true);
-          toast.success("Added to favorites");
-        }
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const addToCart = async () => {
     if (!user) {
@@ -198,30 +121,15 @@ export function ProductCard({ product, inventoryData, rating, onProductClick }: 
           Price: ₱{product.product_price.toFixed(2)}
         </p>
       </CardContent>
-      <CardFooter className="flex justify-between items-center p-4">
+      <CardFooter className="flex justify-center items-center p-4">
         <Button 
           onClick={(e) => {
             e.stopPropagation();
             addToCart();
           }} 
-          className="bg-green-600 text-white rounded-md hover:bg-green-500"
+          className="bg-green-600 text-white rounded-md hover:bg-green-500 w-full"
         >
           Add to Cart <ShoppingCart className="ml-2 h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite();
-          }}
-          disabled={isLoading}
-          className={`rounded-full p-2 hover:bg-gray-100 ${isFavorite ? 'text-red-500' : 'text-gray-500'}`}
-        >
-          {isLoading ? (
-            <LoadingSpinner size="sm" />
-          ) : (
-            <Heart className="h-5 w-5" fill={isFavorite ? 'red' : 'none'} stroke={isFavorite ? 'none' : 'currentColor'} />
-          )}
         </Button>
       </CardFooter>
     </Card>

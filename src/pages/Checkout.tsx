@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { CartItem } from "@/types/product";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShoppingBag, ArrowLeft, Info } from "lucide-react";
+import { ShoppingBag, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import OrderSummary from "@/components/checkout/OrderSummary";
 import OrderSuccessDialog from "@/components/checkout/OrderSuccessDialog";
 import OrderSummaryDialog from "@/components/checkout/OrderSummaryDialog";
 import AddressManagement from "@/components/checkout/AddressManagement";
+import PaymentInfo from "@/components/checkout/PaymentInfo";
+import CancellationModal from "@/components/checkout/CancellationModal";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type SupabaseCartResponse = {
@@ -35,6 +37,7 @@ export default function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
@@ -388,6 +391,13 @@ export default function Checkout() {
     setSelectedAddressId(address.id);
   };
 
+  const handleCancellation = async (reason: string, details?: string) => {
+    // For now, just navigate back to products with a cancellation message
+    toast.success("Order cancelled successfully");
+    setShowCancellationModal(false);
+    navigate('/products');
+  };
+
   if (!user) {
     navigate('/login', {
       state: { redirectAfterLogin: '/checkout', message: "Please log in to access checkout" }
@@ -399,13 +409,25 @@ export default function Checkout() {
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <Navbar />
       <div className="container mx-auto px-4 pt-20 pb-10">
-        <Button 
-          variant="ghost" 
-          className="mb-4 flex items-center gap-2 hover:bg-gray-100"
-          onClick={() => navigate('/products')}
-        >
-          <ArrowLeft className="h-4 w-4" /> Continue Shopping
-        </Button>
+        <div className="flex justify-between items-center mb-4">
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 hover:bg-gray-100"
+            onClick={() => navigate('/products')}
+          >
+            <ArrowLeft className="h-4 w-4" /> Continue Shopping
+          </Button>
+          
+          {cartItems.length > 0 && (
+            <Button 
+              variant="outline"
+              className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={() => setShowCancellationModal(true)}
+            >
+              Cancel Order
+            </Button>
+          )}
+        </div>
 
         <h1 className="text-3xl font-bold mb-8 text-gray-800">Checkout</h1>
         
@@ -447,6 +469,8 @@ export default function Checkout() {
                   />
                 </CardContent>
               </Card>
+
+              <PaymentInfo />
             </div>
             
             <div className="md:col-span-1">
@@ -481,6 +505,13 @@ export default function Checkout() {
         cartItems={cartItems}
         total={total}
         onDetailsSubmitted={handleDetailsSubmitted}
+      />
+
+      {/* Cancellation Modal */}
+      <CancellationModal
+        open={showCancellationModal}
+        onOpenChange={setShowCancellationModal}
+        onConfirmCancellation={handleCancellation}
       />
     </div>
   );

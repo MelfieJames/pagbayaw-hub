@@ -38,7 +38,6 @@ interface AddressType {
 
 interface AddressFormData {
   address_name: string;
-  recipient_name: string;
   address_line1: string;
   address_line2: string;
   purok: string;
@@ -64,13 +63,13 @@ export default function AddressManagement({
 }: AddressManagementProps) {
   const { user } = useAuth();
   const [addresses, setAddresses] = useState<AddressType[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false);
   const [isEditAddressModalOpen, setIsEditAddressModalOpen] = useState(false);
   const [currentAddress, setCurrentAddress] = useState<AddressType | null>(null);
   const [formData, setFormData] = useState<AddressFormData>({
     address_name: "",
-    recipient_name: "",
     address_line1: "",
     address_line2: "",
     purok: "",
@@ -85,9 +84,27 @@ export default function AddressManagement({
 
   useEffect(() => {
     if (user) {
+      fetchUserProfile();
       fetchAddresses();
     }
   }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const fetchAddresses = async () => {
     if (!user) return;
@@ -108,6 +125,14 @@ export default function AddressManagement({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getUserFullName = () => {
+    if (!userProfile) return user?.email?.split('@')[0] || 'User';
+    const firstName = userProfile.first_name || '';
+    const middleName = userProfile.middle_name || '';
+    const lastName = userProfile.last_name || '';
+    return `${firstName} ${middleName} ${lastName}`.trim() || user?.email?.split('@')[0] || 'User';
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,7 +166,7 @@ export default function AddressManagement({
           {
             user_id: user.id,
             address_name: formData.address_name,
-            recipient_name: formData.recipient_name,
+            recipient_name: getUserFullName(),
             address_line1: formData.address_line1,
             address_line2: formData.address_line2,
             purok: formData.purok,
@@ -165,7 +190,6 @@ export default function AddressManagement({
       // Reset form data
       setFormData({
         address_name: "",
-        recipient_name: "",
         address_line1: "",
         address_line2: "",
         purok: "",
@@ -187,7 +211,6 @@ export default function AddressManagement({
     setCurrentAddress(address);
     setFormData({
       address_name: address.address_name,
-      recipient_name: address.recipient_name,
       address_line1: address.address_line1,
       address_line2: address.address_line2 || "",
       purok: address.purok || "",
@@ -220,7 +243,7 @@ export default function AddressManagement({
         .from('user_addresses')
         .update({
           address_name: formData.address_name,
-          recipient_name: formData.recipient_name,
+          recipient_name: getUserFullName(),
           address_line1: formData.address_line1,
           address_line2: formData.address_line2,
           purok: formData.purok,
@@ -431,36 +454,33 @@ export default function AddressManagement({
           <DialogHeader>
             <DialogTitle>Add New Address</DialogTitle>
             <DialogDescription>
-              Enter the details for your new delivery address
+              Enter the details for your new delivery address. Your name will be used from your profile.
             </DialogDescription>
           </DialogHeader>
           
           <ScrollArea className="max-h-[60vh]">
             <form onSubmit={handleAddAddress} className="py-4 px-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="address_name">Address Name (e.g. Home, Office)</Label>
-                  <Input
-                    id="address_name"
-                    name="address_name"
-                    value={formData.address_name}
-                    onChange={handleInputChange}
-                    placeholder="Home"
-                    required
-                  />
-                </div>
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="recipient_display">Recipient Name</Label>
+                <Input
+                  id="recipient_display"
+                  value={getUserFullName()}
+                  disabled
+                  className="bg-gray-100"
+                />
+                <p className="text-xs text-gray-500">Name is taken from your profile. Update your profile to change this.</p>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="recipient_name">Recipient Name</Label>
-                  <Input
-                    id="recipient_name"
-                    name="recipient_name"
-                    value={formData.recipient_name}
-                    onChange={handleInputChange}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="address_name">Address Name (e.g. Home, Office)</Label>
+                <Input
+                  id="address_name"
+                  name="address_name"
+                  value={formData.address_name}
+                  onChange={handleInputChange}
+                  placeholder="Home"
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -597,44 +617,41 @@ export default function AddressManagement({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Address Modal */}
+      {/* Edit Address Modal - similar structure but for editing */}
       <Dialog open={isEditAddressModalOpen} onOpenChange={setIsEditAddressModalOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Address</DialogTitle>
             <DialogDescription>
-              Update your delivery address information
+              Update your delivery address information. Your name will be used from your profile.
             </DialogDescription>
           </DialogHeader>
           
           <ScrollArea className="max-h-[60vh]">
             <form onSubmit={handleUpdateAddress} className="py-4 px-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit_address_name">Address Name</Label>
-                  <Input
-                    id="edit_address_name"
-                    name="address_name"
-                    value={formData.address_name}
-                    onChange={handleInputChange}
-                    placeholder="Home"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit_recipient_name">Recipient Name</Label>
-                  <Input
-                    id="edit_recipient_name"
-                    name="recipient_name"
-                    value={formData.recipient_name}
-                    onChange={handleInputChange}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="edit_recipient_display">Recipient Name</Label>
+                <Input
+                  id="edit_recipient_display"
+                  value={getUserFullName()}
+                  disabled
+                  className="bg-gray-100"
+                />
+                <p className="text-xs text-gray-500">Name is taken from your profile. Update your profile to change this.</p>
               </div>
 
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="edit_address_name">Address Name</Label>
+                <Input
+                  id="edit_address_name"
+                  name="address_name"
+                  value={formData.address_name}
+                  onChange={handleInputChange}
+                  placeholder="Home"
+                  required
+                />
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit_address_line1">Street Address</Label>
