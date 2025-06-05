@@ -20,10 +20,12 @@ import { showCartAddNotification } from "./CartAddNotification";
 
 interface ProductCardProps {
   product: Product;
-  inventoryData: any[];
+  inventoryData: { product_id: number; quantity: number }[];
+  rating?: { total: number; count: number };
+  onProductClick?: (product: Product) => void;
 }
 
-export function ProductCard({ product, inventoryData }: ProductCardProps) {
+export function ProductCard({ product, inventoryData, rating, onProductClick }: ProductCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -164,13 +166,27 @@ export function ProductCard({ product, inventoryData }: ProductCardProps) {
     }
   };
 
+  const handleCardClick = () => {
+    if (onProductClick) {
+      onProductClick(product);
+    }
+  };
+
   return (
-    <Card className="bg-white shadow-md rounded-md overflow-hidden">
+    <Card className="bg-white shadow-md rounded-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold truncate">
           {product.product_name}
         </CardTitle>
         <CardDescription>Category: {product.category}</CardDescription>
+        {rating && rating.count > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-yellow-500">★</span>
+            <span className="text-sm text-gray-600">
+              {(rating.total / rating.count).toFixed(1)} ({rating.count} reviews)
+            </span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-4">
         <img
@@ -183,12 +199,21 @@ export function ProductCard({ product, inventoryData }: ProductCardProps) {
         </p>
       </CardContent>
       <CardFooter className="flex justify-between items-center p-4">
-        <Button onClick={addToCart} className="bg-green-600 text-white rounded-md hover:bg-green-500">
+        <Button 
+          onClick={(e) => {
+            e.stopPropagation();
+            addToCart();
+          }} 
+          className="bg-green-600 text-white rounded-md hover:bg-green-500"
+        >
           Add to Cart <ShoppingCart className="ml-2 h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
-          onClick={toggleFavorite}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite();
+          }}
           disabled={isLoading}
           className={`rounded-full p-2 hover:bg-gray-100 ${isFavorite ? 'text-red-500' : 'text-gray-500'}`}
         >
