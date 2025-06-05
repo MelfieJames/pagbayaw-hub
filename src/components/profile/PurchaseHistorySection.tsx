@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { Package, Star, Clock, CheckCircle, AlertTriangle, X, Truck } from "luci
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReviewSection from "@/components/products/ReviewSection";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import CancellationModal from "@/components/checkout/CancellationModal";
+import { toast } from "sonner";
 
 export default function PurchaseHistorySection() {
   const { user } = useAuth();
@@ -21,6 +23,8 @@ export default function PurchaseHistorySection() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [selectedProductToReview, setSelectedProductToReview] = useState(null);
   const [selectedPurchaseItem, setSelectedPurchaseItem] = useState(null);
+  const [isCancellationOpen, setIsCancellationOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ["user-purchases", user?.id],
@@ -46,6 +50,60 @@ export default function PurchaseHistorySection() {
       return data;
     },
     enabled: !!user,
+  });
+
+  // Cancel order mutation
+  const cancelOrderMutation = useMutation({
+    mutationFn: async ({ purchaseId, reason, details }: { purchaseId: number, reason: string, details?: string }) => {
+      // Step 1: Get purchase items to restore inventory
+      const { data: purchaseData, error: fetchError } = await supabase
+        .from('purchases')
+        .select(`
+          purchase_items(product_id, quantity)
+        `)
+        .eq('id', purchaseId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Step 2: Update purchase status to cancelled
+      const { error: updateError } = await supabase
+        .from('purchases')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', purchaseId);
+
+      if (updateError) throw updateError;
+
+      // Step 3: Restore inventory quantities using the edge function
+      const purchaseItems = purchaseData.purchase_items;
+      for (const item of purchaseItems) {
+        try {
+          const response = await supabase.functions.invoke('increment-inventory', {
+            body: { 
+              productId: item.product_id, 
+              quantity: item.quantity 
+            }
+          });
+          
+          if (!response.data.success) {
+            console.error('Error updating inventory via function:', response.data.message);
+          }
+        } catch (err) {
+          console.error('Error calling increment-inventory function:', err);
+        }
+      }
+
+      return purchaseId;
+    },
+    onSuccess: () => {
+      toast.success('Order cancelled successfully');
+      setIsCancellationOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['user-purchases', user?.id] });
+    },
+    onError: (error) => {
+      console.error('Error cancelling order:', error);
+      toast.error('Failed to cancel order. Please try again.');
+    }
   });
   
   // If there's a purchase ID in the URL query, open its details
@@ -111,6 +169,21 @@ export default function PurchaseHistorySection() {
     setIsReviewOpen(true);
   };
 
+  const handleCancelOrder = (purchase) => {
+    setSelectedPurchase(purchase);
+    setIsCancellationOpen(true);
+  };
+
+  const handleConfirmCancellation = (reason, details) => {
+    if (selectedPurchase) {
+      cancelOrderMutation.mutate({
+        purchaseId: selectedPurchase.id,
+        reason,
+        details
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -154,6 +227,7 @@ export default function PurchaseHistorySection() {
                 onReviewProduct={(product, purchaseItem) => 
                   handleOpenReview(product, purchaseItem, purchase)
                 }
+                onCancelOrder={() => handleCancelOrder(purchase)}
                 getBadgeColor={getBadgeColor}
                 getStatusIcon={getStatusIcon}
               />
@@ -174,6 +248,7 @@ export default function PurchaseHistorySection() {
                   onReviewProduct={(product, purchaseItem) => 
                     handleOpenReview(product, purchaseItem, purchase)
                   }
+                  onCancelOrder={() => handleCancelOrder(purchase)}
                   getBadgeColor={getBadgeColor}
                   getStatusIcon={getStatusIcon}
                 />
@@ -194,6 +269,7 @@ export default function PurchaseHistorySection() {
                   onReviewProduct={(product, purchaseItem) => 
                     handleOpenReview(product, purchaseItem, purchase)
                   }
+                  onCancelOrder={() => handleCancelOrder(purchase)}
                   getBadgeColor={getBadgeColor}
                   getStatusIcon={getStatusIcon}
                 />
@@ -214,6 +290,7 @@ export default function PurchaseHistorySection() {
                   onReviewProduct={(product, purchaseItem) => 
                     handleOpenReview(product, purchaseItem, purchase)
                   }
+                  onCancelOrder={() => handleCancelOrder(purchase)}
                   getBadgeColor={getBadgeColor}
                   getStatusIcon={getStatusIcon}
                 />
@@ -286,6 +363,18 @@ export default function PurchaseHistorySection() {
                   ))}
                 </div>
               </ScrollArea>
+
+              {/* Cancel button for pending orders */}
+              {selectedPurchase.status?.toLowerCase() === "pending" && (
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => handleCancelOrder(selectedPurchase)}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel Order
+                </Button>
+              )}
             </div>
           )}
         </DialogContent>
@@ -327,6 +416,14 @@ export default function PurchaseHistorySection() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Cancellation Modal */}
+      <CancellationModal
+        open={isCancellationOpen}
+        onOpenChange={setIsCancellationOpen}
+        onConfirmCancellation={handleConfirmCancellation}
+        isLoading={cancelOrderMutation.isPending}
+      />
     </section>
   );
 }
@@ -335,6 +432,7 @@ function PurchaseCard({
   purchase, 
   onViewDetails, 
   onReviewProduct,
+  onCancelOrder,
   getBadgeColor,
   getStatusIcon 
 }) {
@@ -405,13 +503,29 @@ function PurchaseCard({
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full mt-3"
-            onClick={onViewDetails}
-          >
-            View Details
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={onViewDetails}
+            >
+              View Details
+            </Button>
+            
+            {purchase.status?.toLowerCase() === "pending" && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancelOrder();
+                }}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

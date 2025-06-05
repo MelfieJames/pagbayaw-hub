@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,16 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -31,6 +20,7 @@ import {
   DialogDescription 
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import CancellationModal from "@/components/checkout/CancellationModal";
 
 interface PurchaseItem {
   id: number;
@@ -89,7 +79,7 @@ export default function PurchaseHistory() {
   });
 
   const cancelOrderMutation = useMutation({
-    mutationFn: async (purchaseId: number) => {
+    mutationFn: async ({ purchaseId, reason, details }: { purchaseId: number, reason: string, details?: string }) => {
       // Step 1: Get purchase items to restore inventory
       const { data: purchaseData, error: fetchError } = await supabase
         .from('purchases')
@@ -142,13 +132,18 @@ export default function PurchaseHistory() {
   });
 
   const handleCancelOrder = (purchaseId: number) => {
-    setSelectedPurchaseId(purchaseId);
+    const purchase = purchases.find(p => p.id === purchaseId);
+    setSelectedPurchase(purchase);
     setCancelDialogOpen(true);
   };
 
-  const confirmCancelOrder = () => {
-    if (selectedPurchaseId) {
-      cancelOrderMutation.mutate(selectedPurchaseId);
+  const handleConfirmCancellation = (reason: string, details?: string) => {
+    if (selectedPurchase) {
+      cancelOrderMutation.mutate({
+        purchaseId: selectedPurchase.id,
+        reason,
+        details
+      });
     }
   };
 
@@ -403,34 +398,13 @@ export default function PurchaseHistory() {
           </div>
         )}
 
-        <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to cancel this order? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>No, keep order</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={confirmCancelOrder}
-                className="bg-red-500 hover:bg-red-600"
-                disabled={cancelOrderMutation.isPending}
-              >
-                {cancelOrderMutation.isPending ? (
-                  <>
-                    <LoadingSpinner size="sm" className="mr-2" /> Cancelling...
-                  </>
-                ) : (
-                  <>
-                    <X className="h-4 w-4 mr-2" /> Yes, cancel order
-                  </>
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Cancellation Modal */}
+        <CancellationModal
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          onConfirmCancellation={handleConfirmCancellation}
+          isLoading={cancelOrderMutation.isPending}
+        />
 
         <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
           <DialogContent className="max-w-3xl">

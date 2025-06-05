@@ -1,176 +1,188 @@
 
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Award,
-  ShoppingBag,
-  LogOut,
-  LayoutDashboard,
-  UserCircle,
-  Home,
-  PackageCheck,
-  Bell,
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { 
+  LayoutDashboard, 
+  Package, 
+  ShoppingCart, 
+  Users, 
+  Bell, 
+  Trophy,
+  Bot,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AdminSidebarProps {
-  isOpen?: boolean;
-  setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
 export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
-  const { signOut } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
-  };
-
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + "/");
-  };
+  const menuItems = [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/admin",
+      description: "Overview and analytics"
+    },
+    {
+      title: "Products",
+      icon: Package,
+      href: "/admin/products",
+      description: "Manage inventory"
+    },
+    {
+      title: "Orders",
+      icon: ShoppingCart,
+      href: "/admin/purchases",
+      description: "View and manage orders"
+    },
+    {
+      title: "Order Approval",
+      icon: ShoppingCart,
+      href: "/admin/order-approval",
+      description: "Approve pending orders"
+    },
+    {
+      title: "Users",
+      icon: Users,
+      href: "/admin/users",
+      description: "User management"
+    },
+    {
+      title: "Notifications",
+      icon: Bell,
+      href: "/admin/notifications",
+      description: "Send notifications"
+    },
+    {
+      title: "Achievements",
+      icon: Trophy,
+      href: "/admin/achievements",
+      description: "Manage achievements"
+    },
+    {
+      title: "Chatbot",
+      icon: Bot,
+      href: "/admin/chatbot",
+      description: "Configure chatbot"
+    }
+  ];
 
   return (
-    <div
-      className={cn(
-        "w-72 h-screen shadow-xl bg-[#fdfbf7] border-r flex flex-col transition-all duration-300 z-20 overflow-y-auto",
-        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        "fixed md:relative"
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
       )}
-    >
-      {/* Header */}
-      <div className="p-6 flex items-center gap-4 border-b bg-[#f0e8d9] sticky top-0 z-10">
-        <UserCircle className="w-10 h-10 text-[#8B7355]" />
-        <h1 className="text-2xl font-bold text-[#8B7355] tracking-wide">
-          Admin Panel
-        </h1>
+
+      {/* Sidebar */}
+      <div className={cn(
+        "fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transition-all duration-300",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        isCollapsed ? "w-16" : "w-64"
+      )}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              {!isCollapsed && (
+                <h2 className="text-lg font-semibold text-[#8B7355]">Admin Panel</h2>
+              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="hidden md:flex"
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronLeft className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                  className="md:hidden"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <ScrollArea className="flex-1 p-4">
+            <nav className="space-y-2">
+              {menuItems.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-[#C4A484] text-white"
+                        : "text-gray-700 hover:bg-gray-100",
+                      isCollapsed && "justify-center px-2"
+                    )}
+                    title={isCollapsed ? item.title : undefined}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    {!isCollapsed && (
+                      <div className="flex flex-col">
+                        <span>{item.title}</span>
+                        <span className={cn(
+                          "text-xs",
+                          isActive ? "text-white/80" : "text-gray-500"
+                        )}>
+                          {item.description}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </ScrollArea>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-gray-200">
+            {!isCollapsed && (
+              <div className="text-xs text-gray-500 text-center">
+                Admin Dashboard v1.0
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-6 text-[15px] overflow-y-auto">
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            Dashboard
-          </div>
-          <Link
-            to="/admin"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin") &&
-              !isActive("/admin/products") &&
-              !isActive("/admin/achievements") &&
-              !isActive("/admin/send-notification") &&
-              !isActive("/admin/purchases")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            <span>Overview</span>
-          </Link>
-          
-          <Link
-            to="/"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <Home className="w-5 h-5" />
-            <span>View Website</span>
-          </Link>
-        </div>
-
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            Content Management
-          </div>
-          <Link
-            to="/admin/achievements"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/achievements")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <Award className="w-5 h-5" />
-            <span>Achievements</span>
-          </Link>
-          <Link
-            to="/admin/products"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/products")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <ShoppingBag className="w-5 h-5" />
-            <span>Products</span>
-          </Link>
-        </div>
-
-        <Separator />
-
-        {/* Order Management */}
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            Order Management
-          </div>
-          <Link
-            to="/admin/purchases"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/purchases")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <PackageCheck className="w-5 h-5" />
-            <span>Purchases</span>
-          </Link>
-        </div>
-
-        <Separator />
-
-        <div>
-          <div className="text-xs uppercase text-gray-500 font-semibold mb-2 pl-2">
-            Communication
-          </div>
-          <Link
-            to="/admin/send-notification"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-              isActive("/admin/send-notification")
-                ? "bg-[#F5F5DC] text-[#8B7355] font-semibold"
-                : "hover:bg-[#f3f3f3] text-gray-700"
-            )}
-          >
-            <Bell className="w-5 h-5" />
-            <span>Notifications</span>
-          </Link>
-        </div>
-      </nav>
-
-      {/* Footer */}
-      <div className="p-6 border-t bg-[#fdfbf7] sticky bottom-0 z-10">
-        <Button
-          onClick={handleLogout}
-          variant="destructive"
-          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>Logout</span>
-        </Button>
-      </div>
-    </div>
+      {/* Mobile menu button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsOpen(true)}
+        className="fixed top-20 left-4 z-40 md:hidden"
+      >
+        <Menu className="h-4 w-4" />
+      </Button>
+    </>
   );
 }
