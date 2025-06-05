@@ -63,7 +63,7 @@ export function ProductList({
         <ProductCard
           key={product.id}
           product={product}
-          inventory={inventoryData.find((item) => item.product_id === product.id)}
+          inventoryData={inventoryData}
           rating={productRatings[product.id]}
           onProductClick={() => onProductClick(product)}
         />
