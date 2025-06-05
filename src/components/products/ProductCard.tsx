@@ -1,67 +1,204 @@
-
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Star } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Product } from "@/types/product";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { supabase } from "@/services/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useEffect, useState } from "react";
+import { Heart, ShoppingCart } from "lucide-react";
+import { showCartAddNotification } from "./CartAddNotification";
 
 interface ProductCardProps {
   product: Product;
-  inventory: { quantity: number } | undefined;
-  rating?: { total: number; count: number };
-  onProductClick: () => void;
+  inventoryData: any[];
 }
 
-export function ProductCard({ product, inventory, rating, onProductClick }: ProductCardProps) {
-  const isOutOfStock = inventory?.quantity === 0;
-  const averageRating = rating && rating.count > 0 ? rating.total / rating.count : 0;
+export function ProductCard({ product, inventoryData }: ProductCardProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (user) {
+        setIsLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('user_favorites')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('product_id', product.id);
+
+          if (error) {
+            console.error('Error fetching favorite status:', error);
+          } else {
+            setIsFavorite(data && data.length > 0);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [user, product.id]);
+
+  const toggleFavorite = async () => {
+    if (!user) {
+      toast("Please log in to add items to your favorites");
+      navigate('/login', {
+        state: {
+          redirectAfterLogin: '/products',
+          message: "Please log in to add items to your favorites"
+        }
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (isFavorite) {
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_id', product.id);
+
+        if (error) {
+          console.error('Error removing from favorites:', error);
+          toast.error("Failed to remove from favorites");
+        } else {
+          setIsFavorite(false);
+          toast.success("Removed from favorites");
+        }
+      } else {
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert([{
+            user_id: user.id,
+            product_id: product.id
+          }]);
+
+        if (error) {
+          console.error('Error adding to favorites:', error);
+          toast.error("Failed to add to favorites");
+        } else {
+          setIsFavorite(true);
+          toast.success("Added to favorites");
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addToCart = async () => {
+    if (!user) {
+      toast("Please log in to add items to your cart");
+      navigate('/login', {
+        state: {
+          redirectAfterLogin: '/products',
+          message: "Please log in to add items to your cart"
+        }
+      });
+      return;
+    }
+
+    const inventoryItem = inventoryData.find(item => item.product_id === product.id);
+    if (!inventoryItem || inventoryItem.quantity === 0) {
+      toast.error("This item is out of stock");
+      return;
+    }
+
+    try {
+      const { data: existingItem } = await supabase
+        .from('cart')
+        .select('quantity')
+        .eq('user_id', user.id)
+        .eq('product_id', product.id)
+        .single();
+
+      if (existingItem) {
+        const newQuantity = existingItem.quantity + 1;
+        if (newQuantity > inventoryItem.quantity) {
+          toast.error("Cannot exceed available stock");
+          return;
+        }
+
+        const { error } = await supabase
+          .from('cart')
+          .update({ quantity: newQuantity })
+          .eq('user_id', user.id)
+          .eq('product_id', product.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('cart')
+          .insert([{
+            user_id: user.id,
+            product_id: product.id,
+            quantity: 1
+          }]);
+
+        if (error) throw error;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
+      showCartAddNotification(product.product_name);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error("Failed to add item to cart");
+    }
+  };
 
   return (
-    <Card
-      onClick={onProductClick}
-      className={`relative overflow-hidden transition-all duration-300 transform border border-gray-200 
-        ${isOutOfStock 
-          ? 'opacity-60 cursor-not-allowed' 
-          : 'hover:shadow-xl hover:scale-[1.02] cursor-pointer hover:border-primary/20'
-        } rounded-xl`}
-      data-product-id={product.id}
-    >
-      <div className="aspect-square relative overflow-hidden">
-        <img 
-          src={product.image || "/placeholder.svg"} 
-          alt={product.product_name} 
-          className={`w-full h-full object-cover transition-transform duration-500 ${isOutOfStock ? 'blur-[2px]' : 'hover:scale-105'}`}
-        />
-        {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Badge variant="destructive" className="text-lg shadow-md">
-              Out of Stock
-            </Badge>
-          </div>
-        )}
-      </div>
-      <CardHeader className="space-y-1 bg-gradient-to-r from-white to-gray-50 pb-2">
-        <Badge variant="secondary" className="w-fit">
-          {product.category}
-        </Badge>
-        <CardTitle className="text-lg line-clamp-2">{product.product_name}</CardTitle>
+    <Card className="bg-white shadow-md rounded-md overflow-hidden">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold truncate">
+          {product.product_name}
+        </CardTitle>
+        <CardDescription>Category: {product.category}</CardDescription>
       </CardHeader>
-      <CardContent className="bg-gradient-to-r from-white to-gray-50">
-        <div className="flex items-center justify-between">
-          <span className="font-medium text-lg text-gray-900">₱{product.product_price.toFixed(2)}</span>
-          <div className="flex flex-col items-end gap-1">
-            {rating && (
-              <span className="text-xs flex items-center gap-1">
-                {rating.count > 0 ? averageRating.toFixed(1) : "0.0"}
-                <Star className={`h-3 w-3 ${rating.count > 0 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
-                ({rating.count})
-              </span>
-            )}
-            <span className="text-xs">
-              {inventory?.quantity || 0} available
-            </span>
-          </div>
-        </div>
+      <CardContent className="p-4">
+        <img
+          src={product.image || "/placeholder.svg"}
+          alt={product.product_name}
+          className="w-full h-48 object-cover rounded-md mb-3"
+        />
+        <p className="text-gray-700">
+          Price: ₱{product.product_price.toFixed(2)}
+        </p>
       </CardContent>
+      <CardFooter className="flex justify-between items-center p-4">
+        <Button onClick={addToCart} className="bg-green-600 text-white rounded-md hover:bg-green-500">
+          Add to Cart <ShoppingCart className="ml-2 h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={toggleFavorite}
+          disabled={isLoading}
+          className={`rounded-full p-2 hover:bg-gray-100 ${isFavorite ? 'text-red-500' : 'text-gray-500'}`}
+        >
+          {isLoading ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <Heart className="h-5 w-5" fill={isFavorite ? 'red' : 'none'} stroke={isFavorite ? 'none' : 'currentColor'} />
+          )}
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

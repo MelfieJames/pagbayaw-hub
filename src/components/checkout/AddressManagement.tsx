@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +25,8 @@ interface AddressType {
   recipient_name: string;
   address_line1: string;
   address_line2: string | null;
+  purok: string | null;
+  barangay: string;
   city: string;
   state_province: string;
   postal_code: string;
@@ -40,8 +41,10 @@ interface AddressFormData {
   recipient_name: string;
   address_line1: string;
   address_line2: string;
+  purok: string;
+  barangay: string;
   city: string;
-  state_province: string;
+  province: string;
   postal_code: string;
   country: string;
   phone_number: string;
@@ -70,8 +73,10 @@ export default function AddressManagement({
     recipient_name: "",
     address_line1: "",
     address_line2: "",
+    purok: "",
+    barangay: "",
     city: "",
-    state_province: "",
+    province: "",
     postal_code: "",
     country: "Philippines",
     phone_number: "",
@@ -135,7 +140,17 @@ export default function AddressManagement({
         .insert([
           {
             user_id: user.id,
-            ...formData,
+            address_name: formData.address_name,
+            recipient_name: formData.recipient_name,
+            address_line1: formData.address_line1,
+            address_line2: formData.address_line2,
+            purok: formData.purok,
+            barangay: formData.barangay,
+            city: formData.city,
+            state_province: formData.province,
+            postal_code: formData.postal_code,
+            country: formData.country,
+            phone_number: formData.phone_number,
             is_default: isFirstAddress || formData.is_default
           }
         ])
@@ -153,8 +168,10 @@ export default function AddressManagement({
         recipient_name: "",
         address_line1: "",
         address_line2: "",
+        purok: "",
+        barangay: "",
         city: "",
-        state_province: "",
+        province: "",
         postal_code: "",
         country: "Philippines",
         phone_number: "",
@@ -173,8 +190,10 @@ export default function AddressManagement({
       recipient_name: address.recipient_name,
       address_line1: address.address_line1,
       address_line2: address.address_line2 || "",
+      purok: address.purok || "",
+      barangay: address.barangay || "",
       city: address.city,
-      state_province: address.state_province,
+      province: address.state_province,
       postal_code: address.postal_code,
       country: address.country,
       phone_number: address.phone_number,
@@ -200,7 +219,18 @@ export default function AddressManagement({
       const { error } = await supabase
         .from('user_addresses')
         .update({
-          ...formData
+          address_name: formData.address_name,
+          recipient_name: formData.recipient_name,
+          address_line1: formData.address_line1,
+          address_line2: formData.address_line2,
+          purok: formData.purok,
+          barangay: formData.barangay,
+          city: formData.city,
+          state_province: formData.province,
+          postal_code: formData.postal_code,
+          country: formData.country,
+          phone_number: formData.phone_number,
+          is_default: formData.is_default
         })
         .eq('id', currentAddress.id);
 
@@ -349,6 +379,12 @@ export default function AddressManagement({
                   {address.address_line2 && (
                     <p className="text-sm text-gray-500">{address.address_line2}</p>
                   )}
+                  {address.purok && (
+                    <p className="text-sm text-gray-500">Purok {address.purok}</p>
+                  )}
+                  {address.barangay && (
+                    <p className="text-sm text-gray-500">Barangay {address.barangay}</p>
+                  )}
                   <p className="text-sm text-gray-500">
                     {address.city}, {address.state_province}, {address.postal_code}
                   </p>
@@ -429,7 +465,7 @@ export default function AddressManagement({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="address_line1">Address Line 1</Label>
+                  <Label htmlFor="address_line1">Street Address</Label>
                   <Input
                     id="address_line1"
                     name="address_line1"
@@ -452,24 +488,49 @@ export default function AddressManagement({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="purok">Purok (Optional)</Label>
+                  <Input
+                    id="purok"
+                    name="purok"
+                    value={formData.purok}
+                    onChange={handleInputChange}
+                    placeholder="Purok number or name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="barangay">Barangay</Label>
+                  <Input
+                    id="barangay"
+                    name="barangay"
+                    value={formData.barangay}
+                    onChange={handleInputChange}
+                    placeholder="Barangay name"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city">City/Municipality</Label>
                   <Input
                     id="city"
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    placeholder="City"
+                    placeholder="City or Municipality"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="state_province">Province/State</Label>
+                  <Label htmlFor="province">Province</Label>
                   <Input
-                    id="state_province"
-                    name="state_province"
-                    value={formData.state_province}
+                    id="province"
+                    name="province"
+                    value={formData.province}
                     onChange={handleInputChange}
                     placeholder="Province"
                     required
@@ -576,7 +637,7 @@ export default function AddressManagement({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit_address_line1">Address Line 1</Label>
+                  <Label htmlFor="edit_address_line1">Street Address</Label>
                   <Input
                     id="edit_address_line1"
                     name="address_line1"
@@ -599,24 +660,49 @@ export default function AddressManagement({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_purok">Purok (Optional)</Label>
+                  <Input
+                    id="edit_purok"
+                    name="purok"
+                    value={formData.purok}
+                    onChange={handleInputChange}
+                    placeholder="Purok number or name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit_barangay">Barangay</Label>
+                  <Input
+                    id="edit_barangay"
+                    name="barangay"
+                    value={formData.barangay}
+                    onChange={handleInputChange}
+                    placeholder="Barangay name"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit_city">City</Label>
+                  <Label htmlFor="edit_city">City/Municipality</Label>
                   <Input
                     id="edit_city"
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    placeholder="City"
+                    placeholder="City or Municipality"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit_state_province">Province/State</Label>
+                  <Label htmlFor="edit_province">Province</Label>
                   <Input
-                    id="edit_state_province"
-                    name="state_province"
-                    value={formData.state_province}
+                    id="edit_province"
+                    name="province"
+                    value={formData.province}
                     onChange={handleInputChange}
                     placeholder="Province"
                     required

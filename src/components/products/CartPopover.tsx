@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Minus, Plus, ShoppingCart, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 
 type SupabaseCartResponse = {
@@ -157,6 +157,19 @@ export function CartPopover() {
     setSelectedItems(prev => prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]);
   };
 
+  const handleSelectAll = () => {
+    const validItems = cartItems.filter(item => {
+      const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+      return inventoryItem && inventoryItem.quantity >= item.quantity;
+    });
+    
+    if (selectedItems.length === validItems.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(validItems.map(item => item.product_id));
+    }
+  };
+
   const groupedCartItems = cartItems.reduce((acc, item) => {
     const category = item.products?.category || 'Uncategorized';
     if (!acc[category]) {
@@ -174,6 +187,11 @@ export function CartPopover() {
     const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
     return !inventoryItem || inventoryItem.quantity < item.quantity;
   });
+
+  const validItemsCount = cartItems.filter(item => {
+    const inventoryItem = inventoryData.find(inv => inv.product_id === item.product_id);
+    return inventoryItem && inventoryItem.quantity >= item.quantity;
+  }).length;
 
   const handleCheckout = () => {
     if (!user) {
@@ -229,10 +247,17 @@ export function CartPopover() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">Shopping Cart</h4>
-            {user && (
-              <span className="text-sm text-muted-foreground">
-                {selectedItems.length} selected
-              </span>
+            {user && cartItems.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedItems.length === validItemsCount && validItemsCount > 0}
+                  onCheckedChange={handleSelectAll}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm text-muted-foreground">
+                  Select All ({selectedItems.length} selected)
+                </span>
+              </div>
             )}
           </div>
           
