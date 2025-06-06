@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Truck, Hash, Pencil, Search } from "lucide-react";
+import { Truck, Hash, Pencil, Search, Calendar } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
@@ -20,6 +20,7 @@ export function TrackingNotificationForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [message, setMessage] = useState("");
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
   const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
@@ -68,6 +69,51 @@ export function TrackingNotificationForm() {
     fetchCustomers();
   }, []);
 
+  // Set up automatic notifications check
+  useEffect(() => {
+    const checkPendingDeliveries = async () => {
+      try {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        const { data: pendingDeliveries, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('expected_delivery_date', tomorrowStr)
+          .eq('type', 'tracking_update');
+
+        if (error) {
+          console.error('Error checking pending deliveries:', error);
+          return;
+        }
+
+        // Send reminder notifications for deliveries due tomorrow
+        if (pendingDeliveries && pendingDeliveries.length > 0) {
+          for (const delivery of pendingDeliveries) {
+            await supabase.from('notifications').insert([
+              {
+                user_id: delivery.user_id,
+                message: `Your order is expected to arrive tomorrow! Tracking: ${delivery.tracking_number}`,
+                tracking_number: delivery.tracking_number,
+                type: 'delivery_reminder',
+                purchase_id: delivery.purchase_id
+              }
+            ]);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking delivery reminders:', error);
+      }
+    };
+
+    // Check for pending deliveries every hour
+    const interval = setInterval(checkPendingDeliveries, 60 * 60 * 1000);
+    checkPendingDeliveries(); // Run immediately
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase();
     setSearchTerm(value);
@@ -114,6 +160,11 @@ export function TrackingNotificationForm() {
       return;
     }
 
+    if (!expectedDeliveryDate) {
+      toast.error("Please enter expected delivery date");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error } = await supabase.from("notifications").insert([
@@ -122,13 +173,14 @@ export function TrackingNotificationForm() {
           message: `${message.trim()} - TRACKING NUMBER: ${trackingNumber.trim()}`,
           tracking_number: trackingNumber.trim(),
           type: "tracking_update",
-          purchase_id: purchaseId
+          purchase_id: purchaseId,
+          expected_delivery_date: expectedDeliveryDate
         },
       ]);
 
       if (error) throw error;
 
-      // Also update the purchase status to 'shipped'
+      // Also update the purchase status to 'delivering'
       const { error: updateError } = await supabase
         .from('purchases')
         .update({ status: 'delivering' })
@@ -139,6 +191,7 @@ export function TrackingNotificationForm() {
       toast.success("Tracking notification sent successfully!");
       setMessage("");
       setTrackingNumber("");
+      setExpectedDeliveryDate("");
       setSearchTerm("");
       setSelectedCustomerId("");
       setPurchaseId("");
@@ -169,7 +222,7 @@ export function TrackingNotificationForm() {
           />
           <div>
             <h2 className="text-xl font-bold text-[#8B7355]">Send Tracking Update</h2>
-            <p className="text-sm text-gray-500">Update customers on their order shipment status</p>
+            <p className="text-sm text-gray-500">Update customers on their order shipment status with delivery expectations</p>
           </div>
         </div>
 
@@ -222,6 +275,20 @@ export function TrackingNotificationForm() {
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
             className="mt-1"
+          />
+        </div>
+
+        <div>
+          <Label className="text-[#8B7355] flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Expected Delivery Date
+          </Label>
+          <Input
+            type="date"
+            value={expectedDeliveryDate}
+            onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+            className="mt-1"
+            min={new Date().toISOString().split('T')[0]}
           />
         </div>
 

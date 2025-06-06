@@ -50,6 +50,35 @@ export interface Database {
           updated_at?: string
         }
       }
+      chatbot_qa: {
+        Row: {
+          id: number
+          question: string
+          answer: string
+          is_active: boolean
+          display_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          question: string
+          answer: string
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          question?: string
+          answer?: string
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
       achievements: {
         Row: {
           id: number
@@ -351,6 +380,41 @@ export interface Database {
           phone_number?: string
           is_default?: boolean
           created_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: number
+          user_id: string
+          message: string
+          created_at: string
+          is_read: boolean
+          type: string
+          tracking_number?: string
+          purchase_id?: number
+          expected_delivery_date?: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          message: string
+          created_at?: string
+          is_read?: boolean
+          type: string
+          tracking_number?: string
+          purchase_id?: number
+          expected_delivery_date?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          message?: string
+          created_at?: string
+          is_read?: boolean
+          type?: string
+          tracking_number?: string
+          purchase_id?: number
+          expected_delivery_date?: string
         }
       }
     }

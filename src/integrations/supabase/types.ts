@@ -213,6 +213,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_qa: {
+        Row: {
+          answer: string
+          created_at: string
+          display_order: number
+          id: number
+          is_active: boolean
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          display_order?: number
+          id?: number
+          is_active?: boolean
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          display_order?: number
+          id?: number
+          is_active?: boolean
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           created_at: string | null
@@ -248,6 +278,7 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string | null
+          expected_delivery_date: string | null
           id: number
           is_read: boolean | null
           message: string
@@ -258,6 +289,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          expected_delivery_date?: string | null
           id?: number
           is_read?: boolean | null
           message: string
@@ -268,6 +300,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          expected_delivery_date?: string | null
           id?: number
           is_read?: boolean | null
           message?: string

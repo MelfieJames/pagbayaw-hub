@@ -4,46 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { MessageCircle, X, Send, ChevronDown } from "lucide-react";
 import { supabase } from "@/services/supabase/client";
 
-// Define FAQ data that will be used by the chatbot
-const faqData = [
-  {
-    question: "What is UNVAS?",
-    answer: "UNVAS is an eco-friendly art canvas and craft material made from upcycled dried banana leaves (locally known as 'unas'). It's a sustainable alternative to traditional canvas materials, created to provide livelihood to communities in the Philippines."
-  },
-  {
-    question: "How is UNVAS made?",
-    answer: "UNVAS is made by collecting dried banana leaves, processing them through several natural methods, and converting them into durable sheets that can be used for various purposes including art canvas and craft materials."
-  },
-  {
-    question: "Is UNVAS eco-friendly?",
-    answer: "Yes, UNVAS is 100% eco-friendly. It utilizes agricultural waste (dried banana leaves) that would otherwise be burned, reducing pollution and carbon emissions. The production process uses minimal chemicals and emphasizes sustainability."
-  },
-  {
-    question: "What makes UNVAS different from other canvas materials?",
-    answer: "UNVAS stands out because of its unique texture, sustainability, and social impact. Each UNVAS product directly contributes to community livelihood programs across the Philippines, particularly helping marginalized groups."
-  },
-  {
-    question: "Can I use UNVAS for painting or crafting?",
-    answer: "Absolutely! UNVAS works wonderfully for various art forms including acrylic painting, oil painting, and many types of crafts. Its unique texture adds character to artwork and creates distinctive results."
-  },
-  {
-    question: "What kind of UNVAS products do you sell?",
-    answer: "We offer a range of products including art canvas in various sizes, printing papers, handmade accessories like earrings and necklaces, home decorations, and raw materials for crafters who want to create their own designs."
-  },
-  {
-    question: "Are all the products handmade?",
-    answer: "Yes, all our products are handmade by different community groups across the Philippines, ensuring each item is unique and created with care. This also helps maximize the positive social impact of each purchase."
-  },
-  {
-    question: "Can I request a custom design?",
-    answer: "Yes, we accept custom orders for both individual pieces and bulk orders. Please contact us with your specific requirements, and we'll work with our artisan communities to create something special for you."
-  },
-  {
-    question: "Do you offer gift sets or bundles?",
-    answer: "Yes, we offer various gift sets and bundles, perfect for presents or as starter kits for those who want to try different UNVAS products. These bundles often come at a special price compared to buying individual items."
-  }
-];
-
 interface ChatbotConfig {
   enabled: boolean;
   welcome_message: string;
@@ -52,6 +12,14 @@ interface ChatbotConfig {
   position: 'bottom-right' | 'bottom-left';
   auto_open: boolean;
   auto_open_delay: number;
+}
+
+interface ChatbotQA {
+  id: number;
+  question: string;
+  answer: string;
+  is_active: boolean;
+  display_order: number;
 }
 
 export default function Chatbot() {
@@ -73,7 +41,6 @@ export default function Chatbot() {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching chatbot config:', error);
-        // Return default config if database fetch fails
         return {
           enabled: true,
           welcome_message: "Hello! I'm your UNVAS assistant. How can I help you today?",
@@ -94,6 +61,25 @@ export default function Chatbot() {
         auto_open: false,
         auto_open_delay: 3000
       };
+    },
+  });
+
+  // Fetch custom Q&A from database
+  const { data: customQA } = useQuery({
+    queryKey: ['chatbot-qa-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chatbot_qa')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching chatbot Q&A:', error);
+        return [];
+      }
+
+      return data || [];
     },
   });
 
@@ -142,25 +128,26 @@ export default function Chatbot() {
       { sender: "user", text: inputText }
     ]);
 
-    // Find an FAQ match or respond with a default message
+    // Find a match in custom Q&A first, then fallback to default
     const userInput = inputText.toLowerCase();
-    const matchedFaq = faqData.find(faq => 
-      faq.question.toLowerCase().includes(userInput) || 
-      userInput.includes(faq.question.toLowerCase().replace(/[?]/g, ""))
+    const matchedCustomQA = customQA?.find(qa => 
+      qa.question.toLowerCase().includes(userInput) || 
+      userInput.includes(qa.question.toLowerCase().replace(/[?]/g, ""))
     );
 
     setTimeout(() => {
-      if (matchedFaq) {
+      if (matchedCustomQA) {
         setMessages((prev) => [
           ...prev,
-          { sender: "bot", text: matchedFaq.answer }
+          { sender: "bot", text: matchedCustomQA.answer }
         ]);
       } else {
+        // Default fallback response
         setMessages((prev) => [
           ...prev,
           { 
             sender: "bot", 
-            text: "I don't have that information at the moment. For specific inquiries, please contact us at projectuplift21@gmail.com or visit our contact page." 
+            text: "I don't have that specific information at the moment. For detailed inquiries, please contact us at projectuplift21@gmail.com or visit our contact page. Is there anything else I can help you with from our available topics?" 
           }
         ]);
       }
@@ -182,12 +169,12 @@ export default function Chatbot() {
       { sender: "user", text: question }
     ]);
 
-    const faq = faqData.find(faq => faq.question === question);
+    const qa = customQA?.find(qa => qa.question === question);
     
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: faq.answer }
+        { sender: "bot", text: qa ? qa.answer : "I don't have information about that topic." }
       ]);
       setShowSuggestions(true);
     }, 500);
@@ -254,7 +241,7 @@ export default function Chatbot() {
             <div ref={messagesEndRef} />
 
             {/* Suggestions */}
-            {showSuggestions && messages.length >= 1 && messages[messages.length - 1].sender === "bot" && (
+            {showSuggestions && messages.length >= 1 && messages[messages.length - 1].sender === "bot" && customQA && customQA.length > 0 && (
               <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-2 mt-4">
                 <div className="flex justify-between items-center">
                   <h4 className="text-sm font-medium text-gray-700">Ask me about:</h4>
@@ -266,13 +253,13 @@ export default function Chatbot() {
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {faqData.slice(0, 5).map((faq, index) => (
+                  {customQA.slice(0, 5).map((qa, index) => (
                     <button
                       key={index}
                       className="w-full text-left text-sm p-2 hover:bg-gray-100 rounded-md transition-colors duration-150"
-                      onClick={() => handleSuggestionClick(faq.question)}
+                      onClick={() => handleSuggestionClick(qa.question)}
                     >
-                      {faq.question}
+                      {qa.question}
                     </button>
                   ))}
                 </div>
