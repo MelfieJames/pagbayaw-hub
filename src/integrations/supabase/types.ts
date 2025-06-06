@@ -171,6 +171,48 @@ export type Database = {
           },
         ]
       }
+      chatbot_config: {
+        Row: {
+          auto_open: boolean
+          auto_open_delay: number
+          bot_name: string
+          created_at: string
+          enabled: boolean
+          id: number
+          position: string
+          system_prompt: string
+          theme_color: string
+          updated_at: string
+          welcome_message: string
+        }
+        Insert: {
+          auto_open?: boolean
+          auto_open_delay?: number
+          bot_name?: string
+          created_at?: string
+          enabled?: boolean
+          id?: number
+          position?: string
+          system_prompt?: string
+          theme_color?: string
+          updated_at?: string
+          welcome_message?: string
+        }
+        Update: {
+          auto_open?: boolean
+          auto_open_delay?: number
+          bot_name?: string
+          created_at?: string
+          enabled?: boolean
+          id?: number
+          position?: string
+          system_prompt?: string
+          theme_color?: string
+          updated_at?: string
+          welcome_message?: string
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           created_at: string | null

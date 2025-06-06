@@ -8,7 +8,6 @@ import {
   LayoutDashboard, 
   Package, 
   ShoppingCart, 
-  Users, 
   Bell, 
   Trophy,
   Bot,
@@ -54,12 +53,6 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       description: "Approve pending orders"
     },
     {
-      title: "Users",
-      icon: Users,
-      href: "/admin/users",
-      description: "User management"
-    },
-    {
       title: "Notifications",
       icon: Bell,
       href: "/admin/notifications",
@@ -91,7 +84,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transition-all duration-300",
+        "fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-50 transition-all duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         isCollapsed ? "w-16" : "w-64"
       )}>
@@ -107,7 +100,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="hidden md:flex"
+                  className="hidden md:flex hover:bg-gray-100"
                 >
                   {isCollapsed ? (
                     <ChevronRight className="h-4 w-4" />
@@ -119,7 +112,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsOpen(false)}
-                  className="md:hidden"
+                  className="md:hidden hover:bg-gray-100"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -137,20 +130,24 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
                     key={item.href}
                     to={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                       isActive
-                        ? "bg-[#C4A484] text-white"
-                        : "text-gray-700 hover:bg-gray-100",
+                        ? "bg-[#C4A484] text-white shadow-sm"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
                       isCollapsed && "justify-center px-2"
                     )}
-                    title={isCollapsed ? item.title : undefined}
+                    title={isCollapsed ? `${item.title} - ${item.description}` : undefined}
                   >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <item.icon className={cn(
+                      "flex-shrink-0 transition-transform duration-200",
+                      isCollapsed ? "h-5 w-5" : "h-4 w-4",
+                      !isCollapsed && isActive && "scale-110"
+                    )} />
                     {!isCollapsed && (
-                      <div className="flex flex-col">
-                        <span>{item.title}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="truncate">{item.title}</span>
                         <span className={cn(
-                          "text-xs",
+                          "text-xs truncate transition-colors duration-200",
                           isActive ? "text-white/80" : "text-gray-500"
                         )}>
                           {item.description}
@@ -179,7 +176,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(true)}
-        className="fixed top-20 left-4 z-40 md:hidden"
+        className="fixed top-20 left-4 z-40 md:hidden shadow-lg"
       >
         <Menu className="h-4 w-4" />
       </Button>

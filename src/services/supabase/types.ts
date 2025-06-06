@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -10,6 +9,47 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      chatbot_config: {
+        Row: {
+          id: number
+          enabled: boolean
+          welcome_message: string
+          system_prompt: string
+          bot_name: string
+          theme_color: string
+          position: 'bottom-right' | 'bottom-left'
+          auto_open: boolean
+          auto_open_delay: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          enabled?: boolean
+          welcome_message?: string
+          system_prompt?: string
+          bot_name?: string
+          theme_color?: string
+          position?: 'bottom-right' | 'bottom-left'
+          auto_open?: boolean
+          auto_open_delay?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          enabled?: boolean
+          welcome_message?: string
+          system_prompt?: string
+          bot_name?: string
+          theme_color?: string
+          position?: 'bottom-right' | 'bottom-left'
+          auto_open?: boolean
+          auto_open_delay?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
       achievements: {
         Row: {
           id: number

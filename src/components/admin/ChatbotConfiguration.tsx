@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Bot, Save, RefreshCw } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -46,29 +47,51 @@ export default function ChatbotConfiguration() {
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching chatbot config:', error);
         throw error;
       }
 
-      if (data) {
-        setConfig(data);
-        return data;
-      }
-      return null;
+      return data;
     },
   });
+
+  useEffect(() => {
+    if (existingConfig) {
+      setConfig(existingConfig);
+    }
+  }, [existingConfig]);
 
   const saveConfigMutation = useMutation({
     mutationFn: async (configData: ChatbotConfig) => {
       if (existingConfig?.id) {
         const { error } = await supabase
           .from('chatbot_config')
-          .update(configData)
+          .update({
+            enabled: configData.enabled,
+            welcome_message: configData.welcome_message,
+            system_prompt: configData.system_prompt,
+            bot_name: configData.bot_name,
+            theme_color: configData.theme_color,
+            position: configData.position,
+            auto_open: configData.auto_open,
+            auto_open_delay: configData.auto_open_delay,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', existingConfig.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('chatbot_config')
-          .insert([configData]);
+          .insert([{
+            enabled: configData.enabled,
+            welcome_message: configData.welcome_message,
+            system_prompt: configData.system_prompt,
+            bot_name: configData.bot_name,
+            theme_color: configData.theme_color,
+            position: configData.position,
+            auto_open: configData.auto_open,
+            auto_open_delay: configData.auto_open_delay
+          }]);
         if (error) throw error;
       }
     },
@@ -155,15 +178,18 @@ export default function ChatbotConfiguration() {
 
             <div>
               <Label htmlFor="position">Position</Label>
-              <select
-                id="position"
+              <Select
                 value={config.position}
-                onChange={(e) => handleInputChange('position', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onValueChange={(value: 'bottom-right' | 'bottom-left') => handleInputChange('position', value)}
               >
-                <option value="bottom-right">Bottom Right</option>
-                <option value="bottom-left">Bottom Left</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                  <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -239,6 +265,9 @@ export default function ChatbotConfiguration() {
                 <Bot className="h-4 w-4 text-white" />
               </div>
               <span className="font-medium">{config.bot_name}</span>
+              {!config.enabled && (
+                <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">Disabled</span>
+              )}
             </div>
             <div className="bg-white p-3 rounded-lg shadow-sm">
               <p className="text-sm">{config.welcome_message}</p>
@@ -250,7 +279,11 @@ export default function ChatbotConfiguration() {
         <div className="flex justify-end gap-3">
           <Button
             variant="outline"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['chatbot-config'] })}
+            onClick={() => {
+              if (existingConfig) {
+                setConfig(existingConfig);
+              }
+            }}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Reset

@@ -1,6 +1,8 @@
 
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MessageCircle, X, Send, ChevronDown } from "lucide-react";
+import { supabase } from "@/services/supabase/client";
 
 // Define FAQ data that will be used by the chatbot
 const faqData = [
@@ -42,17 +44,82 @@ const faqData = [
   }
 ];
 
+interface ChatbotConfig {
+  enabled: boolean;
+  welcome_message: string;
+  bot_name: string;
+  theme_color: string;
+  position: 'bottom-right' | 'bottom-left';
+  auto_open: boolean;
+  auto_open_delay: number;
+}
+
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      sender: "bot",
-      text: "Hello! I'm your UNVAS assistant. How can I help you today?"
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Fetch chatbot configuration from database
+  const { data: config } = useQuery({
+    queryKey: ['chatbot-config-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chatbot_config')
+        .select('enabled, welcome_message, bot_name, theme_color, position, auto_open, auto_open_delay')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching chatbot config:', error);
+        // Return default config if database fetch fails
+        return {
+          enabled: true,
+          welcome_message: "Hello! I'm your UNVAS assistant. How can I help you today?",
+          bot_name: "UNVAS Assistant",
+          theme_color: "#6b8e68",
+          position: 'bottom-right' as const,
+          auto_open: false,
+          auto_open_delay: 3000
+        };
+      }
+
+      return data || {
+        enabled: true,
+        welcome_message: "Hello! I'm your UNVAS assistant. How can I help you today?",
+        bot_name: "UNVAS Assistant",
+        theme_color: "#6b8e68",
+        position: 'bottom-right' as const,
+        auto_open: false,
+        auto_open_delay: 3000
+      };
+    },
+  });
+
+  // Initialize messages with welcome message from config
+  useEffect(() => {
+    if (config && messages.length === 0) {
+      setMessages([
+        {
+          sender: "bot",
+          text: config.welcome_message
+        }
+      ]);
+    }
+  }, [config, messages.length]);
+
+  // Handle auto-open functionality
+  useEffect(() => {
+    if (config && config.auto_open && config.enabled && !hasAutoOpened && !isOpen) {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+        setHasAutoOpened(true);
+      }, config.auto_open_delay);
+
+      return () => clearTimeout(timer);
+    }
+  }, [config, hasAutoOpened, isOpen]);
 
   // Auto-scroll to the bottom of the messages
   useEffect(() => {
@@ -60,6 +127,11 @@ export default function Chatbot() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isOpen]);
+
+  // Don't render if chatbot is disabled
+  if (!config || !config.enabled) {
+    return null;
+  }
 
   const handleSend = () => {
     if (inputText.trim() === "") return;
@@ -92,7 +164,6 @@ export default function Chatbot() {
           }
         ]);
       }
-      // Always show suggestions after answering
       setShowSuggestions(true);
     }, 500);
 
@@ -111,7 +182,6 @@ export default function Chatbot() {
       { sender: "user", text: question }
     ]);
 
-    // Find the answer for this question
     const faq = faqData.find(faq => faq.question === question);
     
     setTimeout(() => {
@@ -119,17 +189,22 @@ export default function Chatbot() {
         ...prev,
         { sender: "bot", text: faq.answer }
       ]);
-      // Always show suggestions after answering
       setShowSuggestions(true);
     }, 500);
   };
 
+  const positionClasses = {
+    'bottom-right': 'bottom-6 right-6',
+    'bottom-left': 'bottom-6 left-6'
+  };
+
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className={`fixed ${positionClasses[config.position]} z-50`}>
       {/* Chat Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-[#6b8e68] text-white p-3 rounded-full shadow-lg hover:bg-[#5b7a58] transition-colors"
+        className="text-white p-3 rounded-full shadow-lg hover:scale-105 transition-all duration-200"
+        style={{ backgroundColor: config.theme_color }}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
         {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
@@ -137,13 +212,18 @@ export default function Chatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col max-h-[500px]">
+        <div className={`absolute bottom-16 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col max-h-[500px] ${
+          config.position === 'bottom-left' ? 'left-0' : 'right-0'
+        }`}>
           {/* Header */}
-          <div className="bg-[#6b8e68] text-white px-4 py-3 rounded-t-lg flex justify-between items-center">
-            <h3 className="font-medium">UNVAS® Chat Support</h3>
+          <div 
+            className="text-white px-4 py-3 rounded-t-lg flex justify-between items-center"
+            style={{ backgroundColor: config.theme_color }}
+          >
+            <h3 className="font-medium">{config.bot_name}</h3>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white/80 hover:text-white"
+              className="text-white/80 hover:text-white transition-colors"
               aria-label="Close chat"
             >
               <X size={18} />
@@ -162,9 +242,10 @@ export default function Chatbot() {
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
                     message.sender === "user"
-                      ? "bg-[#6b8e68] text-white rounded-tr-none"
+                      ? "text-white rounded-tr-none"
                       : "bg-white border border-gray-200 rounded-tl-none"
                   }`}
+                  style={message.sender === "user" ? { backgroundColor: config.theme_color } : {}}
                 >
                   {message.text}
                 </div>
@@ -172,7 +253,7 @@ export default function Chatbot() {
             ))}
             <div ref={messagesEndRef} />
 
-            {/* Suggestions - always shown after bot responds */}
+            {/* Suggestions */}
             {showSuggestions && messages.length >= 1 && messages[messages.length - 1].sender === "bot" && (
               <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-2 mt-4">
                 <div className="flex justify-between items-center">
@@ -207,12 +288,14 @@ export default function Chatbot() {
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
-              className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#6b8e68]"
+              className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-1"
+              style={{ '--tw-ring-color': config.theme_color } as any}
             />
             <button
               onClick={handleSend}
               disabled={!inputText.trim()}
-              className="bg-[#6b8e68] text-white px-3 py-2 rounded-r-md hover:bg-[#5b7a58] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-white px-3 py-2 rounded-r-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              style={{ backgroundColor: config.theme_color }}
             >
               <Send size={18} />
             </button>
