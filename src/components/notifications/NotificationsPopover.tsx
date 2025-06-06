@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, CheckCircle, AlertTriangle, Package, ChevronRight, Copy, Eye, Star } from "lucide-react";
+import { Bell, CheckCircle, AlertTriangle, Package, ChevronRight, Copy, Eye, Star, Calendar } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +28,21 @@ interface Notification {
   is_read: boolean;
   purchase_id: number | null;
   tracking_number: string | null;
+  expected_delivery_date: string | null;
   product_id?: number;
+}
+
+interface PurchaseDetails {
+  id: number;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  purchase_items: {
+    product: {
+      product_name: string;
+    };
+    quantity: number;
+  }[];
 }
 
 export function NotificationsPopover() {
@@ -55,6 +68,34 @@ export function NotificationsPopover() {
       return data as Notification[];
     },
     enabled: !!user?.id,
+  });
+
+  const { data: purchaseDetails } = useQuery({
+    queryKey: ['purchase-details', selectedNotification?.purchase_id],
+    queryFn: async () => {
+      if (!selectedNotification?.purchase_id) return null;
+      
+      const { data, error } = await supabase
+        .from('purchases')
+        .select(`
+          id,
+          total_amount,
+          status,
+          created_at,
+          purchase_items (
+            quantity,
+            product:products (
+              product_name
+            )
+          )
+        `)
+        .eq('id', selectedNotification.purchase_id)
+        .single();
+        
+      if (error) throw error;
+      return data as PurchaseDetails;
+    },
+    enabled: !!selectedNotification?.purchase_id,
   });
   
   const { data: unreadCount = 0 } = useQuery({
@@ -238,6 +279,14 @@ export function NotificationsPopover() {
                         <div className="text-xs text-gray-500 mt-1">
                           {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
                         </div>
+
+                        {/* Show expected delivery date */}
+                        {notification.expected_delivery_date && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-green-600">
+                            <Calendar className="h-3 w-3" />
+                            Expected: {format(new Date(notification.expected_delivery_date), "MMM d, yyyy")}
+                          </div>
+                        )}
                         
                         {notification.tracking_number && (
                           <div className="flex items-center gap-2 mt-2">
@@ -269,7 +318,6 @@ export function NotificationsPopover() {
                           </div>
                         )}
 
-                        {/* Review button for review_request notifications */}
                         {notification.type === 'review_request' && notification.product_id && (
                           <div className="mt-2">
                             <Button 
@@ -347,6 +395,14 @@ export function NotificationsPopover() {
                 <div className="text-xs text-gray-500">
                   {format(new Date(selectedNotification.created_at), "MMMM d, yyyy 'at' h:mm a")}
                 </div>
+                
+                {/* Show expected delivery date in details */}
+                {selectedNotification.expected_delivery_date && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-green-600">
+                    <Calendar className="h-4 w-4" />
+                    Expected Delivery: {format(new Date(selectedNotification.expected_delivery_date), "MMMM d, yyyy")}
+                  </div>
+                )}
               </div>
               
               {selectedNotification.tracking_number && (
@@ -385,7 +441,6 @@ export function NotificationsPopover() {
                 </div>
               )}
 
-              {/* Add Review Button for review requests */}
               {selectedNotification.type === 'review_request' && selectedNotification.product_id && (
                 <div className="text-center">
                   <Button
@@ -398,9 +453,37 @@ export function NotificationsPopover() {
                 </div>
               )}
               
-              {selectedNotification.purchase_id && (
-                <div className="text-sm text-gray-500">
-                  Related to Order #{selectedNotification.purchase_id}
+              {/* Show detailed order information */}
+              {selectedNotification.purchase_id && purchaseDetails && (
+                <div className="p-4 border rounded-md">
+                  <div className="font-medium mb-2">Order Details</div>
+                  <div className="text-sm space-y-2">
+                    <div><strong>Order #:</strong> {purchaseDetails.id}</div>
+                    <div><strong>Total Amount:</strong> ₱{purchaseDetails.total_amount}</div>
+                    <div><strong>Status:</strong> 
+                      <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                        purchaseDetails.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        purchaseDetails.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {purchaseDetails.status}
+                      </span>
+                    </div>
+                    <div><strong>Order Date:</strong> {format(new Date(purchaseDetails.created_at), "MMM d, yyyy")}</div>
+                    
+                    {purchaseDetails.purchase_items && purchaseDetails.purchase_items.length > 0 && (
+                      <div className="mt-3">
+                        <strong>Items:</strong>
+                        <ul className="mt-1 space-y-1">
+                          {purchaseDetails.purchase_items.map((item, index) => (
+                            <li key={index} className="text-xs bg-gray-50 p-2 rounded">
+                              {item.product?.product_name} (Qty: {item.quantity})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
