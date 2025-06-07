@@ -34,7 +34,7 @@ interface PurchaseDetails {
     quantity: number;
     products: {
       product_name: string;
-    };
+    } | null;
   }[];
 }
 
