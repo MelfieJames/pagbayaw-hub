@@ -1,3 +1,4 @@
+
 import {
   Popover,
   PopoverContent,
@@ -89,13 +90,7 @@ export function NotificationsPopover() {
         throw error;
       }
 
-      return (data || []).map(purchase => ({
-        ...purchase,
-        purchase_items: purchase.purchase_items.map(item => ({
-          quantity: item.quantity,
-          products: item.products
-        }))
-      })) as PurchaseDetails[];
+      return (data || []) as PurchaseDetails[];
     },
     enabled: !!user?.id
   });
@@ -110,7 +105,7 @@ export function NotificationsPopover() {
       purchase.purchase_items.forEach(item => {
         combinedNotifications.push({
           type: 'purchase_update',
-          message: `You purchased ${item.quantity} ${item.quantity > 1 ? 'items' : 'item'} - ${item.products?.product_name}`,
+          message: `You purchased ${item.quantity} ${item.quantity > 1 ? 'items' : 'item'} - ${item.products?.product_name || 'Unknown Product'}`,
           timeAgo: timeAgo,
           isRead: false,
           created_at: purchase.created_at,
