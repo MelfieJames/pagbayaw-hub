@@ -11,7 +11,7 @@ import { useProductActions } from "@/hooks/products/useProductActions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Star, Image as ImageIcon, Video } from "lucide-react";
+import { Star, Image as ImageIcon, Video, Store } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -295,9 +295,13 @@ export default function Products() {
       <div className="container mx-auto px-4 pt-24 flex-grow">
         {/* Hero Section with UNVAS Store Information */}
         <div className="text-center mb-12 bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-green-200/50 shadow-lg">
-          <h1 className="text-5xl font-bold text-gray-800 mb-4">
-            Welcome to UNVAS Store
-          </h1>
+          {/* Header with Icon and Gradient Text */}
+          <div className="flex items-center justify-center mb-6 animate-fade-in">
+            <Store className="mr-4 text-green-600 h-10 w-10" />
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-green-700 via-green-600 to-green-500 bg-clip-text text-transparent">
+              Welcome to UNVAS Store
+            </h1>
+          </div>
           <p className="text-xl text-gray-600 mb-4 max-w-4xl mx-auto">
             Your trusted partner for quality products and exceptional service. At UNVAS Store, we carefully curate 
             our collection to bring you the latest innovations across electronics, mobile devices, audio equipment, 

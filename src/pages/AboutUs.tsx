@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Minus, Store } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -192,7 +193,11 @@ export default function AboutUs() {
         {/* Hero Section */}
         <div className="bg-gradient-to-b from-[#A8D0B9]/20 to-white py-16">
           <div className="container mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-[#5a3e2b] mb-6">About UNVAS®</h1>
+            {/* Header with Icon and Gradient Text */}
+            <div className="flex items-center justify-center mb-6 animate-fade-in">
+              <Store className="mr-4 text-[#6b8e68] h-10 w-10" />
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#5a3e2b] via-[#6b8e68] to-[#A8D0B9] bg-clip-text text-transparent">About UNVAS®</h1>
+            </div>
             <p className="text-lg text-gray-700 max-w-2xl mx-auto">
               Learn about our journey, our mission and the people who make UNVAS® a catalyst for positive change.
             </p>
@@ -320,6 +325,15 @@ export default function AboutUs() {
                 <blockquote className="italic text-gray-700 mb-6 text-lg">
                   "We hope that more Filipino people will join us in revolutionizing sustainable livelihood by supporting UNVAS. Together, we can empower marginal communities in the Philippines, reduce waste, and create a greener future."
                 </blockquote>
+                
+                {/* Founder's Picture */}
+                <div className="flex justify-center mb-6">
+                  <img 
+                    src="/lovable-uploads/maam.jpg" 
+                    alt="Julienne Stephanie Fabie" 
+                    className="w-40 h-40 object-cover rounded-full border-4 border-[#A8D0B9] shadow-lg"
+                  />
+                </div>
                 
                 <div className="flex flex-col items-center">
                   <p className="font-semibold text-[#6b8e68] text-lg">Julienne Stephanie Fabie</p>

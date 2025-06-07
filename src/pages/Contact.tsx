@@ -78,7 +78,7 @@ const Contact = () => {
 
         {/* Right Side: Contact Form */}
         <div className="w-full lg:w-1/2 bg-white/80 backdrop-blur-sm shadow-lg rounded-lg p-8 border border-green-200">
-          <h1 className="text-4xl font-bold text-center text-green-800 mb-6">Contact Us</h1>
+          <h1 className="text-4xl font-bold text-center mb-6 bg-gradient-to-r from-green-700 via-green-600 to-green-500 bg-clip-text text-transparent">Contact Us</h1>
           <p className="text-center text-gray-600 mb-6">
             Have questions? We're here to help! Fill out the form below.
           </p>
@@ -140,6 +140,6 @@ const Contact = () => {
       <Footer />
     </div>
   );
-};
+}
 
 export default Contact;

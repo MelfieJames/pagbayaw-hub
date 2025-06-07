@@ -28,7 +28,7 @@ export function ProductCard({ product, inventoryData, rating, onProductClick }: 
       stars.push(
         <Star
           key={i}
-          className={`h-4 w-4 ${
+          className={`h-3 w-3 ${
             i <= averageRating
               ? "fill-yellow-400 text-yellow-400"
               : "fill-gray-300 text-gray-300"
@@ -40,10 +40,10 @@ export function ProductCard({ product, inventoryData, rating, onProductClick }: 
   };
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 border-2 border-green-200/50 hover:border-green-300/70 h-[300px] group" onClick={handleCardClick}>
-      <CardContent className="p-5 h-full flex flex-col">
+    <Card className="bg-white/80 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 border-2 border-green-200/50 hover:border-green-300/70 h-[320px] group mb-4" onClick={handleCardClick}>
+      <CardContent className="p-4 h-full flex flex-col">
         {/* Product Image */}
-        <div className="relative mb-4 flex-shrink-0 overflow-hidden rounded-lg">
+        <div className="relative mb-3 flex-shrink-0 overflow-hidden rounded-lg">
           <img
             src={product.image || "/placeholder.svg"}
             alt={product.product_name}
@@ -55,7 +55,7 @@ export function ProductCard({ product, inventoryData, rating, onProductClick }: 
         </div>
         
         {/* Star Rating and Price Row */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-3">
           {/* 5 Star Rating */}
           <div className="flex items-center gap-1">
             {renderStars()}
@@ -65,9 +65,9 @@ export function ProductCard({ product, inventoryData, rating, onProductClick }: 
           </div>
           
           {/* Price with shopping bag icon */}
-          <div className="flex items-center gap-1 bg-green-100/80 rounded-full px-3 py-1">
-            <ShoppingBag className="h-4 w-4 text-green-600" />
-            <span className="text-lg font-bold text-green-700">
+          <div className="flex items-center gap-1 bg-green-100/80 rounded-full px-2 py-1">
+            <ShoppingBag className="h-3 w-3 text-green-600" />
+            <span className="text-sm font-bold text-green-700">
               ₱{product.product_price.toFixed(2)}
             </span>
           </div>

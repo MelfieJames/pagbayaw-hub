@@ -78,15 +78,15 @@ const Achievements = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-green-700 via-green-600 to-green-500 bg-clip-text text-transparent">Our Achievements</h1>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar - Fixed positioning */}
         <div className="relative max-w-md mx-auto mb-12">
           <Input
             placeholder="Search achievements..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 py-3 px-4 rounded-lg border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all shadow-sm hover:shadow-md bg-white/80 backdrop-blur-sm"
+            className="w-full pl-12 pr-4 py-3 rounded-lg border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all shadow-sm hover:shadow-md bg-white/80 backdrop-blur-sm"
           />
-          <Search className="absolute left-4 top-3 h-5 w-5 text-gray-500" />
+          <Search className="absolute left-4 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
         </div>
 
         {/* Achievement Cards */}
@@ -94,26 +94,26 @@ const Achievements = () => {
           {filteredAchievements?.map((achievement, index) => (
             <Card
               key={achievement.id}
-              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-500 rounded-lg bg-white/80 backdrop-blur-sm shadow-md hover:scale-[1.02] border border-green-200 animate-fade-in"
+              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-500 rounded-lg bg-white/80 backdrop-blur-sm shadow-md hover:scale-[1.02] border border-green-200 animate-fade-in h-[400px] flex flex-col"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className="aspect-w-16 aspect-h-9">
+              <div className="h-48 overflow-hidden">
                 <img
                   src={achievement.image || "/placeholder.svg"}
                   alt={achievement.achievement_name}
-                  className="w-full h-48 object-cover rounded-t-lg transition-transform duration-500 hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />
               </div>
-              <CardHeader className="pb-2 px-4 bg-gradient-to-r from-white to-green-50">
-                <CardTitle className="text-xl text-gray-800 font-semibold">{achievement.achievement_name}</CardTitle>
+              <CardHeader className="pb-2 px-4 bg-gradient-to-r from-white to-green-50 flex-shrink-0">
+                <CardTitle className="text-lg text-gray-800 font-semibold line-clamp-2">{achievement.achievement_name}</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 pb-5 px-4 bg-gradient-to-r from-white to-green-50">
+              <CardContent className="pt-0 pb-5 px-4 bg-gradient-to-r from-white to-green-50 flex-grow flex flex-col justify-between">
                 <p className="text-sm text-gray-600 mb-4">
                   {format(new Date(achievement.date), 'MMMM dd, yyyy')}
                 </p>
-                <Link to={`/achievements/${achievement.id}`}>
+                <Link to={`/achievements/${achievement.id}`} className="mt-auto">
                   <Button
-                    className="w-full mt-3 bg-green-600 hover:bg-green-700 transition-all transform hover:scale-[1.02]"
+                    className="w-full bg-green-600 hover:bg-green-700 transition-all transform hover:scale-[1.02]"
                     size="lg"
                   >
                     <Eye className="mr-2 h-4 w-4 text-white" />
