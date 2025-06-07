@@ -26,18 +26,6 @@ interface NotificationItemProps {
   isRead: boolean;
 }
 
-interface PurchaseDetails {
-  id: number;
-  total_amount: number;
-  created_at: string;
-  purchase_items: {
-    quantity: number;
-    products: {
-      product_name: string;
-    } | null;
-  }[];
-}
-
 export function NotificationsPopover() {
   const { user } = useAuth();
 
@@ -103,9 +91,14 @@ export function NotificationsPopover() {
         addSuffix: true,
       });
       purchase.purchase_items.forEach(item => {
+        // Handle the case where products might be an array or object
+        const productName = Array.isArray(item.products) 
+          ? item.products[0]?.product_name 
+          : item.products?.product_name;
+        
         combinedNotifications.push({
           type: 'purchase_update',
-          message: `You purchased ${item.quantity} ${item.quantity > 1 ? 'items' : 'item'} - ${item.products?.product_name || 'Unknown Product'}`,
+          message: `You purchased ${item.quantity} ${item.quantity > 1 ? 'items' : 'item'} - ${productName || 'Unknown Product'}`,
           timeAgo: timeAgo,
           isRead: false,
           created_at: purchase.created_at,
