@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -91,7 +92,7 @@ export function NotificationsPopover() {
         .single();
         
       if (error) throw error;
-      return data;
+      return data as PurchaseDetails;
     },
     enabled: !!selectedNotification?.purchase_id,
   });
@@ -370,7 +371,7 @@ export function NotificationsPopover() {
       
       {/* Notification Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] border-slate-200">
+        <DialogContent className="max-w-4xl max-h-[85vh] border-slate-200">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-slate-800">
               {selectedNotification?.type === 'tracking_update' ? (
@@ -389,7 +390,7 @@ export function NotificationsPopover() {
             </DialogTitle>
           </DialogHeader>
           
-          <ScrollArea className="max-h-[60vh] pr-4">
+          <ScrollArea className="max-h-[65vh] pr-4">
             {selectedNotification && (
               <div className="space-y-4">
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
@@ -480,7 +481,7 @@ export function NotificationsPopover() {
                           <div className="space-y-2">
                             {purchaseDetails.purchase_items.map((item, index) => (
                               <div key={index} className="text-xs bg-slate-50 p-3 rounded border border-slate-100">
-                                <div className="font-medium text-slate-800">{item.product?.product_name}</div>
+                                <div className="font-medium text-slate-800">{item.product.product_name}</div>
                                 <div className="text-slate-600 mt-1">Quantity: {item.quantity}</div>
                               </div>
                             ))}
