@@ -90,7 +90,7 @@ export function NotificationsPopover() {
         throw error;
       }
 
-      return (data || []) as PurchaseDetails[];
+      return data as PurchaseDetails[] || [];
     },
     enabled: !!user?.id
   });
