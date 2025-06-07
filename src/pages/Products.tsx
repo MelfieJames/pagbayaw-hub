@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
@@ -292,11 +290,11 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100 animate-fade-in">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-100 to-green-200 animate-fade-in">
       <Navbar />
       <div className="container mx-auto px-4 pt-24 flex-grow">
         {/* Hero Section with UNVAS Store Information */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-green-200/50 shadow-lg">
           <h1 className="text-5xl font-bold text-gray-800 mb-4">
             Welcome to UNVAS Store
           </h1>

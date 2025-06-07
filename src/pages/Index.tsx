@@ -6,7 +6,7 @@ import Chatbot from "@/components/Chatbot";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-100 to-green-200">
       <Navbar />
       <Hero />
       <Footer />
