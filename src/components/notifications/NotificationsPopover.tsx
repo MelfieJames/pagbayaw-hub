@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -70,33 +69,6 @@ export function NotificationsPopover() {
     enabled: !!user?.id,
   });
 
-  const { data: purchaseDetails } = useQuery({
-    queryKey: ['purchase-details', selectedNotification?.purchase_id],
-    queryFn: async () => {
-      if (!selectedNotification?.purchase_id) return null;
-      
-      const { data, error } = await supabase
-        .from('purchases')
-        .select(`
-          id,
-          total_amount,
-          created_at,
-          purchase_items (
-            quantity,
-            product:products (
-              product_name
-            )
-          )
-        `)
-        .eq('id', selectedNotification.purchase_id)
-        .single();
-        
-      if (error) throw error;
-      return data as PurchaseDetails;
-    },
-    enabled: !!selectedNotification?.purchase_id,
-  });
-  
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unread-notification-count', user?.id],
     queryFn: async () => {
@@ -112,6 +84,33 @@ export function NotificationsPopover() {
       return count || 0;
     },
     enabled: !!user?.id,
+  });
+
+  const { data: purchaseDetails } = useQuery({
+    queryKey: ['purchase-details', selectedNotification?.purchase_id],
+    queryFn: async () => {
+      if (!selectedNotification?.purchase_id) return null;
+      
+      const { data, error } = await supabase
+        .from('purchases')
+        .select(`
+          id,
+          total_amount,
+          created_at,
+          purchase_items (
+            quantity,
+            product:product_id (
+              product_name
+            )
+          )
+        `)
+        .eq('id', selectedNotification.purchase_id)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedNotification?.purchase_id,
   });
   
   const markAsReadMutation = useMutation({
@@ -216,8 +215,8 @@ export function NotificationsPopover() {
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative hover:bg-slate-100">
-            <Bell className="h-5 w-5 text-slate-700" />
+          <Button variant="ghost" size="icon" className="relative hover:bg-gray-50">
+            <Bell className="h-5 w-5 text-gray-700" />
             {unreadCount > 0 && (
               <span className="absolute top-0 right-0 h-4 w-4 text-xs flex items-center justify-center rounded-full bg-red-600 text-white font-medium">
                 {unreadCount}
@@ -225,16 +224,16 @@ export function NotificationsPopover() {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[380px] p-0 border-slate-200" align="end">
-          <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
-            <h3 className="font-semibold text-slate-800">Notifications</h3>
+        <PopoverContent className="w-[380px] p-0 border-gray-200" align="end">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <h3 className="font-semibold text-gray-800">Notifications</h3>
             {unreadCount > 0 && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => markAllAsReadMutation.mutate()}
                 disabled={markAllAsReadMutation.isPending}
-                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                className="text-gray-600 hover:text-gray-800 hover:bg-gray-100"
               >
                 Mark all as read
               </Button>
@@ -248,15 +247,15 @@ export function NotificationsPopover() {
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-center p-4">
-                <Bell className="h-8 w-8 text-slate-300 mb-2" />
-                <p className="text-slate-500">No notifications yet</p>
+                <Bell className="h-8 w-8 text-gray-300 mb-2" />
+                <p className="text-gray-500">No notifications yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-gray-100">
                 {notifications.map((notification) => (
                   <div 
                     key={notification.id} 
-                    className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors ${!notification.is_read ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'border-l-4 border-l-transparent'}`}
+                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.is_read ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'border-l-4 border-l-transparent'}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex items-start gap-3">
@@ -264,7 +263,7 @@ export function NotificationsPopover() {
                         <img 
                           src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
                           alt="JNT Express" 
-                          className="h-10 w-10 rounded-full object-contain border border-slate-200 p-1 bg-white"
+                          className="h-10 w-10 rounded-full object-contain border border-gray-200 p-1 bg-white"
                         />
                       ) : (
                         <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white flex-shrink-0`}>
@@ -273,10 +272,10 @@ export function NotificationsPopover() {
                       )}
                       
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm text-slate-700 ${!notification.is_read ? 'font-semibold' : 'font-normal'}`}>
+                        <p className={`text-sm text-gray-700 ${!notification.is_read ? 'font-semibold' : 'font-normal'}`}>
                           {notification.message}
                         </p>
-                        <div className="text-xs text-slate-500 mt-1">
+                        <div className="text-xs text-gray-500 mt-1">
                           {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
                         </div>
 
@@ -293,7 +292,7 @@ export function NotificationsPopover() {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="h-7 text-xs border-slate-300 text-slate-700 hover:bg-slate-100"
+                              className="h-7 text-xs border-gray-300 text-gray-700 hover:bg-gray-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 copyTrackingNumber(notification.tracking_number!);
@@ -306,7 +305,7 @@ export function NotificationsPopover() {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="h-7 text-xs bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
+                              className="h-7 text-xs bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 viewNotificationDetails(notification);
@@ -340,7 +339,7 @@ export function NotificationsPopover() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          className="h-6 w-6 text-slate-400 hover:text-slate-600"
+                          className="h-6 w-6 text-gray-400 hover:text-gray-600"
                           onClick={(e) => {
                             e.stopPropagation();
                             viewNotificationDetails(notification);
@@ -356,11 +355,11 @@ export function NotificationsPopover() {
             )}
           </ScrollArea>
           
-          <div className="p-3 border-t border-slate-200 bg-slate-50">
+          <div className="p-3 border-t border-gray-200 bg-gray-50">
             <Button 
               variant="outline" 
               size="sm" 
-              className="w-full border-slate-300 text-slate-700 hover:bg-slate-100"
+              className="w-full border-gray-300 text-gray-700 hover:bg-gray-100"
               onClick={() => setOpen(false)}
             >
               Close
@@ -371,14 +370,14 @@ export function NotificationsPopover() {
       
       {/* Notification Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[85vh] border-slate-200">
+        <DialogContent className="max-w-4xl max-h-[85vh] border-gray-200">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-slate-800">
+            <DialogTitle className="flex items-center gap-2 text-gray-800">
               {selectedNotification?.type === 'tracking_update' ? (
                 <img 
                   src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
                   alt="JNT Express" 
-                  className="h-6 w-6 rounded-full object-contain border border-slate-200"
+                  className="h-6 w-6 rounded-full object-contain border border-gray-200"
                 />
               ) : (
                 <div className={`${getNotificationColor(selectedNotification?.type || '')} p-1 rounded-full text-white`}>
@@ -393,9 +392,9 @@ export function NotificationsPopover() {
           <ScrollArea className="max-h-[65vh] pr-4">
             {selectedNotification && (
               <div className="space-y-4">
-                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="mb-3 font-medium text-slate-800">{selectedNotification.message}</div>
-                  <div className="text-xs text-slate-500">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="mb-3 font-medium text-gray-800">{selectedNotification.message}</div>
+                  <div className="text-xs text-gray-500">
                     {format(new Date(selectedNotification.created_at), "MMMM d, yyyy 'at' h:mm a")}
                   </div>
                   
@@ -409,14 +408,14 @@ export function NotificationsPopover() {
                 </div>
                 
                 {selectedNotification.tracking_number && (
-                  <div className="p-4 border border-slate-200 rounded-lg bg-white">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-white">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="font-medium text-slate-800">Tracking Information</div>
+                      <div className="font-medium text-gray-800">Tracking Information</div>
                       <Button 
                         size="sm" 
                         variant="outline" 
                         onClick={() => copyTrackingNumber(selectedNotification.tracking_number!)}
-                        className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
                       >
                         <Copy className="h-4 w-4 mr-2" />
                         Copy Number
@@ -427,11 +426,11 @@ export function NotificationsPopover() {
                       <img 
                         src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
                         alt="JNT Express" 
-                        className="h-12 w-12 rounded-full object-contain border border-slate-200 p-1 bg-white"
+                        className="h-12 w-12 rounded-full object-contain border border-gray-200 p-1 bg-white"
                       />
                       <div>
-                        <div className="font-medium text-slate-800">J&T Express</div>
-                        <div className="text-sm font-mono bg-slate-100 p-2 rounded mt-1 border border-slate-200">
+                        <div className="font-medium text-gray-800">J&T Express</div>
+                        <div className="text-sm font-mono bg-gray-100 p-2 rounded mt-1 border border-gray-200">
                           {selectedNotification.tracking_number}
                         </div>
                       </div>
@@ -439,7 +438,7 @@ export function NotificationsPopover() {
                     
                     <Separator className="my-4" />
                     
-                    <div className="text-sm text-slate-600">
+                    <div className="text-sm text-gray-600">
                       You can track your package by visiting the J&T Express website and entering this tracking number.
                     </div>
                   </div>
@@ -459,30 +458,30 @@ export function NotificationsPopover() {
                 
                 {/* Show detailed order information */}
                 {selectedNotification.purchase_id && purchaseDetails && (
-                  <div className="p-4 border border-slate-200 rounded-lg bg-white">
-                    <div className="font-medium mb-3 text-slate-800">Order Details</div>
+                  <div className="p-4 border border-gray-200 rounded-lg bg-white">
+                    <div className="font-medium mb-3 text-gray-800">Order Details</div>
                     <div className="text-sm space-y-3">
                       <div className="flex justify-between">
-                        <span className="font-medium text-slate-600">Order Number:</span>
-                        <span className="text-slate-800">#{purchaseDetails.id}</span>
+                        <span className="font-medium text-gray-600">Order Number:</span>
+                        <span className="text-gray-800">#{purchaseDetails.id}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium text-slate-600">Total Amount:</span>
-                        <span className="text-slate-800 font-semibold">₱{purchaseDetails.total_amount}</span>
+                        <span className="font-medium text-gray-600">Total Amount:</span>
+                        <span className="text-gray-800 font-semibold">₱{purchaseDetails.total_amount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium text-slate-600">Order Date:</span>
-                        <span className="text-slate-800">{format(new Date(purchaseDetails.created_at), "MMM d, yyyy")}</span>
+                        <span className="font-medium text-gray-600">Order Date:</span>
+                        <span className="text-gray-800">{format(new Date(purchaseDetails.created_at), "MMM d, yyyy")}</span>
                       </div>
                       
                       {purchaseDetails.purchase_items && purchaseDetails.purchase_items.length > 0 && (
                         <div className="mt-4">
-                          <div className="font-medium text-slate-600 mb-2">Items Ordered:</div>
+                          <div className="font-medium text-gray-600 mb-2">Items Ordered:</div>
                           <div className="space-y-2">
                             {purchaseDetails.purchase_items.map((item, index) => (
-                              <div key={index} className="text-xs bg-slate-50 p-3 rounded border border-slate-100">
-                                <div className="font-medium text-slate-800">{item.product.product_name}</div>
-                                <div className="text-slate-600 mt-1">Quantity: {item.quantity}</div>
+                              <div key={index} className="text-xs bg-gray-50 p-3 rounded border border-gray-100">
+                                <div className="font-medium text-gray-800">{item.product.product_name}</div>
+                                <div className="text-gray-600 mt-1">Quantity: {item.quantity}</div>
                               </div>
                             ))}
                           </div>
@@ -495,11 +494,11 @@ export function NotificationsPopover() {
             )}
           </ScrollArea>
 
-          <DialogFooter className="border-t border-slate-200 pt-4">
+          <DialogFooter className="border-t border-gray-200 pt-4">
             <Button 
               variant="outline" 
               onClick={() => setDetailsOpen(false)}
-              className="border-slate-300 text-slate-700 hover:bg-slate-50"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Close
             </Button>
