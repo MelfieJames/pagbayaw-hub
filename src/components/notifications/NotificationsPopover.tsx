@@ -93,7 +93,7 @@ export function NotificationsPopover() {
         .single();
         
       if (error) throw error;
-      return data as PurchaseDetails;
+      return data;
     },
     enabled: !!selectedNotification?.purchase_id,
   });
