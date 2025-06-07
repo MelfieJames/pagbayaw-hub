@@ -295,13 +295,19 @@ export default function Products() {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100 animate-fade-in">
       <Navbar />
       <div className="container mx-auto px-4 pt-24 flex-grow">
-        {/* Hero Section inspired by the reference */}
+        {/* Hero Section with UNVAS Store Information */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-800 mb-4">
-            Discover, Explore, and Shop the Latest Innovations in Our Collection
+            Welcome to UNVAS Store
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Find the perfect products for all your needs
+          <p className="text-xl text-gray-600 mb-4 max-w-4xl mx-auto">
+            Your trusted partner for quality products and exceptional service. At UNVAS Store, we carefully curate 
+            our collection to bring you the latest innovations across electronics, mobile devices, audio equipment, 
+            photography gear, wearables, gaming accessories, home essentials, and fashion items.
+          </p>
+          <p className="text-lg text-gray-500 max-w-3xl mx-auto">
+            Discover premium products with competitive prices, authentic quality guarantees, and reliable customer support. 
+            Shop with confidence and experience the difference that quality makes.
           </p>
         </div>
 
@@ -509,4 +515,3 @@ export default function Products() {
     </div>
   );
 }
-
