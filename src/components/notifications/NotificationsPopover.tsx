@@ -74,9 +74,9 @@ export function NotificationsPopover() {
           id,
           total_amount,
           created_at,
-          purchase_items (
+          purchase_items!inner (
             quantity,
-            products (
+            products!inner (
               product_name
             )
           )
@@ -90,7 +90,7 @@ export function NotificationsPopover() {
         throw error;
       }
 
-      return data as PurchaseDetails[] || [];
+      return data || [];
     },
     enabled: !!user?.id
   });
