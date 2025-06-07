@@ -92,8 +92,9 @@ export function NotificationsPopover() {
       });
       
       purchase.purchase_items.forEach(item => {
-        // Type assertion to handle the products relationship correctly
-        const product = item.products as { product_name: string } | null;
+        // Handle the products property correctly - it's an array, so get the first element
+        const productsArray = item.products as { product_name: string }[];
+        const product = productsArray && productsArray.length > 0 ? productsArray[0] : null;
         const productName = product?.product_name || 'Unknown Product';
         
         combinedNotifications.push({
