@@ -91,14 +91,22 @@ export function NotificationsPopover() {
         addSuffix: true,
       });
       purchase.purchase_items.forEach(item => {
-        // Handle the case where products might be an array or object
-        const productName = Array.isArray(item.products) 
-          ? item.products[0]?.product_name 
-          : item.products?.product_name;
+        // Safely extract product name with proper type handling
+        let productName = 'Unknown Product';
+        
+        if (item.products) {
+          // Check if products is an array
+          if (Array.isArray(item.products) && item.products.length > 0) {
+            productName = item.products[0]?.product_name || 'Unknown Product';
+          } else if (typeof item.products === 'object' && 'product_name' in item.products) {
+            // Handle as single object
+            productName = (item.products as any).product_name || 'Unknown Product';
+          }
+        }
         
         combinedNotifications.push({
           type: 'purchase_update',
-          message: `You purchased ${item.quantity} ${item.quantity > 1 ? 'items' : 'item'} - ${productName || 'Unknown Product'}`,
+          message: `You purchased ${item.quantity} ${item.quantity > 1 ? 'items' : 'item'} - ${productName}`,
           timeAgo: timeAgo,
           isRead: false,
           created_at: purchase.created_at,
