@@ -90,8 +90,11 @@ export function NotificationsPopover() {
       const timeAgo = formatDistanceToNow(new Date(purchase.created_at), {
         addSuffix: true,
       });
+      
       purchase.purchase_items.forEach(item => {
-        const productName = item.products?.product_name || 'Unknown Product';
+        // Handle the products property correctly - it should be a single object, not an array
+        const product = item.products;
+        const productName = product?.product_name || 'Unknown Product';
         
         combinedNotifications.push({
           type: 'purchase_update',
