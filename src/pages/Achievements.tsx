@@ -1,3 +1,4 @@
+
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/services/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -48,7 +49,7 @@ const Achievements = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100">
         <Navbar />
         <div className="pt-20 container mx-auto flex-grow text-center">
           <h1 className="text-4xl font-semibold text-gray-800">Achievements</h1>
@@ -68,7 +69,7 @@ const Achievements = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100">
       <Navbar />
       <div className="container mx-auto pt-24 px-4 flex-grow">
         {/* Header with Icon */}
@@ -83,7 +84,7 @@ const Achievements = () => {
             placeholder="Search achievements..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 py-3 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all shadow-sm hover:shadow-md"
+            className="w-full pl-12 py-3 px-4 rounded-lg border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all shadow-sm hover:shadow-md bg-white/80 backdrop-blur-sm"
           />
           <Search className="absolute left-4 top-3 h-5 w-5 text-gray-500" />
         </div>
@@ -93,7 +94,7 @@ const Achievements = () => {
           {filteredAchievements?.map((achievement, index) => (
             <Card
               key={achievement.id}
-              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-500 rounded-lg bg-white shadow-md hover:scale-[1.02] border border-gray-200 animate-fade-in"
+              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-500 rounded-lg bg-white/80 backdrop-blur-sm shadow-md hover:scale-[1.02] border border-green-200 animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="aspect-w-16 aspect-h-9">
@@ -103,10 +104,10 @@ const Achievements = () => {
                   className="w-full h-48 object-cover rounded-t-lg transition-transform duration-500 hover:scale-105"
                 />
               </div>
-              <CardHeader className="pb-2 px-4 bg-gradient-to-r from-white to-gray-50">
+              <CardHeader className="pb-2 px-4 bg-gradient-to-r from-white to-green-50">
                 <CardTitle className="text-xl text-gray-800 font-semibold">{achievement.achievement_name}</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 pb-5 px-4 bg-gradient-to-r from-white to-gray-50">
+              <CardContent className="pt-0 pb-5 px-4 bg-gradient-to-r from-white to-green-50">
                 <p className="text-sm text-gray-600 mb-4">
                   {format(new Date(achievement.date), 'MMMM dd, yyyy')}
                 </p>
