@@ -35,13 +35,12 @@ interface Notification {
 interface PurchaseDetails {
   id: number;
   total_amount: number;
-  status: string;
   created_at: string;
   purchase_items: {
+    quantity: number;
     product: {
       product_name: string;
     };
-    quantity: number;
   }[];
 }
 
@@ -80,7 +79,6 @@ export function NotificationsPopover() {
         .select(`
           id,
           total_amount,
-          status,
           created_at,
           purchase_items (
             quantity,
@@ -197,19 +195,19 @@ export function NotificationsPopover() {
   const getNotificationColor = (type: string) => {
     switch (type?.toLowerCase()) {
       case 'order':
-        return 'bg-blue-500';
+        return 'bg-blue-600';
       case 'system':
-        return 'bg-purple-500';
+        return 'bg-slate-600';
       case 'inventory':
-        return 'bg-amber-500';
+        return 'bg-amber-600';
       case 'alert':
-        return 'bg-red-500';
+        return 'bg-red-600';
       case 'tracking_update':
-        return 'bg-[#C4A484]';
+        return 'bg-slate-700';
       case 'review_request':
-        return 'bg-yellow-500';
+        return 'bg-orange-600';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-600';
     }
   };
 
@@ -217,83 +215,84 @@ export function NotificationsPopover() {
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="relative hover:bg-slate-100">
+            <Bell className="h-5 w-5 text-slate-700" />
             {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 h-4 w-4 text-xs flex items-center justify-center rounded-full bg-red-500 text-white">
+              <span className="absolute top-0 right-0 h-4 w-4 text-xs flex items-center justify-center rounded-full bg-red-600 text-white font-medium">
                 {unreadCount}
               </span>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[350px] p-0" align="end">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="font-medium">Notifications</h3>
+        <PopoverContent className="w-[380px] p-0 border-slate-200" align="end">
+          <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <h3 className="font-semibold text-slate-800">Notifications</h3>
             {unreadCount > 0 && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => markAllAsReadMutation.mutate()}
                 disabled={markAllAsReadMutation.isPending}
+                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
               >
                 Mark all as read
               </Button>
             )}
           </div>
           
-          <ScrollArea className="h-[350px]">
+          <ScrollArea className="h-[400px]">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
                 <LoadingSpinner size="md" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-center p-4">
-                <Bell className="h-8 w-8 text-gray-300 mb-2" />
-                <p className="text-gray-500">No notifications yet</p>
+                <Bell className="h-8 w-8 text-slate-300 mb-2" />
+                <p className="text-slate-500">No notifications yet</p>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="divide-y divide-slate-100">
                 {notifications.map((notification) => (
                   <div 
                     key={notification.id} 
-                    className={`p-4 hover:bg-gray-50 cursor-pointer ${!notification.is_read ? 'bg-blue-50' : ''}`}
+                    className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors ${!notification.is_read ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'border-l-4 border-l-transparent'}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       {notification.type === 'tracking_update' ? (
                         <img 
                           src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
                           alt="JNT Express" 
-                          className="h-10 w-10 rounded-full object-contain border p-1"
+                          className="h-10 w-10 rounded-full object-contain border border-slate-200 p-1 bg-white"
                         />
                       ) : (
-                        <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white`}>
+                        <div className={`${getNotificationColor(notification.type)} p-2 rounded-full text-white flex-shrink-0`}>
                           {getNotificationIcon(notification.type)}
                         </div>
                       )}
                       
-                      <div className="flex-1">
-                        <p className={`text-sm ${!notification.is_read ? 'font-semibold' : ''}`}>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm text-slate-700 ${!notification.is_read ? 'font-semibold' : 'font-normal'}`}>
                           {notification.message}
                         </p>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-slate-500 mt-1">
                           {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
                         </div>
 
                         {/* Show expected delivery date */}
                         {notification.expected_delivery_date && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-green-600">
+                          <div className="flex items-center gap-1 mt-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md w-fit">
                             <Calendar className="h-3 w-3" />
                             Expected: {format(new Date(notification.expected_delivery_date), "MMM d, yyyy")}
                           </div>
                         )}
                         
                         {notification.tracking_number && (
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-2 mt-3">
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="h-7 text-xs"
+                              className="h-7 text-xs border-slate-300 text-slate-700 hover:bg-slate-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 copyTrackingNumber(notification.tracking_number!);
@@ -306,7 +305,7 @@ export function NotificationsPopover() {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="h-7 text-xs bg-[#F5F5DC] border-[#C4A484] text-[#8B7355] hover:bg-[#C4A484] hover:text-white"
+                              className="h-7 text-xs bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 viewNotificationDetails(notification);
@@ -319,11 +318,11 @@ export function NotificationsPopover() {
                         )}
 
                         {notification.type === 'review_request' && notification.product_id && (
-                          <div className="mt-2">
+                          <div className="mt-3">
                             <Button 
                               size="sm"
                               variant="outline"
-                              className="h-7 text-xs bg-yellow-100 border-yellow-300 text-yellow-700 hover:bg-yellow-200"
+                              className="h-7 text-xs bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleReviewProduct(notification.product_id);
@@ -340,7 +339,7 @@ export function NotificationsPopover() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          className="h-6 w-6"
+                          className="h-6 w-6 text-slate-400 hover:text-slate-600"
                           onClick={(e) => {
                             e.stopPropagation();
                             viewNotificationDetails(notification);
@@ -356,11 +355,11 @@ export function NotificationsPopover() {
             )}
           </ScrollArea>
           
-          <div className="p-2 border-t">
+          <div className="p-3 border-t border-slate-200 bg-slate-50">
             <Button 
               variant="outline" 
               size="sm" 
-              className="w-full"
+              className="w-full border-slate-300 text-slate-700 hover:bg-slate-100"
               onClick={() => setOpen(false)}
             >
               Close
@@ -371,126 +370,136 @@ export function NotificationsPopover() {
       
       {/* Notification Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[80vh] border-slate-200">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-slate-800">
               {selectedNotification?.type === 'tracking_update' ? (
                 <img 
                   src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
                   alt="JNT Express" 
-                  className="h-6 w-6 rounded-full object-contain"
+                  className="h-6 w-6 rounded-full object-contain border border-slate-200"
                 />
               ) : (
-                getNotificationIcon(selectedNotification?.type || '')
+                <div className={`${getNotificationColor(selectedNotification?.type || '')} p-1 rounded-full text-white`}>
+                  {getNotificationIcon(selectedNotification?.type || '')}
+                </div>
               )}
               {selectedNotification?.type === 'tracking_update' ? 'Tracking Update' : 
-               selectedNotification?.type === 'review_request' ? 'Review Request' : 'Notification'}
+               selectedNotification?.type === 'review_request' ? 'Review Request' : 'Notification Details'}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedNotification && (
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-md">
-                <div className="mb-3 font-medium">{selectedNotification.message}</div>
-                <div className="text-xs text-gray-500">
-                  {format(new Date(selectedNotification.created_at), "MMMM d, yyyy 'at' h:mm a")}
+          <ScrollArea className="max-h-[60vh] pr-4">
+            {selectedNotification && (
+              <div className="space-y-4">
+                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="mb-3 font-medium text-slate-800">{selectedNotification.message}</div>
+                  <div className="text-xs text-slate-500">
+                    {format(new Date(selectedNotification.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                  </div>
+                  
+                  {/* Show expected delivery date in details */}
+                  {selectedNotification.expected_delivery_date && (
+                    <div className="flex items-center gap-2 mt-3 text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded-md w-fit">
+                      <Calendar className="h-4 w-4" />
+                      Expected Delivery: {format(new Date(selectedNotification.expected_delivery_date), "MMMM d, yyyy")}
+                    </div>
+                  )}
                 </div>
                 
-                {/* Show expected delivery date in details */}
-                {selectedNotification.expected_delivery_date && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-green-600">
-                    <Calendar className="h-4 w-4" />
-                    Expected Delivery: {format(new Date(selectedNotification.expected_delivery_date), "MMMM d, yyyy")}
+                {selectedNotification.tracking_number && (
+                  <div className="p-4 border border-slate-200 rounded-lg bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-medium text-slate-800">Tracking Information</div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => copyTrackingNumber(selectedNotification.tracking_number!)}
+                        className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Number
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 mt-3">
+                      <img 
+                        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                        alt="JNT Express" 
+                        className="h-12 w-12 rounded-full object-contain border border-slate-200 p-1 bg-white"
+                      />
+                      <div>
+                        <div className="font-medium text-slate-800">J&T Express</div>
+                        <div className="text-sm font-mono bg-slate-100 p-2 rounded mt-1 border border-slate-200">
+                          {selectedNotification.tracking_number}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator className="my-4" />
+                    
+                    <div className="text-sm text-slate-600">
+                      You can track your package by visiting the J&T Express website and entering this tracking number.
+                    </div>
+                  </div>
+                )}
+
+                {selectedNotification.type === 'review_request' && selectedNotification.product_id && (
+                  <div className="text-center">
+                    <Button
+                      onClick={() => handleReviewProduct(selectedNotification.product_id)}
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Star className="h-4 w-4 mr-2" />
+                      Write a Review
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Show detailed order information */}
+                {selectedNotification.purchase_id && purchaseDetails && (
+                  <div className="p-4 border border-slate-200 rounded-lg bg-white">
+                    <div className="font-medium mb-3 text-slate-800">Order Details</div>
+                    <div className="text-sm space-y-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-600">Order Number:</span>
+                        <span className="text-slate-800">#{purchaseDetails.id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-600">Total Amount:</span>
+                        <span className="text-slate-800 font-semibold">₱{purchaseDetails.total_amount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-600">Order Date:</span>
+                        <span className="text-slate-800">{format(new Date(purchaseDetails.created_at), "MMM d, yyyy")}</span>
+                      </div>
+                      
+                      {purchaseDetails.purchase_items && purchaseDetails.purchase_items.length > 0 && (
+                        <div className="mt-4">
+                          <div className="font-medium text-slate-600 mb-2">Items Ordered:</div>
+                          <div className="space-y-2">
+                            {purchaseDetails.purchase_items.map((item, index) => (
+                              <div key={index} className="text-xs bg-slate-50 p-3 rounded border border-slate-100">
+                                <div className="font-medium text-slate-800">{item.product?.product_name}</div>
+                                <div className="text-slate-600 mt-1">Quantity: {item.quantity}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-              
-              {selectedNotification.tracking_number && (
-                <div className="p-4 border rounded-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="font-medium">Tracking Information</div>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => copyTrackingNumber(selectedNotification.tracking_number!)}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Number
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 mt-3">
-                    <img 
-                      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
-                      alt="JNT Express" 
-                      className="h-12 w-12 rounded-full object-contain border p-1"
-                    />
-                    <div>
-                      <div className="font-medium">J&T Express</div>
-                      <div className="text-sm font-mono bg-gray-100 p-1 rounded mt-1">
-                        {selectedNotification.tracking_number}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <div className="text-sm text-gray-500">
-                    You can track your package by visiting the J&T Express website and entering this tracking number.
-                  </div>
-                </div>
-              )}
+            )}
+          </ScrollArea>
 
-              {selectedNotification.type === 'review_request' && selectedNotification.product_id && (
-                <div className="text-center">
-                  <Button
-                    onClick={() => handleReviewProduct(selectedNotification.product_id)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                  >
-                    <Star className="h-4 w-4 mr-2" />
-                    Write a Review
-                  </Button>
-                </div>
-              )}
-              
-              {/* Show detailed order information */}
-              {selectedNotification.purchase_id && purchaseDetails && (
-                <div className="p-4 border rounded-md">
-                  <div className="font-medium mb-2">Order Details</div>
-                  <div className="text-sm space-y-2">
-                    <div><strong>Order #:</strong> {purchaseDetails.id}</div>
-                    <div><strong>Total Amount:</strong> ₱{purchaseDetails.total_amount}</div>
-                    <div><strong>Status:</strong> 
-                      <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                        purchaseDetails.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        purchaseDetails.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {purchaseDetails.status}
-                      </span>
-                    </div>
-                    <div><strong>Order Date:</strong> {format(new Date(purchaseDetails.created_at), "MMM d, yyyy")}</div>
-                    
-                    {purchaseDetails.purchase_items && purchaseDetails.purchase_items.length > 0 && (
-                      <div className="mt-3">
-                        <strong>Items:</strong>
-                        <ul className="mt-1 space-y-1">
-                          {purchaseDetails.purchase_items.map((item, index) => (
-                            <li key={index} className="text-xs bg-gray-50 p-2 rounded">
-                              {item.product?.product_name} (Qty: {item.quantity})
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+          <DialogFooter className="border-t border-slate-200 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setDetailsOpen(false)}
+              className="border-slate-300 text-slate-700 hover:bg-slate-50"
+            >
               Close
             </Button>
           </DialogFooter>
