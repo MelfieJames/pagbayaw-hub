@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -38,7 +39,7 @@ interface PurchaseDetails {
   created_at: string;
   purchase_items: {
     quantity: number;
-    product: {
+    products: {
       product_name: string;
     };
   }[];
@@ -99,7 +100,7 @@ export function NotificationsPopover() {
           created_at,
           purchase_items (
             quantity,
-            product:product_id (
+            products:product_id (
               product_name
             )
           )
@@ -108,7 +109,7 @@ export function NotificationsPopover() {
         .single();
         
       if (error) throw error;
-      return data;
+      return data as PurchaseDetails;
     },
     enabled: !!selectedNotification?.purchase_id,
   });
@@ -197,13 +198,13 @@ export function NotificationsPopover() {
       case 'order':
         return 'bg-blue-600';
       case 'system':
-        return 'bg-slate-600';
+        return 'bg-gray-600';
       case 'inventory':
-        return 'bg-amber-600';
+        return 'bg-yellow-600';
       case 'alert':
         return 'bg-red-600';
       case 'tracking_update':
-        return 'bg-slate-700';
+        return 'bg-gray-700';
       case 'review_request':
         return 'bg-orange-600';
       default:
@@ -279,7 +280,6 @@ export function NotificationsPopover() {
                           {format(new Date(notification.created_at), "MMM d, yyyy • h:mm a")}
                         </div>
 
-                        {/* Show expected delivery date */}
                         {notification.expected_delivery_date && (
                           <div className="flex items-center gap-1 mt-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md w-fit">
                             <Calendar className="h-3 w-3" />
@@ -370,7 +370,7 @@ export function NotificationsPopover() {
       
       {/* Notification Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[85vh] border-gray-200">
+        <DialogContent className="max-w-5xl max-h-[85vh] border-gray-200">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-gray-800">
               {selectedNotification?.type === 'tracking_update' ? (
@@ -398,7 +398,6 @@ export function NotificationsPopover() {
                     {format(new Date(selectedNotification.created_at), "MMMM d, yyyy 'at' h:mm a")}
                   </div>
                   
-                  {/* Show expected delivery date in details */}
                   {selectedNotification.expected_delivery_date && (
                     <div className="flex items-center gap-2 mt-3 text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded-md w-fit">
                       <Calendar className="h-4 w-4" />
@@ -456,7 +455,6 @@ export function NotificationsPopover() {
                   </div>
                 )}
                 
-                {/* Show detailed order information */}
                 {selectedNotification.purchase_id && purchaseDetails && (
                   <div className="p-4 border border-gray-200 rounded-lg bg-white">
                     <div className="font-medium mb-3 text-gray-800">Order Details</div>
@@ -480,7 +478,7 @@ export function NotificationsPopover() {
                           <div className="space-y-2">
                             {purchaseDetails.purchase_items.map((item, index) => (
                               <div key={index} className="text-xs bg-gray-50 p-3 rounded border border-gray-100">
-                                <div className="font-medium text-gray-800">{item.product.product_name}</div>
+                                <div className="font-medium text-gray-800">{item.products.product_name}</div>
                                 <div className="text-gray-600 mt-1">Quantity: {item.quantity}</div>
                               </div>
                             ))}
