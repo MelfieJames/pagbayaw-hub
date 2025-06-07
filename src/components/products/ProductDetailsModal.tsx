@@ -11,7 +11,7 @@ import { Product } from "@/types/product";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { SimilarProducts } from "./SimilarProducts";
 import { useState, useEffect } from "react";
-import { ShoppingCart, Plus, Minus, Star, Image, Video, Edit, Trash2, ChevronDown, ChevronUp, Package, Tag, Award } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Star, Image, Video, Edit, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -119,23 +119,6 @@ export function ProductDetailsModal({
   const averageRating = productRating.average;
   const ratingCount = productRating.count;
 
-  const renderStars = (rating: number) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <Star
-          key={i}
-          className={`h-4 w-4 ${
-            i <= rating
-              ? "fill-yellow-400 text-yellow-400"
-              : "fill-gray-300 text-gray-300"
-          }`}
-        />
-      );
-    }
-    return stars;
-  };
-
   const handleEditReview = (review: any) => {
     navigate(`/products`, { 
       state: { 
@@ -178,88 +161,80 @@ export function ProductDetailsModal({
   return (
     <>
       <Dialog open={!!product} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl h-[90vh] bg-gradient-to-br from-green-50 to-white border-2 border-green-200/50 shadow-2xl backdrop-blur-sm">
-          <DialogHeader className="border-b border-green-100 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-green-500/10 p-2 rounded-lg">
-                <Package className="h-6 w-6 text-green-600" />
-              </div>
-              <DialogTitle className="text-2xl font-bold text-gray-800">{product.product_name}</DialogTitle>
-            </div>
+        <DialogContent className="max-w-4xl h-[90vh] bg-gradient-to-br from-white to-gray-50 border border-gray-200/60 shadow-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-800">{product.product_name}</DialogTitle>
             <DialogDescription className="sr-only">Product details for {product.product_name}</DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="h-full pr-4">
             <div className="space-y-8">
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-green-100">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
                     <ProductImageCarousel
                       mainImage={product.image}
                       productName={product.product_name}
                       isOutOfStock={stockQuantity === 0}
                     />
                   </div>
-                  <div className="flex items-center justify-between bg-white/60 rounded-xl p-4 border border-green-100">
-                    <div className="flex items-center gap-2">
-                      <Tag className="h-5 w-5 text-green-600" />
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-                        {product.category}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 bg-green-500/10 rounded-full px-4 py-2">
-                      <ShoppingCart className="h-5 w-5 text-green-600" />
-                      <span className="text-2xl font-bold text-green-700">₱{product.product_price.toFixed(2)}</span>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="w-fit">
+                      {product.category}
+                    </Badge>
+                    <p className="text-2xl font-bold text-gray-800">₱{product.product_price.toFixed(2)}</p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-green-100 shadow-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Award className="h-5 w-5 text-green-600" />
-                      <h3 className="text-lg font-semibold text-gray-800">Product Description</h3>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Description</p>
+                    <div className="w-full rounded-md border bg-white/80 p-4 shadow-sm">
+                      <p className="text-sm text-gray-600">{product.description}</p>
                     </div>
-                    <p className="text-gray-600 leading-relaxed">{product.description}</p>
                   </div>
 
-                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-green-100 shadow-lg">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Quantity</h3>
-                    <div className="flex items-center space-x-3">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Quantity</p>
+                    <div className="flex items-center space-x-2 bg-white/80 p-3 rounded-md border shadow-sm">
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
                         disabled={quantity <= 1 || stockQuantity === 0}
-                        className="hover:bg-green-100 border-green-200 transition-colors"
+                        className="hover:bg-gray-100 transition-colors"
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="w-16 text-center font-bold text-lg bg-green-50 py-2 px-4 rounded-lg border border-green-200">{quantity}</span>
+                      <span className="w-12 text-center font-medium">{quantity}</span>
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => setQuantity(prev => Math.min(stockQuantity, prev + 1))}
                         disabled={quantity >= stockQuantity || stockQuantity === 0}
-                        className="hover:bg-green-100 border-green-200 transition-colors"
+                        className="hover:bg-gray-100 transition-colors"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
-                      <span className="text-sm text-gray-600 ml-3 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+                      <span className="text-sm text-gray-500 ml-2">
                         {stockQuantity} pieces available
                       </span>
                     </div>
                   </div>
 
-                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-green-100 shadow-lg">
-                    <div className="flex items-center justify-between border-b border-green-100 pb-4">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-5 w-5 text-yellow-400" />
-                        <h3 className="text-lg font-semibold text-gray-800">Product Ratings ({ratingCount})</h3>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {renderStars(averageRating)}
-                        <span className="text-sm ml-2 font-semibold bg-yellow-100 px-2 py-1 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <p className="text-sm font-medium text-gray-700">Product Ratings ({ratingCount})</p>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-4 w-4 ${
+                              averageRating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                        <span className="text-sm ml-1 font-medium">
                           {averageRating ? averageRating.toFixed(1) : "No ratings"}
                         </span>
                       </div>
@@ -362,17 +337,17 @@ export function ProductDetailsModal({
                 </div>
               </div>
 
-              <DialogFooter className="flex-col sm:flex-row gap-3 bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-green-100">
+              <DialogFooter className="flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto border-green-300 hover:bg-green-50 text-green-700 transition-all hover:shadow-lg"
+                  className="w-full sm:w-auto transition-all hover:shadow-md"
                   onClick={() => onBuyNow(product.id, quantity)}
                   disabled={stockQuantity === 0}
                 >
                   Buy Now
                 </Button>
                 <Button
-                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 transition-all hover:shadow-lg"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 transition-all hover:shadow-md"
                   onClick={() => onAddToCart(product.id, quantity)}
                   disabled={stockQuantity === 0}
                 >
@@ -381,11 +356,8 @@ export function ProductDetailsModal({
                 </Button>
               </DialogFooter>
 
-              <div className="bg-white/40 backdrop-blur-sm rounded-xl p-6 border border-green-100">
-                <h3 className="text-lg font-semibold mb-6 text-gray-800 flex items-center gap-2">
-                  <Package className="h-5 w-5 text-green-600" />
-                  Similar Products
-                </h3>
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Similar Products</h3>
                 <SimilarProducts
                   products={products}
                   currentProductId={product.id}

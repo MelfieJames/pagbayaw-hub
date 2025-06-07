@@ -2,9 +2,20 @@
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Product } from "@/types/product";
-import { Star, Package, ShoppingBag } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { supabase } from "@/services/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { ShoppingCart } from "lucide-react";
+import { showCartAddNotification } from "./CartAddNotification";
 
 interface ProductCardProps {
   product: Product;
@@ -14,72 +25,113 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, inventoryData, rating, onProductClick }: ProductCardProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const addToCart = async () => {
+    if (!user) {
+      toast("Please log in to add items to your cart");
+      navigate('/login', {
+        state: {
+          redirectAfterLogin: '/products',
+          message: "Please log in to add items to your cart"
+        }
+      });
+      return;
+    }
+
+    const inventoryItem = inventoryData.find(item => item.product_id === product.id);
+    if (!inventoryItem || inventoryItem.quantity === 0) {
+      toast.error("This item is out of stock");
+      return;
+    }
+
+    try {
+      const { data: existingItem } = await supabase
+        .from('cart')
+        .select('quantity')
+        .eq('user_id', user.id)
+        .eq('product_id', product.id)
+        .single();
+
+      if (existingItem) {
+        const newQuantity = existingItem.quantity + 1;
+        if (newQuantity > inventoryItem.quantity) {
+          toast.error("Cannot exceed available stock");
+          return;
+        }
+
+        const { error } = await supabase
+          .from('cart')
+          .update({ quantity: newQuantity })
+          .eq('user_id', user.id)
+          .eq('product_id', product.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('cart')
+          .insert([{
+            user_id: user.id,
+            product_id: product.id,
+            quantity: 1
+          }]);
+
+        if (error) throw error;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['cart-details'] });
+      showCartAddNotification(product.product_name);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error("Failed to add item to cart");
+    }
+  };
+
   const handleCardClick = () => {
     if (onProductClick) {
       onProductClick(product);
     }
   };
 
-  const averageRating = rating && rating.count > 0 ? (rating.total / rating.count) : 0;
-
-  const renderStars = () => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <Star
-          key={i}
-          className={`h-4 w-4 ${
-            i <= averageRating
-              ? "fill-yellow-400 text-yellow-400"
-              : "fill-gray-300 text-gray-300"
-          }`}
-        />
-      );
-    }
-    return stars;
-  };
-
   return (
-    <Card className="bg-white/80 backdrop-blur-sm shadow-lg rounded-xl overflow-hidden cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 border-2 border-green-200/50 hover:border-green-300/70 h-[300px] group" onClick={handleCardClick}>
-      <CardContent className="p-5 h-full flex flex-col">
-        {/* Product Image */}
-        <div className="relative mb-4 flex-shrink-0 overflow-hidden rounded-lg">
-          <img
-            src={product.image || "/placeholder.svg"}
-            alt={product.product_name}
-            className="w-full h-36 object-cover transition-transform duration-300 group-hover:scale-110"
-          />
-          <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur-sm rounded-full p-1.5">
-            <Package className="h-4 w-4 text-white" />
-          </div>
-        </div>
-        
-        {/* Star Rating and Price Row */}
-        <div className="flex justify-between items-center mb-4">
-          {/* 5 Star Rating */}
-          <div className="flex items-center gap-1">
-            {renderStars()}
-            {rating && rating.count > 0 && (
-              <span className="text-xs text-gray-500 ml-1">({rating.count})</span>
-            )}
-          </div>
-          
-          {/* Price with shopping bag icon */}
-          <div className="flex items-center gap-1 bg-green-100/80 rounded-full px-3 py-1">
-            <ShoppingBag className="h-4 w-4 text-green-600" />
-            <span className="text-lg font-bold text-green-700">
-              ₱{product.product_price.toFixed(2)}
+    <Card className="bg-white shadow-md rounded-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold truncate">
+          {product.product_name}
+        </CardTitle>
+        <CardDescription>Category: {product.category}</CardDescription>
+        {rating && rating.count > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-yellow-500">★</span>
+            <span className="text-sm text-gray-600">
+              {(rating.total / rating.count).toFixed(1)} ({rating.count} reviews)
             </span>
           </div>
-        </div>
-        
-        {/* Product Name at Bottom */}
-        <div className="mt-auto">
-          <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-5 group-hover:text-green-700 transition-colors">
-            {product.product_name}
-          </h3>
-        </div>
+        )}
+      </CardHeader>
+      <CardContent className="p-4">
+        <img
+          src={product.image || "/placeholder.svg"}
+          alt={product.product_name}
+          className="w-full h-48 object-cover rounded-md mb-3"
+        />
+        <p className="text-gray-700">
+          Price: ₱{product.product_price.toFixed(2)}
+        </p>
       </CardContent>
+      <CardFooter className="flex justify-center items-center p-4">
+        <Button 
+          onClick={(e) => {
+            e.stopPropagation();
+            addToCart();
+          }} 
+          className="bg-green-600 text-white rounded-md hover:bg-green-500 w-full"
+        >
+          Add to Cart <ShoppingCart className="ml-2 h-4 w-4" />
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

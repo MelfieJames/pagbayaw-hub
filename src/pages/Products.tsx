@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
@@ -290,25 +291,9 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-100 to-green-200 animate-fade-in">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white animate-fade-in">
       <Navbar />
       <div className="container mx-auto px-4 pt-24 flex-grow">
-        {/* Hero Section with UNVAS Store Information */}
-        <div className="text-center mb-12 bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-green-200/50 shadow-lg">
-          <h1 className="text-5xl font-bold text-gray-800 mb-4">
-            Welcome to UNVAS Store
-          </h1>
-          <p className="text-xl text-gray-600 mb-4 max-w-4xl mx-auto">
-            Your trusted partner for quality products and exceptional service. At UNVAS Store, we carefully curate 
-            our collection to bring you the latest innovations across electronics, mobile devices, audio equipment, 
-            photography gear, wearables, gaming accessories, home essentials, and fashion items.
-          </p>
-          <p className="text-lg text-gray-500 max-w-3xl mx-auto">
-            Discover premium products with competitive prices, authentic quality guarantees, and reliable customer support. 
-            Shop with confidence and experience the difference that quality makes.
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <FilterSidebar
             products={products}

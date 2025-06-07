@@ -1,15 +1,14 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Footer from "@/components/Footer"; // Added Footer
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Mail, Phone, MapPin } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Mail, Phone, MapPin } from "lucide-react"; // Icons
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Modal
 
 const Contact = () => {
   const { user } = useAuth();
@@ -42,7 +41,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-col lg:flex-row items-center justify-center flex-1 px-6 py-10 gap-12 max-w-6xl mx-auto">
         {/* Left Side: Contact Image & Details */}
@@ -50,25 +49,25 @@ const Contact = () => {
           <img
             src="https://static.vecteezy.com/system/resources/previews/027/244/724/non_2x/contact-us-or-the-customer-support-hotline-people-connect-businessman-touching-virtual-icons-doing-to-customer-service-call-center-free-png.png"
             alt="Contact Us"
-            className="w-full max-w-[280px] lg:max-w-[320px]"
+            className="w-full max-w-[280px] lg:max-w-[320px]" // Slightly smaller image
           />
 
           <div className="mt-6 space-y-4">
             {/* Phone Number */}
             <div className="flex items-center gap-3">
-              <Phone className="text-green-600" size={20} />
+              <Phone className="text-[#6b8e68]" size={20} />
               <p className="text-lg font-semibold text-gray-700">+63 912 345 6789</p>
             </div>
 
             {/* Email */}
             <div className="flex items-center gap-3">
-              <Mail className="text-green-600" size={20} />
+              <Mail className="text-[#6b8e68]" size={20} />
               <p className="text-lg font-semibold text-gray-700">projectuplift21@gmail.com</p>
             </div>
 
             {/* Location */}
             <div className="flex items-center gap-3">
-              <MapPin className="text-green-600" size={20} />
+              <MapPin className="text-[#6b8e68]" size={20} />
               <p className="text-lg font-semibold text-gray-700">
                 Alta Tierra, Tiguma, Pagadian City, Philippines, 7016
               </p>
@@ -77,8 +76,8 @@ const Contact = () => {
         </div>
 
         {/* Right Side: Contact Form */}
-        <div className="w-full lg:w-1/2 bg-white/80 backdrop-blur-sm shadow-lg rounded-lg p-8 border border-green-200">
-          <h1 className="text-4xl font-bold text-center text-green-800 mb-6">Contact Us</h1>
+        <div className="w-full lg:w-1/2 bg-white shadow-lg rounded-lg p-8">
+          <h1 className="text-4xl font-bold text-center text-gray-800 mb-6">Contact Us</h1>
           <p className="text-center text-gray-600 mb-6">
             Have questions? We're here to help! Fill out the form below.
           </p>
@@ -119,7 +118,7 @@ const Contact = () => {
             </div>
 
             {/* Send Message Button */}
-            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+            <Button type="submit" className="w-full bg-[#6b8e68] hover:bg-[#5a7c5a]">
               Send Message
             </Button>
           </form>
@@ -130,13 +129,14 @@ const Contact = () => {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="text-center">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-green-600">
+            <DialogTitle className="text-lg font-bold text-[#6b8e68]">
               THANK YOU FOR CONTACTING US!
             </DialogTitle>
           </DialogHeader>
         </DialogContent>
       </Dialog>
 
+      {/* Footer Section */}
       <Footer />
     </div>
   );
