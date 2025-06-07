@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Product } from "@/types/product";
@@ -291,9 +292,19 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white animate-fade-in">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100 animate-fade-in">
       <Navbar />
       <div className="container mx-auto px-4 pt-24 flex-grow">
+        {/* Hero Section inspired by the reference */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-800 mb-4">
+            Discover, Explore, and Shop the Latest Innovations in Our Collection
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Find the perfect products for all your needs
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <FilterSidebar
             products={products}
@@ -498,3 +509,4 @@ export default function Products() {
     </div>
   );
 }
+
