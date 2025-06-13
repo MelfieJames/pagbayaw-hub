@@ -17,7 +17,7 @@ export interface PurchaseDetails {
   created_at: string;
   purchase_items: {
     quantity: number;
-    product: {
+    products: {
       product_name: string;
     };
   }[];

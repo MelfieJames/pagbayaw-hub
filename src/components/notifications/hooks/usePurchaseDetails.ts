@@ -17,7 +17,7 @@ export function usePurchaseDetails(selectedNotification: Notification | null) {
           created_at,
           purchase_items (
             quantity,
-            product:products (
+            products!inner (
               product_name
             )
           )
@@ -26,7 +26,19 @@ export function usePurchaseDetails(selectedNotification: Notification | null) {
         .single();
         
       if (error) throw error;
-      return data as PurchaseDetails;
+      
+      // Transform the data to match our interface
+      const transformedData = {
+        ...data,
+        purchase_items: data.purchase_items?.map(item => ({
+          quantity: item.quantity,
+          product: {
+            product_name: item.products.product_name
+          }
+        })) || []
+      };
+      
+      return transformedData as PurchaseDetails;
     },
     enabled: !!selectedNotification?.purchase_id,
   });

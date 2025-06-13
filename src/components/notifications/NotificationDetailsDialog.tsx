@@ -156,7 +156,7 @@ export function NotificationDetailsDialog({
                         <div className="space-y-2">
                           {purchaseDetails.purchase_items.map((item, index) => (
                             <div key={index} className="text-xs bg-slate-50 p-3 rounded border border-slate-100">
-                              <div className="font-medium text-slate-800">{item.product.product_name}</div>
+                              <div className="font-medium text-slate-800">{item.products.product_name}</div>
                               <div className="text-slate-600 mt-1">Quantity: {item.quantity}</div>
                             </div>
                           ))}
