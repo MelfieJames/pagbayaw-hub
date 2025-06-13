@@ -394,7 +394,6 @@ export default function Checkout() {
   const handleCancellation = async (reason: string, details?: string) => {
     // For now, just navigate back to products with a cancellation message
     toast.success("Order cancelled successfully");
-    setShowCancellationModal(false);
     navigate('/products');
   };
 
@@ -417,16 +416,6 @@ export default function Checkout() {
           >
             <ArrowLeft className="h-4 w-4" /> Continue Shopping
           </Button>
-          
-          {cartItems.length > 0 && (
-            <Button 
-              variant="outline"
-              className="text-red-600 border-red-200 hover:bg-red-50"
-              onClick={() => setShowCancellationModal(true)}
-            >
-              Cancel Order
-            </Button>
-          )}
         </div>
 
         <h1 className="text-3xl font-bold mb-8 text-gray-800">Checkout</h1>
@@ -476,7 +465,7 @@ export default function Checkout() {
             <div className="md:col-span-1">
               <OrderSummary 
                 total={total}
-                isComplete={true} // Always allow checkout
+                isComplete={true}
                 cartItems={cartItems}
                 isProcessing={isProcessing}
                 handleCheckout={handleCheckout}
@@ -505,13 +494,6 @@ export default function Checkout() {
         cartItems={cartItems}
         total={total}
         onDetailsSubmitted={handleDetailsSubmitted}
-      />
-
-      {/* Cancellation Modal */}
-      <CancellationModal
-        open={showCancellationModal}
-        onOpenChange={setShowCancellationModal}
-        onConfirmCancellation={handleCancellation}
       />
     </div>
   );

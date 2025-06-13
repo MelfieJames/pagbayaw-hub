@@ -8,10 +8,10 @@ interface CartAddNotificationProps {
 
 export const showCartAddNotification = (productName: string) => {
   toast.success(
-    <div className="flex items-center gap-2">
-      <div className="relative">
+    <div className="flex items-center gap-2 animate-scale-in">
+      <div className="relative animate-bounce">
         <ShoppingCart className="h-5 w-5 text-green-600" />
-        <CheckCircle className="h-3 w-3 text-green-600 absolute -top-1 -right-1 animate-bounce" />
+        <CheckCircle className="h-3 w-3 text-green-600 absolute -top-1 -right-1 animate-pulse" />
       </div>
       <div>
         <p className="font-medium text-sm">Added to cart!</p>
@@ -20,7 +20,7 @@ export const showCartAddNotification = (productName: string) => {
     </div>,
     {
       duration: 3000,
-      className: "border-green-200 bg-green-50",
+      className: "border-green-200 bg-green-50 animate-fade-in scale-in",
     }
   );
 };
