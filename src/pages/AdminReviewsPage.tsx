@@ -62,10 +62,10 @@ export default function AdminReviewsPage() {
         created_at: review.created_at,
         user_id: review.user_id,
         product_id: review.product_id,
-        product_name: review.products.product_name,
-        user_email: review.profiles.email,
-        user_first_name: review.profiles.first_name,
-        user_last_name: review.profiles.last_name
+        product_name: Array.isArray(review.products) ? review.products[0]?.product_name : review.products?.product_name,
+        user_email: Array.isArray(review.profiles) ? review.profiles[0]?.email : review.profiles?.email,
+        user_first_name: Array.isArray(review.profiles) ? review.profiles[0]?.first_name : review.profiles?.first_name,
+        user_last_name: Array.isArray(review.profiles) ? review.profiles[0]?.last_name : review.profiles?.last_name
       })) as ReviewWithDetails[];
     }
   });
