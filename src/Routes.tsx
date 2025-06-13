@@ -32,8 +32,9 @@ export default function AppRoutes() {
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/purchase-history" element={<PurchaseHistory />} />
       <Route path="/checkout" element={<Checkout />} />
-      <Route path="/admin/products" element={<ProductManagement />} />
+      <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/products" element={<ProductManagement />} />
       <Route path="/admin/orders" element={<OrderApprovalPage />} />
       <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
       <Route path="/admin/chatbot" element={<AdminChatbotPage />} />
