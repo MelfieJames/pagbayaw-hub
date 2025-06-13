@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     if (!user && !isLoading) {
       toast.error("You must be logged in to access the admin dashboard");
       navigate("/login", { 
-        state: { redirectAfterLogin: "/admin/dashboard", message: "Please log in to access the admin dashboard" }
+        state: { redirectAfterLogin: "/admin", message: "Please log in to access the admin dashboard" }
       });
       return;
     }
@@ -76,7 +76,9 @@ export default function AdminDashboard() {
           setIsOpen={setIsSidebarOpen} 
         />
         <main className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "ml-0"}`}>
-          <AdminDashboardMainContent />
+          <div className="bg-white rounded-xl shadow-md border border-gray-200">
+            <AdminDashboardMainContent />
+          </div>
         </main>
       </div>
     </div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -52,26 +53,20 @@ export default function AdminReviewsPage() {
 
       if (error) throw error;
       
-      return data?.map(review => {
-        // Handle the joined data properly
-        const product = review.products as any;
-        const profile = review.profiles as any;
-        
-        return {
-          id: review.id,
-          rating: review.rating,
-          comment: review.comment,
-          image_url: review.image_url,
-          video_url: review.video_url,
-          created_at: review.created_at,
-          user_id: review.user_id,
-          product_id: review.product_id,
-          product_name: product?.product_name || '',
-          user_email: profile?.email || '',
-          user_first_name: profile?.first_name,
-          user_last_name: profile?.last_name
-        };
-      }) as ReviewWithDetails[] || [];
+      return data.map(review => ({
+        id: review.id,
+        rating: review.rating,
+        comment: review.comment,
+        image_url: review.image_url,
+        video_url: review.video_url,
+        created_at: review.created_at,
+        user_id: review.user_id,
+        product_id: review.product_id,
+        product_name: review.products.product_name,
+        user_email: review.profiles.email,
+        user_first_name: review.profiles.first_name,
+        user_last_name: review.profiles.last_name
+      })) as ReviewWithDetails[];
     }
   });
 
@@ -90,8 +85,8 @@ export default function AdminReviewsPage() {
 
   const filteredReviews = reviews.filter(review => {
     const matchesSearch = 
-      review.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.user_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.comment?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       `${review.user_first_name || ''} ${review.user_last_name || ''}`.toLowerCase().includes(searchQuery.toLowerCase());
     

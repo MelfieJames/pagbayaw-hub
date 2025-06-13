@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -46,7 +47,7 @@ export default function OrderSummary({
         
         <Button 
           className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
-          disabled={cartItems.length === 0 || isProcessing}
+          disabled={!isComplete || cartItems.length === 0 || isProcessing}
           onClick={handleCheckout}
         >
           {isProcessing ? (
@@ -59,6 +60,12 @@ export default function OrderSummary({
             </>
           )}
         </Button>
+        
+        {!isComplete && (
+          <p className="text-amber-600 text-xs mt-2 text-center">
+            Please complete your profile before checkout
+          </p>
+        )}
       </div>
     </div>
   );
