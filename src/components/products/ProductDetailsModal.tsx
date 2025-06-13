@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Sheet,
@@ -6,6 +5,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
   SheetClose
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -18,35 +18,26 @@ import { useNavigate } from "react-router-dom";
 import { ProductReviews } from "./ProductReviews";
 import { SimilarProducts } from "./SimilarProducts";
 import { useProductQueries } from "@/hooks/products/useProductQueries";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { showCartAddNotification } from "./CartAddNotification";
 
 interface ProductDetailsModalProps {
-  product: Product | null;
+  product: Product;
+  isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (productId: any, qty: any) => Promise<void>;
-  onBuyNow: (productId: any, qty: any) => Promise<void>;
-  inventory: any;
-  productRatings: any;
+  inventoryData: { quantity: number } | undefined;
+  productReviews: any[];
+  refetchProductReviews: () => void;
 }
 
-export function ProductDetailsModal({ 
-  product, 
-  onClose, 
-  onAddToCart, 
-  onBuyNow, 
-  inventory, 
-  productRatings 
-}: ProductDetailsModalProps) {
+export function ProductDetailsModal({ product, isOpen, onClose, inventoryData, productReviews, refetchProductReviews }: ProductDetailsModalProps) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { products, productReviews, refetchProductReviews } = useProductQueries();
+  const { products } = useProductQueries();
 
-  if (!product) return null;
-
-  const isOutOfStock = inventory?.quantity === 0;
-  const productSpecificReviews = productReviews.filter((review: any) => review.product_id === product.id);
+  const isOutOfStock = inventoryData?.quantity === 0;
 
   const addToCart = async () => {
     if (!user) {
@@ -61,7 +52,20 @@ export function ProductDetailsModal({
 
     try {
       setIsAddingToCart(true);
-      await onAddToCart(product.id, 1);
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add product to cart');
+      }
       
       showCartAddNotification(product.product_name);
       
@@ -84,7 +88,7 @@ export function ProductDetailsModal({
   };
 
   return (
-    <Sheet open={!!product} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="sm:max-w-4xl">
         <SheetHeader>
           <SheetTitle>{product.product_name}</SheetTitle>
@@ -111,12 +115,7 @@ export function ProductDetailsModal({
               <p className="text-gray-600">Category: {product.category}</p>
               <div className="flex items-center gap-2">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span>
-                  {productSpecificReviews.length > 0 
-                    ? (productSpecificReviews.reduce((sum: number, review: { rating: number; }) => sum + review.rating, 0) / productSpecificReviews.length).toFixed(1)
-                    : 'No ratings yet'
-                  } ({productSpecificReviews.length} reviews)
-                </span>
+                <span>{productReviews.length > 0 ? (productReviews.reduce((sum: number, review: { rating: number; }) => sum + review.rating, 0) / productReviews.length).toFixed(1) : 'No ratings yet'} ({productReviews.length} reviews)</span>
               </div>
               <Button
                 className="w-full bg-primary hover:bg-primary/90"
@@ -149,7 +148,7 @@ export function ProductDetailsModal({
               currentProductId={product.id}
               category={product.category}
               onProductClick={handleProductClick}
-              inventoryData={inventory}
+              inventoryData={inventoryData}
             />
           </div>
         </ScrollArea>
