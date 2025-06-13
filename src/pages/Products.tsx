@@ -345,10 +345,9 @@ export default function Products() {
 
         <ProductDetailsModal
           product={selectedProduct}
-          products={products}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={(productId, qty) => handleAddToCart(productId, qty)}
-          onBuyNow={(productId, qty) => handleBuyNow(productId, qty)}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
           inventory={selectedProduct ? inventoryData?.find(item => item.product_id === selectedProduct.id) : undefined}
           productRatings={productRatings}
         />
