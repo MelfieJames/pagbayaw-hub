@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -53,20 +52,26 @@ export default function AdminReviewsPage() {
 
       if (error) throw error;
       
-      return data.map(review => ({
-        id: review.id,
-        rating: review.rating,
-        comment: review.comment,
-        image_url: review.image_url,
-        video_url: review.video_url,
-        created_at: review.created_at,
-        user_id: review.user_id,
-        product_id: review.product_id,
-        product_name: Array.isArray(review.products) ? review.products[0]?.product_name : review.products.product_name,
-        user_email: Array.isArray(review.profiles) ? review.profiles[0]?.email : review.profiles.email,
-        user_first_name: Array.isArray(review.profiles) ? review.profiles[0]?.first_name : review.profiles.first_name,
-        user_last_name: Array.isArray(review.profiles) ? review.profiles[0]?.last_name : review.profiles.last_name
-      })) as ReviewWithDetails[];
+      return data?.map(review => {
+        // Handle the joined data properly
+        const product = review.products as any;
+        const profile = review.profiles as any;
+        
+        return {
+          id: review.id,
+          rating: review.rating,
+          comment: review.comment,
+          image_url: review.image_url,
+          video_url: review.video_url,
+          created_at: review.created_at,
+          user_id: review.user_id,
+          product_id: review.product_id,
+          product_name: product?.product_name || '',
+          user_email: profile?.email || '',
+          user_first_name: profile?.first_name,
+          user_last_name: profile?.last_name
+        };
+      }) as ReviewWithDetails[] || [];
     }
   });
 
