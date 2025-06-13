@@ -2,7 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { getProductReviews } from "@/services/productService";
 
 export function useProductQueries() {
   const { user } = useAuth();
@@ -24,7 +23,7 @@ export function useProductQueries() {
     }
   });
 
-  // Fetch inventory data regardless of auth status - This should already be enabled for all users
+  // Fetch inventory data regardless of auth status
   const { data: inventoryData = [], isLoading: inventoryLoading } = useQuery({
     queryKey: ['inventory'],
     queryFn: async () => {
@@ -38,7 +37,6 @@ export function useProductQueries() {
       }
       return data || [];
     },
-    // Make sure this is enabled for all users, not just logged-in users
     enabled: true
   });
 
@@ -65,11 +63,11 @@ export function useProductQueries() {
     }
   });
   
-  // Get reviews for the current user only if logged in
+  // Get reviews for the current user only if logged in - with stable key
   const { data: userReviews = [], isLoading: userReviewsLoading } = useQuery({
-    queryKey: ['user-reviews', user?.id],
+    queryKey: ['user-reviews', user?.id || 'anonymous'],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user?.id) return [];
       
       try {
         const { data, error } = await supabase
@@ -84,18 +82,20 @@ export function useProductQueries() {
         return [];
       }
     },
-    enabled: !!user
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes
   });
 
-  // This function helps determine if a user has already reviewed a specific product
+  // This function helps determine if a user has already reviewed a specific product (regardless of purchase)
   const hasUserReviewedProduct = (productId: number) => {
-    if (!user) return false;
+    if (!user?.id) return false;
     return userReviews.some(review => review.product_id === productId);
   };
   
   // Get a specific user review for a product
   const getUserReviewForProduct = (productId: number) => {
-    if (!user) return null;
+    if (!user?.id) return null;
     return userReviews.find(review => review.product_id === productId);
   };
 

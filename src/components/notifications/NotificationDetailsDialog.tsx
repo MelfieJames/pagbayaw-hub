@@ -5,8 +5,7 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, 
-  DialogFooter
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -152,7 +151,7 @@ export function NotificationDetailsDialog({
                     
                     {purchaseDetails.purchase_items && purchaseDetails.purchase_items.length > 0 && (
                       <div className="mt-4">
-                        <div className="font-medium text-slate-600 mb-2">Items Ordered:</div>
+                        <div className="font-medium text-slate-600 mb-2">Items Ordered ({purchaseDetails.purchase_items.length}):</div>
                         <div className="space-y-2">
                           {purchaseDetails.purchase_items.map((item, index) => (
                             <div key={index} className="text-xs bg-slate-50 p-3 rounded border border-slate-100">
@@ -169,16 +168,6 @@ export function NotificationDetailsDialog({
             </div>
           )}
         </ScrollArea>
-
-        <DialogFooter className="border-t border-slate-200 pt-4">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            className="border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
