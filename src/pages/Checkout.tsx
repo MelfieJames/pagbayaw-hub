@@ -206,6 +206,12 @@ export default function Checkout() {
       toast.error("No items to checkout");
       return;
     }
+
+    // Check if address is required and not provided
+    if (!selectedAddressId) {
+      toast.error("Please add a shipping address before completing your order");
+      return;
+    }
     
     setIsProcessing(true);
 
@@ -372,8 +378,9 @@ export default function Checkout() {
       queryClient.invalidateQueries({ queryKey: ['user-addresses'] });
       queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
       
-      // Show the success dialog
-      setShowSuccessDialog(true);
+      toast.success("Order placed successfully!");
+      // Redirect to products page after successful checkout
+      navigate('/products');
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error("Failed to process order. Please try again.");
