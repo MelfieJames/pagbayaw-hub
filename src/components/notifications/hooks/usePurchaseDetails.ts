@@ -17,7 +17,7 @@ export function usePurchaseDetails(selectedNotification: Notification | null) {
           created_at,
           purchase_items (
             quantity,
-            products!inner (
+            products (
               product_name
             )
           )
@@ -27,7 +27,16 @@ export function usePurchaseDetails(selectedNotification: Notification | null) {
         
       if (error) throw error;
       
-      return data as PurchaseDetails;
+      // Transform the data to match our interface since Supabase returns products as an object, not array
+      const transformedData = {
+        ...data,
+        purchase_items: data.purchase_items?.map(item => ({
+          quantity: item.quantity,
+          products: item.products // This is already a single object from Supabase
+        })) || []
+      };
+      
+      return transformedData as PurchaseDetails;
     },
     enabled: !!selectedNotification?.purchase_id,
   });
