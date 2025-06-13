@@ -8,6 +8,8 @@ import Navbar from "@/components/Navbar";
 import { AdminStats } from "@/components/admin/AdminStats";
 import { AdminReviewsFilters } from "@/components/admin/AdminReviewsFilters";
 import { ReviewCard } from "@/components/admin/ReviewCard";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ReviewWithDetails {
   id: number;
@@ -28,8 +30,9 @@ export default function AdminReviewsPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
+  const { user } = useAuth();
 
-  const { data: reviews = [], isLoading } = useQuery({
+  const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
     queryKey: ['admin-reviews'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,24 +46,27 @@ export default function AdminReviewsPage() {
           created_at,
           user_id,
           product_id,
-          products!inner(product_name),
-          profiles!inner(email, first_name, last_name)
+          products(product_name),
+          profiles(email, first_name, last_name)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching reviews:', error);
+        throw error;
+      }
       
       return data.map(review => ({
         id: review.id,
         rating: review.rating,
-        comment: review.comment,
+        comment: review.comment || '',
         image_url: review.image_url,
         video_url: review.video_url,
         created_at: review.created_at,
         user_id: review.user_id,
         product_id: review.product_id,
-        product_name: (review.products as any)?.product_name || '',
-        user_email: (review.profiles as any)?.email || '',
+        product_name: (review.products as any)?.product_name || 'Unknown Product',
+        user_email: (review.profiles as any)?.email || 'Unknown User',
         user_first_name: (review.profiles as any)?.first_name,
         user_last_name: (review.profiles as any)?.last_name
       })) as ReviewWithDetails[];
@@ -101,10 +107,10 @@ export default function AdminReviewsPage() {
       <Navbar />
       <div className="flex pt-16">
         <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-        <div className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "ml-0"}`}>
+        <div className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "md:ml-16"}`}>
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-[#8B7355] mb-2">User Reviews Management</h2>
+              <h1 className="text-3xl font-bold text-[#8B7355] mb-2">Reviews Management</h1>
               <p className="text-gray-600">View and monitor all product reviews from customers</p>
             </div>
 
@@ -119,8 +125,10 @@ export default function AdminReviewsPage() {
 
             <AdminStats reviews={reviews} />
 
-            {isLoading ? (
-              <div className="text-center py-8">Loading reviews...</div>
+            {reviewsLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <LoadingSpinner size="lg" />
+              </div>
             ) : (
               <ScrollArea className="h-[600px]">
                 <div className="space-y-4">

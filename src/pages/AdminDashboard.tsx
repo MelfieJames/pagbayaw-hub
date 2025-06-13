@@ -75,9 +75,16 @@ export default function AdminDashboard() {
           isOpen={isSidebarOpen} 
           setIsOpen={setIsSidebarOpen} 
         />
-        <main className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "ml-0"}`}>
-          <div className="bg-white rounded-xl shadow-md border border-gray-200">
-            <AdminDashboardMainContent />
+        <main className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "md:ml-16"}`}>
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-[#8B7355] mb-2">Admin Dashboard</h1>
+              <p className="text-gray-600">Manage your business operations and monitor performance</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-md border border-gray-200">
+              <AdminDashboardMainContent />
+            </div>
           </div>
         </main>
       </div>
