@@ -92,7 +92,7 @@ export function OrderApproval() {
         };
       }) as Purchase[];
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   const updateOrderStatus = useMutation({
@@ -105,7 +105,6 @@ export function OrderApproval() {
       newStatus: OrderStatus;
       trackingNumber?: string | null;
     }) => {
-      // 1. Update the order status
       const { error: updateError } = await supabase
         .from("purchases")
         .update({ 
@@ -116,7 +115,6 @@ export function OrderApproval() {
 
       if (updateError) throw updateError;
 
-      // 2. Create notification
       let notificationMessage = "";
       let notificationType = "";
 
@@ -329,7 +327,6 @@ export function OrderApproval() {
     }
   };
 
-  // Filter orders based on active tab
   const filteredOrders = orders.filter(order => {
     if (activeTab === "all") return true;
     if (activeTab === "pending") return order.status === "pending";
@@ -342,235 +339,222 @@ export function OrderApproval() {
 
   if (isLoading) {
     return (
-      <Card className="border-2 border-[#C4A484]">
-        <CardHeader className="bg-[#F5F5DC]">
-          <CardTitle className="text-[#8B7355]">Customer Orders</CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center h-[200px]">
-          <LoadingSpinner />
-        </CardContent>
-      </Card>
+      <div className="flex justify-center items-center h-[200px]">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   return (
-    <Card className="border-2 border-[#C4A484]">
-      <CardHeader className="bg-[#F5F5DC]">
-        <CardTitle className="text-[#8B7355] flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Customer Orders Management
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="processing">Processing</TabsTrigger>
-            <TabsTrigger value="shipping">Shipping</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value={activeTab}>
-            {filteredOrders.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                <Package className="mx-auto h-12 w-12 opacity-20 mb-3" />
-                <p>No orders in this category</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+    <div className="space-y-4">
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all">All Orders</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="processing">Processing</TabsTrigger>
+          <TabsTrigger value="shipping">Shipping</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value={activeTab}>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              <Package className="mx-auto h-12 w-12 opacity-20 mb-3" />
+              <p>No orders in this category</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((purchase) => (
+                    <TableRow key={purchase.id} className="hover:bg-gray-50">
+                      <TableCell className="font-semibold">#{purchase.id}</TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        {format(new Date(purchase.created_at), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{purchase.customerName}</div>
+                        <div className="text-xs text-gray-500">{purchase.customerEmail}</div>
+                      </TableCell>
+                      <TableCell>
+                        ₱{Number(purchase.total_amount).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(purchase.status)}
+                          {getStatusBadge(purchase.status)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => viewOrderDetails(purchase)}
+                          >
+                            Details
+                          </Button>
+                          {getNextActionButton(purchase)}
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOrders.map((purchase) => (
-                      <TableRow key={purchase.id} className="hover:bg-gray-50">
-                        <TableCell className="font-semibold">#{purchase.id}</TableCell>
-                        <TableCell className="text-sm text-gray-500">
-                          {format(new Date(purchase.created_at), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{purchase.customerName}</div>
-                          <div className="text-xs text-gray-500">{purchase.customerEmail}</div>
-                        </TableCell>
-                        <TableCell>
-                          ₱{Number(purchase.total_amount).toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(purchase.status)}
-                            {getStatusBadge(purchase.status)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => viewOrderDetails(purchase)}
-                            >
-                              Details
-                            </Button>
-                            {getNextActionButton(purchase)}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
-        {/* View Order Details Dialog */}
-        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-          <DialogContent className="max-w-3xl">
-            {selectedPurchase && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="text-xl flex items-center gap-2">
-                    {getStatusIcon(selectedPurchase.status)}
-                    Order #{selectedPurchase.id}
-                  </DialogTitle>
-                  <DialogDescription>
-                    Placed on {format(new Date(selectedPurchase.created_at), "MMMM d, yyyy 'at' h:mm a")}
-                  </DialogDescription>
-                </DialogHeader>
+      {/* View Order Details Dialog */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-3xl">
+          {selectedPurchase && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl flex items-center gap-2">
+                  {getStatusIcon(selectedPurchase.status)}
+                  Order #{selectedPurchase.id}
+                </DialogTitle>
+                <DialogDescription>
+                  Placed on {format(new Date(selectedPurchase.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                </DialogDescription>
+              </DialogHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-md border">
-                    <h3 className="font-medium mb-2 flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      Customer Information
-                    </h3>
-                    <p className="text-sm">Name: {selectedPurchase.customerName}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-md border">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    Customer Information
+                  </h3>
+                  <p className="text-sm">Name: {selectedPurchase.customerName}</p>
+                  <p className="text-sm flex items-center gap-1">
+                    <Mail className="h-3 w-3 text-gray-500" />
+                    {selectedPurchase.customerEmail}
+                  </p>
+                  {selectedPurchase.transaction_details?.[0]?.phone_number && (
                     <p className="text-sm flex items-center gap-1">
-                      <Mail className="h-3 w-3 text-gray-500" />
-                      {selectedPurchase.customerEmail}
+                      <Phone className="h-3 w-3 text-gray-500" />
+                      {selectedPurchase.transaction_details[0].phone_number}
                     </p>
-                    {selectedPurchase.transaction_details?.[0]?.phone_number && (
-                      <p className="text-sm flex items-center gap-1">
-                        <Phone className="h-3 w-3 text-gray-500" />
-                        {selectedPurchase.transaction_details[0].phone_number}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-md border">
-                    <h3 className="font-medium mb-2 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      Shipping Information
-                    </h3>
-                    {selectedPurchase.transaction_details?.[0]?.address ? (
-                      <p className="text-sm whitespace-pre-wrap">{selectedPurchase.transaction_details[0].address}</p>
-                    ) : (
-                      <p className="text-sm text-amber-600">No address provided</p>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-md border">
-                  <h3 className="font-medium mb-2">Order Items</h3>
-                  <div className="space-y-3">
-                    {selectedPurchase.purchase_items.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 border-b pb-2">
-                        <img
-                          src={item.products?.image || "/placeholder.svg"}
-                          alt={item.products?.product_name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium">{item.products?.product_name}</p>
-                          <p className="text-sm text-gray-500">₱{Number(item.price_at_time).toFixed(2)} × {item.quantity}</p>
-                        </div>
-                        <p className="font-medium">₱{(Number(item.price_at_time) * item.quantity).toFixed(2)}</p>
-                      </div>
-                    ))}
-                    <div className="flex justify-between pt-2">
-                      <p className="font-medium">Total</p>
-                      <p className="font-bold">₱{Number(selectedPurchase.total_amount).toFixed(2)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <div className="flex gap-2 w-full justify-between">
-                    <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Close</Button>
-                    <div className="flex gap-2">
-                      {getNextActionButton(selectedPurchase)}
-                    </div>
-                  </div>
-                </DialogFooter>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Process to Shipping Dialog */}
-        <Dialog open={isProcessModalOpen} onOpenChange={setIsProcessModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Shipping Information</DialogTitle>
-              <DialogDescription>
-                Enter the tracking number for this order to proceed to shipping.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#F5F5DC]">
-                  <img 
-                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
-                    alt="J&T Express" 
-                    className="h-10 w-10 object-contain rounded-full"
-                  />
-                </div>
-                <div>
-                  <p className="font-medium">J&T Express</p>
-                  <p className="text-xs text-gray-500">Tracking Number Required</p>
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    Shipping Information
+                  </h3>
+                  {selectedPurchase.transaction_details?.[0]?.address ? (
+                    <p className="text-sm whitespace-pre-wrap">{selectedPurchase.transaction_details[0].address}</p>
+                  ) : (
+                    <p className="text-sm text-amber-600">No address provided</p>
+                  )}
                 </div>
               </div>
-              
-              <Input
-                placeholder="Enter tracking number (e.g., JT1234567890)"
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-              />
-              
-              {!trackingNumber && (
-                <div className="flex items-center gap-2 text-sm text-amber-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>Tracking number is required to proceed</span>
+
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <h3 className="font-medium mb-2">Order Items</h3>
+                <div className="space-y-3">
+                  {selectedPurchase.purchase_items.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 border-b pb-2">
+                      <img
+                        src={item.products?.image || "/placeholder.svg"}
+                        alt={item.products?.product_name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium">{item.products?.product_name}</p>
+                        <p className="text-sm text-gray-500">₱{Number(item.price_at_time).toFixed(2)} × {item.quantity}</p>
+                      </div>
+                      <p className="font-medium">₱{(Number(item.price_at_time) * item.quantity).toFixed(2)}</p>
+                    </div>
+                  ))}
+                  <div className="flex justify-between pt-2">
+                    <p className="font-medium">Total</p>
+                    <p className="font-bold">₱{Number(selectedPurchase.total_amount).toFixed(2)}</p>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              <DialogFooter>
+                <div className="flex gap-2 w-full justify-between">
+                  <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Close</Button>
+                  <div className="flex gap-2">
+                    {getNextActionButton(selectedPurchase)}
+                  </div>
+                </div>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Process to Shipping Dialog */}
+      <Dialog open={isProcessModalOpen} onOpenChange={setIsProcessModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Shipping Information</DialogTitle>
+            <DialogDescription>
+              Enter the tracking number for this order to proceed to shipping.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#F5F5DC]">
+                <img 
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
+                  alt="J&T Express" 
+                  className="h-10 w-10 object-contain rounded-full"
+                />
+              </div>
+              <div>
+                <p className="font-medium">J&T Express</p>
+                <p className="text-xs text-gray-500">Tracking Number Required</p>
+              </div>
             </div>
             
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsProcessModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                disabled={!trackingNumber} 
-                onClick={handleSubmitTrackingNumber}
-                className="bg-[#C4A484] hover:bg-[#a68967]"
-              >
-                <Truck className="h-4 w-4 mr-1" />
-                Ship Order
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+            <Input
+              placeholder="Enter tracking number (e.g., JT1234567890)"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+            />
+            
+            {!trackingNumber && (
+              <div className="flex items-center gap-2 text-sm text-amber-600">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Tracking number is required to proceed</span>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProcessModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              disabled={!trackingNumber} 
+              onClick={handleSubmitTrackingNumber}
+              className="bg-[#C4A484] hover:bg-[#a68967]"
+            >
+              <Truck className="h-4 w-4 mr-1" />
+              Ship Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

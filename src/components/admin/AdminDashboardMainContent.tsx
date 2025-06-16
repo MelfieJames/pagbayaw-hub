@@ -1,60 +1,49 @@
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminStats } from "./AdminStats";
 import { SalesCharts } from "./SalesCharts";
-import { PurchasesManagement } from "./PurchasesManagement";
-import { UserManagement } from "./UserManagement";
-import { AdminManagement } from "./AdminManagement";
-import { LayoutDashboard, ShoppingBag, User, Shield } from "lucide-react";
+import { RecentPurchases } from "./RecentPurchases";
+import { TopRevenueProducts } from "./TopRevenueProducts";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/services/supabase/client";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function AdminDashboardMainContent() {
-  return (
-    <div className="p-4 md:p-6">
-      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2 text-[#8B7355]">
-        <LayoutDashboard className="h-7 w-7" />
-        Dashboard
-      </h1>
+  const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
+    queryKey: ['admin-dashboard-reviews'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reviews:', error);
+        return [];
+      }
       
-      <div className="mb-8">
-        <SalesCharts />
+      return data || [];
+    }
+  });
+
+  if (reviewsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
       </div>
+    );
+  }
 
-      <Tabs defaultValue="purchases" className="w-full">
-        <TabsList className="mb-4 grid grid-cols-3 md:w-[400px] bg-[#f0e8d9]">
-          <TabsTrigger value="purchases" className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4" />
-            Purchases
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Users
-          </TabsTrigger>
-          <TabsTrigger value="admins" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Admins
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Wrapping each section in a box with overflow and scrollbar */}
-        <div className="space-y-4">
-          <TabsContent value="purchases">
-            <div className="bg-white rounded-lg shadow-lg p-4 max-h-[400px] overflow-y-auto">
-              <PurchasesManagement />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="users">
-            <div className="bg-white rounded-lg shadow-lg p-4 max-h-[400px] overflow-y-auto">
-              <UserManagement />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="admins">
-            <div className="bg-white rounded-lg shadow-lg p-4 max-h-[400px] overflow-y-auto">
-              <AdminManagement />
-            </div>
-          </TabsContent>
-        </div>
-      </Tabs>
+  return (
+    <div className="space-y-6 p-6">
+      <AdminStats reviews={reviews} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SalesCharts />
+        <TopRevenueProducts />
+      </div>
+      
+      <RecentPurchases />
     </div>
   );
 }
