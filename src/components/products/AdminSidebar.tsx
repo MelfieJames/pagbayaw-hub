@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Package, 
   ShoppingCart, 
@@ -13,10 +13,13 @@ import {
   X,
   Star,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/services/supabase/client";
+import { toast } from "sonner";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -25,17 +28,32 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Sorted alphabetically A-Z
   const menuItems = [
-    { icon: BarChart3, label: "Dashboard", href: "/admin/dashboard" },
-    { icon: Package, label: "Products", href: "/admin/products" },
-    { icon: ShoppingCart, label: "Orders", href: "/admin/orders" },
-    { icon: Star, label: "Reviews", href: "/admin/reviews" },
-    { icon: Bell, label: "Notifications", href: "/admin/notifications" },
-    { icon: MessageSquare, label: "Chatbot", href: "/admin/chatbot" },
     { icon: Trophy, label: "Achievements", href: "/admin/achievements" },
+    { icon: MessageSquare, label: "Chatbot", href: "/admin/chatbot" },
+    { icon: BarChart3, label: "Dashboard", href: "/admin/dashboard" },
+    { icon: Bell, label: "Notifications", href: "/admin/notifications" },
+    { icon: ShoppingCart, label: "Orders", href: "/admin/orders" },
+    { icon: Package, label: "Products", href: "/admin/products" },
+    { icon: Star, label: "Reviews", href: "/admin/reviews" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast.success("Logged out successfully");
+      navigate("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out");
+    }
+  };
 
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";
 
@@ -61,11 +79,11 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-50",
+        "fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-50 flex flex-col",
         sidebarWidth,
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
-        <div className="p-4">
+        <div className="p-4 flex-1">
           <div className="flex items-center justify-between mb-6">
             {!isCollapsed && (
               <h2 className="text-xl font-bold text-[#8B7355]">Admin Panel</h2>
@@ -106,6 +124,22 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
               </Link>
             ))}
           </nav>
+        </div>
+
+        {/* Logout button at bottom */}
+        <div className="p-4 border-t border-gray-200">
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            className={cn(
+              "w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors duration-200 text-red-600 hover:bg-red-50 hover:text-red-700",
+              isCollapsed && "justify-center px-2"
+            )}
+            title={isCollapsed ? "Logout" : undefined}
+          >
+            <LogOut className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
+            {!isCollapsed && <span>Logout</span>}
+          </Button>
         </div>
       </div>
     </>

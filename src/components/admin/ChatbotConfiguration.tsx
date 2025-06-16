@@ -22,8 +22,6 @@ interface ChatbotConfig {
   bot_name: string;
   theme_color: string;
   position: 'bottom-right' | 'bottom-left';
-  auto_open: boolean;
-  auto_open_delay: number;
 }
 
 export default function ChatbotConfiguration() {
@@ -35,8 +33,6 @@ export default function ChatbotConfiguration() {
     bot_name: "UNVAS Assistant",
     theme_color: "#C4A484",
     position: 'bottom-right',
-    auto_open: false,
-    auto_open_delay: 3000,
   });
 
   const { data: existingConfig, isLoading } = useQuery({
@@ -58,7 +54,15 @@ export default function ChatbotConfiguration() {
 
   useEffect(() => {
     if (existingConfig) {
-      setConfig(existingConfig);
+      setConfig({
+        id: existingConfig.id,
+        enabled: existingConfig.enabled,
+        welcome_message: existingConfig.welcome_message,
+        system_prompt: existingConfig.system_prompt,
+        bot_name: existingConfig.bot_name,
+        theme_color: existingConfig.theme_color,
+        position: existingConfig.position,
+      });
     }
   }, [existingConfig]);
 
@@ -74,8 +78,6 @@ export default function ChatbotConfiguration() {
             bot_name: configData.bot_name,
             theme_color: configData.theme_color,
             position: configData.position,
-            auto_open: configData.auto_open,
-            auto_open_delay: configData.auto_open_delay,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingConfig.id);
@@ -89,9 +91,7 @@ export default function ChatbotConfiguration() {
             system_prompt: configData.system_prompt,
             bot_name: configData.bot_name,
             theme_color: configData.theme_color,
-            position: configData.position,
-            auto_open: configData.auto_open,
-            auto_open_delay: configData.auto_open_delay
+            position: configData.position
           }]);
         if (error) throw error;
       }
@@ -99,6 +99,7 @@ export default function ChatbotConfiguration() {
     onSuccess: () => {
       toast.success('Chatbot configuration saved successfully');
       queryClient.invalidateQueries({ queryKey: ['chatbot-config'] });
+      queryClient.invalidateQueries({ queryKey: ['chatbot-config-public'] });
     },
     onError: (error) => {
       console.error('Error saving chatbot config:', error);
@@ -107,6 +108,19 @@ export default function ChatbotConfiguration() {
   });
 
   const handleSave = () => {
+    if (!config.welcome_message.trim()) {
+      toast.error('Welcome message is required');
+      return;
+    }
+    if (!config.bot_name.trim()) {
+      toast.error('Bot name is required');
+      return;
+    }
+    if (!config.system_prompt.trim()) {
+      toast.error('System prompt is required');
+      return;
+    }
+    
     saveConfigMutation.mutate(config);
   };
 
@@ -151,14 +165,25 @@ export default function ChatbotConfiguration() {
 
               <div className="space-y-2">
                 <Label htmlFor="theme_color">Theme Color</Label>
-                <Input
-                  id="theme_color"
-                  type="color"
-                  value={config.theme_color}
-                  onChange={(e) => setConfig({ ...config, theme_color: e.target.value })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="theme_color"
+                    type="color"
+                    value={config.theme_color}
+                    onChange={(e) => setConfig({ ...config, theme_color: e.target.value })}
+                    className="w-20"
+                  />
+                  <Input
+                    value={config.theme_color}
+                    onChange={(e) => setConfig({ ...config, theme_color: e.target.value })}
+                    placeholder="#C4A484"
+                    className="flex-1"
+                  />
+                </div>
               </div>
+            </div>
 
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="position">Position</Label>
                 <Select
@@ -174,31 +199,23 @@ export default function ChatbotConfiguration() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="auto_open"
-                  checked={config.auto_open}
-                  onCheckedChange={(checked) => setConfig({ ...config, auto_open: checked })}
-                />
-                <Label htmlFor="auto_open">Auto Open</Label>
-              </div>
-
-              {config.auto_open && (
-                <div className="space-y-2">
-                  <Label htmlFor="auto_open_delay">Auto Open Delay (ms)</Label>
-                  <Input
-                    id="auto_open_delay"
-                    type="number"
-                    value={config.auto_open_delay}
-                    onChange={(e) => setConfig({ ...config, auto_open_delay: parseInt(e.target.value) })}
-                    min="1000"
-                    max="10000"
-                  />
+              {/* Preview Box */}
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div 
+                  className="p-4 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center"
+                  style={{ backgroundColor: `${config.theme_color}20` }}
+                >
+                  <div 
+                    className="flex items-center gap-2 px-3 py-2 rounded-full text-white text-sm"
+                    style={{ backgroundColor: config.theme_color }}
+                  >
+                    <Bot className="h-4 w-4" />
+                    {config.bot_name}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 

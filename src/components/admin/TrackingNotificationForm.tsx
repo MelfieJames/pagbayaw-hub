@@ -17,6 +17,7 @@ interface OrderData {
   customerName: string;
   total_amount: number;
   status: string;
+  tracking_number?: string;
 }
 
 export function TrackingNotificationForm() {
@@ -30,7 +31,7 @@ export function TrackingNotificationForm() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [allOrders, setAllOrders] = useState<OrderData[]>([]);
 
-  // Fetch orders with status 'approved' or 'processing' (ready to ship)
+  // Fetch orders with status 'shipped' only
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -44,14 +45,14 @@ export function TrackingNotificationForm() {
             total_amount,
             status
           `)
-          .in('status', ['approved', 'processing']);
+          .eq('status', 'shipped');
 
         if (error) {
           throw error;
         }
 
         if (purchasesData) {
-          // Get user details for better customer names
+          // Get user details and existing tracking numbers
           const userIds = [...new Set(purchasesData.map(p => p.user_id))];
           const { data: profiles } = await supabase
             .from('profiles')
@@ -63,12 +64,21 @@ export function TrackingNotificationForm() {
             .select('purchase_id, first_name, last_name, email')
             .in('purchase_id', purchasesData.map(p => p.id));
 
+          // Get existing tracking numbers from notifications
+          const { data: notifications } = await supabase
+            .from('notifications')
+            .select('purchase_id, tracking_number')
+            .in('purchase_id', purchasesData.map(p => p.id))
+            .eq('type', 'tracking_update');
+
           const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
           const transactionMap = new Map(transactionDetails?.map(t => [t.purchase_id, t]) || []);
+          const trackingMap = new Map(notifications?.map(n => [n.purchase_id, n.tracking_number]) || []);
 
           const formattedOrders = purchasesData.map(purchase => {
             const transaction = transactionMap.get(purchase.id);
             const profile = profileMap.get(purchase.user_id);
+            const existingTracking = trackingMap.get(purchase.id);
             
             let customerName = "Unknown Customer";
             let customerEmail = purchase.email || "unknown@email.com";
@@ -87,7 +97,8 @@ export function TrackingNotificationForm() {
               user_id: purchase.user_id,
               customerName,
               total_amount: purchase.total_amount,
-              status: purchase.status
+              status: purchase.status,
+              tracking_number: existingTracking
             };
           });
 
@@ -113,11 +124,12 @@ export function TrackingNotificationForm() {
       setFilteredOrders(allOrders);
       setShowDropdown(false);
       setSelectedOrder(null);
+      setTrackingNumber("");
       return;
     }
     
     const filtered = allOrders.filter(
-      order => order.id.includes(value) || order.customerName.toLowerCase().includes(value.toLowerCase())
+      order => order.id.includes(value)
     );
     
     setFilteredOrders(filtered);
@@ -128,6 +140,13 @@ export function TrackingNotificationForm() {
     setSelectedOrder(order);
     setSearchTerm(`Order #${order.id}`);
     setShowDropdown(false);
+    
+    // Auto-populate tracking number if it exists
+    if (order.tracking_number) {
+      setTrackingNumber(order.tracking_number);
+    } else {
+      setTrackingNumber("");
+    }
   };
 
   const handleSendNotification = async () => {
@@ -181,7 +200,7 @@ export function TrackingNotificationForm() {
       setSearchTerm("");
       setSelectedOrder(null);
       
-      // Remove the shipped order from the list
+      // Remove the order from the list since it's now delivering
       setAllOrders(prev => prev.filter(order => order.id !== selectedOrder.id));
       setFilteredOrders(prev => prev.filter(order => order.id !== selectedOrder.id));
       
@@ -206,7 +225,7 @@ export function TrackingNotificationForm() {
           />
           <div>
             <h2 className="text-xl font-bold text-[#8B7355]">Send Tracking Update</h2>
-            <p className="text-sm text-gray-500">Update customers on their order shipment status with delivery expectations</p>
+            <p className="text-sm text-gray-500">Update customers on their shipped order status with delivery expectations</p>
           </div>
         </div>
 
@@ -236,6 +255,9 @@ export function TrackingNotificationForm() {
                         <div className="font-medium">Order #{order.id}</div>
                         <div className="text-sm text-gray-600">{order.customerName}</div>
                         <div className="text-sm text-gray-500">{order.email}</div>
+                        {order.tracking_number && (
+                          <div className="text-xs text-blue-600">Tracking: {order.tracking_number}</div>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="font-medium">₱{Number(order.total_amount).toFixed(2)}</div>
@@ -250,7 +272,7 @@ export function TrackingNotificationForm() {
             )}
             {searchTerm && filteredOrders.length === 0 && (
               <div className="border p-3 rounded-md bg-gray-50 text-gray-500 text-sm">
-                No orders found ready for shipping
+                No shipped orders found
               </div>
             )}
           </div>
@@ -262,6 +284,11 @@ export function TrackingNotificationForm() {
                 <strong>Customer:</strong> {selectedOrder.customerName}<br />
                 <strong>Email:</strong> {selectedOrder.email}<br />
                 <strong>Total:</strong> ₱{Number(selectedOrder.total_amount).toFixed(2)}
+                {selectedOrder.tracking_number && (
+                  <>
+                    <br /><strong>Existing Tracking:</strong> {selectedOrder.tracking_number}
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -270,10 +297,10 @@ export function TrackingNotificationForm() {
         <div>
           <Label className="text-[#8B7355] flex items-center gap-2">
             <Hash className="w-4 h-4" />
-            Tracking Number
+            Tracking Number {selectedOrder?.tracking_number && <span className="text-sm text-gray-500">(Auto-filled)</span>}
           </Label>
           <Input
-            placeholder="Enter shipping tracking number"
+            placeholder="Enter or update tracking number"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
             className="mt-1"

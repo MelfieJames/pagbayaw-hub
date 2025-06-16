@@ -10,8 +10,6 @@ interface ChatbotConfig {
   bot_name: string;
   theme_color: string;
   position: 'bottom-right' | 'bottom-left';
-  auto_open: boolean;
-  auto_open_delay: number;
 }
 
 interface ChatbotQA {
@@ -27,7 +25,6 @@ export default function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(true);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Fetch chatbot configuration from database
@@ -36,7 +33,7 @@ export default function Chatbot() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('chatbot_config')
-        .select('enabled, welcome_message, bot_name, theme_color, position, auto_open, auto_open_delay')
+        .select('enabled, welcome_message, bot_name, theme_color, position')
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -45,10 +42,8 @@ export default function Chatbot() {
           enabled: true,
           welcome_message: "Hello! I'm your UNVAS assistant. How can I help you today?",
           bot_name: "UNVAS Assistant",
-          theme_color: "#6b8e68",
+          theme_color: "#C4A484",
           position: 'bottom-right' as const,
-          auto_open: false,
-          auto_open_delay: 3000
         };
       }
 
@@ -56,10 +51,8 @@ export default function Chatbot() {
         enabled: true,
         welcome_message: "Hello! I'm your UNVAS assistant. How can I help you today?",
         bot_name: "UNVAS Assistant",
-        theme_color: "#6b8e68",
+        theme_color: "#C4A484",
         position: 'bottom-right' as const,
-        auto_open: false,
-        auto_open_delay: 3000
       };
     },
   });
@@ -93,19 +86,7 @@ export default function Chatbot() {
         }
       ]);
     }
-  }, [config, messages.length]);
-
-  // Handle auto-open functionality
-  useEffect(() => {
-    if (config && config.auto_open && config.enabled && !hasAutoOpened && !isOpen) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        setHasAutoOpened(true);
-      }, config.auto_open_delay);
-
-      return () => clearTimeout(timer);
-    }
-  }, [config, hasAutoOpened, isOpen]);
+  }, [config]);
 
   // Auto-scroll to the bottom of the messages
   useEffect(() => {
