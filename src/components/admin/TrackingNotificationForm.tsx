@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Truck, Hash, Pencil, Search, Calendar } from "lucide-react";
+import { Truck, Search, Calendar } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
@@ -22,7 +22,6 @@ interface OrderData {
 
 export function TrackingNotificationForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [trackingNumber, setTrackingNumber] = useState("");
   const [message, setMessage] = useState("");
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,7 +30,7 @@ export function TrackingNotificationForm() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [allOrders, setAllOrders] = useState<OrderData[]>([]);
 
-  // Fetch orders with status 'shipped' only
+  // Fetch orders with status 'delivering' (shipped orders)
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -45,14 +44,14 @@ export function TrackingNotificationForm() {
             total_amount,
             status
           `)
-          .eq('status', 'shipped');
+          .eq('status', 'delivering');
 
         if (error) {
           throw error;
         }
 
         if (purchasesData) {
-          // Get user details and existing tracking numbers
+          // Get user details and existing tracking numbers from notifications
           const userIds = [...new Set(purchasesData.map(p => p.user_id))];
           const { data: profiles } = await supabase
             .from('profiles')
@@ -64,12 +63,13 @@ export function TrackingNotificationForm() {
             .select('purchase_id, first_name, last_name, email')
             .in('purchase_id', purchasesData.map(p => p.id));
 
-          // Get existing tracking numbers from notifications
+          // Get tracking numbers from notifications
           const { data: notifications } = await supabase
             .from('notifications')
             .select('purchase_id, tracking_number')
             .in('purchase_id', purchasesData.map(p => p.id))
-            .eq('type', 'tracking_update');
+            .eq('type', 'tracking_update')
+            .not('tracking_number', 'is', null);
 
           const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
           const transactionMap = new Map(transactionDetails?.map(t => [t.purchase_id, t]) || []);
@@ -124,12 +124,11 @@ export function TrackingNotificationForm() {
       setFilteredOrders(allOrders);
       setShowDropdown(false);
       setSelectedOrder(null);
-      setTrackingNumber("");
       return;
     }
     
     const filtered = allOrders.filter(
-      order => order.id.includes(value)
+      order => order.id.toLowerCase().includes(value.toLowerCase())
     );
     
     setFilteredOrders(filtered);
@@ -140,13 +139,6 @@ export function TrackingNotificationForm() {
     setSelectedOrder(order);
     setSearchTerm(`Order #${order.id}`);
     setShowDropdown(false);
-    
-    // Auto-populate tracking number if it exists
-    if (order.tracking_number) {
-      setTrackingNumber(order.tracking_number);
-    } else {
-      setTrackingNumber("");
-    }
   };
 
   const handleSendNotification = async () => {
@@ -155,8 +147,8 @@ export function TrackingNotificationForm() {
       return;
     }
 
-    if (!trackingNumber.trim()) {
-      toast.error("Please enter a tracking number");
+    if (!selectedOrder.tracking_number) {
+      toast.error("This order doesn't have a tracking number assigned yet");
       return;
     }
 
@@ -175,8 +167,8 @@ export function TrackingNotificationForm() {
       const { error } = await supabase.from("notifications").insert([
         {
           user_id: selectedOrder.user_id,
-          message: `${message.trim()} - TRACKING NUMBER: ${trackingNumber.trim()}`,
-          tracking_number: trackingNumber.trim(),
+          message: `${message.trim()} - TRACKING NUMBER: ${selectedOrder.tracking_number}`,
+          tracking_number: selectedOrder.tracking_number,
           type: "tracking_update",
           purchase_id: parseInt(selectedOrder.id),
           expected_delivery_date: expectedDeliveryDate
@@ -185,24 +177,11 @@ export function TrackingNotificationForm() {
 
       if (error) throw error;
 
-      // Update the purchase status to 'delivering'
-      const { error: updateError } = await supabase
-        .from('purchases')
-        .update({ status: 'delivering' })
-        .eq('id', parseInt(selectedOrder.id));
-
-      if (updateError) throw updateError;
-
       toast.success("Tracking notification sent successfully!");
       setMessage("");
-      setTrackingNumber("");
       setExpectedDeliveryDate("");
       setSearchTerm("");
       setSelectedOrder(null);
-      
-      // Remove the order from the list since it's now delivering
-      setAllOrders(prev => prev.filter(order => order.id !== selectedOrder.id));
-      setFilteredOrders(prev => prev.filter(order => order.id !== selectedOrder.id));
       
       alert("Notification has been successfully sent to the customer!");
       
@@ -215,7 +194,7 @@ export function TrackingNotificationForm() {
   };
 
   return (
-    <Card className="shadow-lg bg-[#fdfbf7] border-[#e5e2dd]">
+    <Card className="shadow-lg bg-[#fdfbf7] border-[#C4A484]">
       <CardContent className="p-6 space-y-6">
         <div className="flex items-center gap-3">
           <img 
@@ -256,12 +235,12 @@ export function TrackingNotificationForm() {
                         <div className="text-sm text-gray-600">{order.customerName}</div>
                         <div className="text-sm text-gray-500">{order.email}</div>
                         {order.tracking_number && (
-                          <div className="text-xs text-blue-600">Tracking: {order.tracking_number}</div>
+                          <div className="text-xs text-[#8B7355]">Tracking: {order.tracking_number}</div>
                         )}
                       </div>
                       <div className="text-right">
                         <div className="font-medium">₱{Number(order.total_amount).toFixed(2)}</div>
-                        <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
+                        <div className="text-xs bg-[#8B7355] text-white px-2 py-1 rounded capitalize">
                           {order.status}
                         </div>
                       </div>
@@ -283,28 +262,11 @@ export function TrackingNotificationForm() {
                 <strong>Selected Order:</strong> #{selectedOrder.id}<br />
                 <strong>Customer:</strong> {selectedOrder.customerName}<br />
                 <strong>Email:</strong> {selectedOrder.email}<br />
-                <strong>Total:</strong> ₱{Number(selectedOrder.total_amount).toFixed(2)}
-                {selectedOrder.tracking_number && (
-                  <>
-                    <br /><strong>Existing Tracking:</strong> {selectedOrder.tracking_number}
-                  </>
-                )}
+                <strong>Total:</strong> ₱{Number(selectedOrder.total_amount).toFixed(2)}<br />
+                <strong>Tracking Number:</strong> {selectedOrder.tracking_number || 'Not assigned'}
               </div>
             </div>
           )}
-        </div>
-
-        <div>
-          <Label className="text-[#8B7355] flex items-center gap-2">
-            <Hash className="w-4 h-4" />
-            Tracking Number {selectedOrder?.tracking_number && <span className="text-sm text-gray-500">(Auto-filled)</span>}
-          </Label>
-          <Input
-            placeholder="Enter or update tracking number"
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
-            className="mt-1"
-          />
         </div>
 
         <div>
@@ -323,11 +285,10 @@ export function TrackingNotificationForm() {
 
         <div>
           <Label className="text-[#8B7355] flex items-center gap-2">
-            <Pencil className="w-4 h-4" />
             Message
           </Label>
           <Textarea
-            placeholder="Your order has been shipped! Track your package using the tracking number below."
+            placeholder="Your order has been shipped! Track your package using the tracking number above."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             className="mt-1 min-h-[100px]"
@@ -336,7 +297,7 @@ export function TrackingNotificationForm() {
 
         <Button
           onClick={handleSendNotification}
-          disabled={isLoading || !selectedOrder}
+          disabled={isLoading || !selectedOrder || !selectedOrder.tracking_number}
           className="w-full bg-[#8B7355] hover:bg-[#7a624d] text-white"
         >
           {isLoading ? (

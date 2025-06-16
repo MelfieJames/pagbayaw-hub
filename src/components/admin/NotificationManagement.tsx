@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SendNotificationForm from "./SendNotificationForm";
 import { TrackingNotificationForm } from "./TrackingNotificationForm";
-import { Bell, Send, Truck } from "lucide-react";
+import { NotificationHistory } from "./NotificationHistory";
+import { BulkNotificationSender } from "./BulkNotificationSender";
+import { Bell, Send, Truck, History, Users } from "lucide-react";
 
 export function NotificationManagement() {
   return (
@@ -16,24 +17,32 @@ export function NotificationManagement() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="general" className="flex items-center gap-2">
-              <Send className="h-4 w-4" />
-              General Notifications
-            </TabsTrigger>
+        <Tabs defaultValue="tracking" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="tracking" className="flex items-center gap-2">
               <Truck className="h-4 w-4" />
-              Order Updates
+              Tracking Updates
+            </TabsTrigger>
+            <TabsTrigger value="bulk" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Bulk Notifications
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              History
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="general" className="mt-6">
-            <SendNotificationForm />
-          </TabsContent>
-          
           <TabsContent value="tracking" className="mt-6">
             <TrackingNotificationForm />
+          </TabsContent>
+          
+          <TabsContent value="bulk" className="mt-6">
+            <BulkNotificationSender />
+          </TabsContent>
+          
+          <TabsContent value="history" className="mt-6">
+            <NotificationHistory />
           </TabsContent>
         </Tabs>
       </CardContent>
