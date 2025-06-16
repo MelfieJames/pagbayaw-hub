@@ -82,7 +82,7 @@ export function TrackingNotificationForm() {
             }
 
             return {
-              id: purchase.i.toString(),
+              id: purchase.id.toString(),
               email: customerEmail,
               user_id: purchase.user_id,
               customerName,
