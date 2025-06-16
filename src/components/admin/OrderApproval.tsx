@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,87 +68,107 @@ export function OrderApproval() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const queryClient = useQueryClient();
 
+  // Optimized query with better performance
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["all-orders"],
     queryFn: async () => {
       console.log("Fetching orders...");
       
       try {
-        const { data, error } = await supabase
+        // Fetch purchases with related data in a single optimized query
+        const { data: purchasesData, error: purchasesError } = await supabase
           .from("purchases")
           .select(`
-            *,
-            purchase_items(*, products(*))
+            id,
+            created_at,
+            updated_at,
+            status,
+            total_amount,
+            user_id,
+            email,
+            purchase_items(
+              id,
+              product_id,
+              quantity,
+              price_at_time,
+              products(product_name, image)
+            )
           `)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .limit(100); // Limit for better performance
 
-        if (error) {
-          console.error("Error fetching purchases:", error);
-          throw error;
+        if (purchasesError) {
+          console.error("Error fetching purchases:", purchasesError);
+          throw purchasesError;
         }
 
-        console.log("Raw purchases data:", data);
+        if (!purchasesData?.length) return [];
 
-        // Get transaction details and user profiles separately
-        const ordersWithDetails = await Promise.all(
-          data.map(async (purchase: any) => {
-            let customerName = "Unknown Customer";
-            let customerEmail = purchase.email || "unknown@email.com";
-            let transactionDetails = null;
+        // Get unique user IDs for batch profile lookup
+        const userIds = [...new Set(purchasesData.map(p => p.user_id))];
+        
+        // Batch fetch transaction details
+        const { data: transactionDetails } = await supabase
+          .from("transaction_details")
+          .select("*")
+          .in("purchase_id", purchasesData.map(p => p.id));
 
-            // Try to get transaction details
-            try {
-              const { data: transactionData, error: transactionError } = await supabase
-                .from("transaction_details")
-                .select("*")
-                .eq("purchase_id", purchase.id)
-                .maybeSingle();
-                
-              if (transactionData && !transactionError) {
-                transactionDetails = transactionData;
-                customerName = `${transactionData.first_name} ${transactionData.last_name}`;
-                customerEmail = transactionData.email;
-              }
-            } catch (error) {
-              console.log("No transaction details found for purchase:", purchase.id);
-            }
+        // Batch fetch profiles
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, first_name, last_name, email")
+          .in("id", userIds);
 
-            // If no transaction details, try to get user profile
-            if (!transactionDetails) {
-              try {
-                const { data: profileData, error: profileError } = await supabase
-                  .from("profiles")
-                  .select("first_name, last_name, email")
-                  .eq("id", purchase.user_id)
-                  .maybeSingle();
-                  
-                if (profileData && !profileError) {
-                  customerName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || customerEmail.split('@')[0];
-                  customerEmail = profileData.email || customerEmail;
-                }
-              } catch (error) {
-                console.log("No profile found for user:", purchase.user_id);
-              }
-            }
+        // Process data efficiently
+        const transactionMap = new Map(transactionDetails?.map(t => [t.purchase_id, t]) || []);
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-            return {
-              ...purchase,
-              customerName,
-              customerEmail,
-              transaction_details: transactionDetails ? [transactionDetails] : null
-            };
-          })
-        );
+        const ordersWithDetails = purchasesData.map((purchase: any) => {
+          const transaction = transactionMap.get(purchase.id);
+          const profile = profileMap.get(purchase.user_id);
+          
+          let customerName = "Unknown Customer";
+          let customerEmail = purchase.email || "unknown@email.com";
 
-        console.log("Orders with details:", ordersWithDetails);
+          if (transaction) {
+            customerName = `${transaction.first_name} ${transaction.last_name}`;
+            customerEmail = transaction.email;
+          } else if (profile) {
+            customerName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || customerEmail.split('@')[0];
+            customerEmail = profile.email || customerEmail;
+          }
+
+          return {
+            ...purchase,
+            customerName,
+            customerEmail,
+            transaction_details: transaction ? [transaction] : null
+          };
+        });
+
+        console.log("Orders processed:", ordersWithDetails.length);
         return ordersWithDetails as Purchase[];
       } catch (error) {
         console.error("Error in orders query:", error);
         throw error;
       }
     },
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced refresh rate for better performance
+    staleTime: 30000, // Cache data for 30 seconds
   });
+
+  // Memoized filtered orders for better performance
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      if (activeTab === "all") return true;
+      if (activeTab === "pending") return order.status === "pending";
+      if (activeTab === "processing") return order.status === "approved" || order.status === "processing";
+      if (activeTab === "shipping") return order.status === "delivering";
+      if (activeTab === "completed") return order.status === "completed";
+      if (activeTab === "cancelled") return order.status === "cancelled";
+      return true;
+    });
+  }, [orders, activeTab]);
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({
@@ -382,15 +402,7 @@ export function OrderApproval() {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    if (activeTab === "all") return true;
-    if (activeTab === "pending") return order.status === "pending";
-    if (activeTab === "processing") return order.status === "approved" || order.status === "processing";
-    if (activeTab === "shipping") return order.status === "delivering";
-    if (activeTab === "completed") return order.status === "completed";
-    if (activeTab === "cancelled") return order.status === "cancelled";
-    return true;
-  });
+  
 
   if (isLoading) {
     return (
@@ -404,12 +416,12 @@ export function OrderApproval() {
     <div className="space-y-4">
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="all">All Orders</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="processing">Processing</TabsTrigger>
-          <TabsTrigger value="shipping">Shipping</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          <TabsTrigger value="all">All Orders ({orders.length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending ({orders.filter(o => o.status === "pending").length})</TabsTrigger>
+          <TabsTrigger value="processing">Processing ({orders.filter(o => o.status === "approved" || o.status === "processing").length})</TabsTrigger>
+          <TabsTrigger value="shipping">Shipping ({orders.filter(o => o.status === "delivering").length})</TabsTrigger>
+          <TabsTrigger value="completed">Completed ({orders.filter(o => o.status === "completed").length})</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled ({orders.filter(o => o.status === "cancelled").length})</TabsTrigger>
         </TabsList>
         
         <TabsContent value={activeTab}>
@@ -426,6 +438,7 @@ export function OrderApproval() {
                     <TableHead>Order ID</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Customer</TableHead>
+                    <TableHead>Items</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
@@ -442,7 +455,10 @@ export function OrderApproval() {
                         <div className="font-medium">{purchase.customerName}</div>
                         <div className="text-xs text-gray-500">{purchase.customerEmail}</div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-sm">
+                        {purchase.purchase_items?.length || 0} items
+                      </TableCell>
+                      <TableCell className="font-medium">
                         ₱{Number(purchase.total_amount).toFixed(2)}
                       </TableCell>
                       <TableCell>

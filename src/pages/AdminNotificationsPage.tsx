@@ -3,8 +3,6 @@ import { useState } from "react";
 import { AdminSidebar } from "@/components/products/AdminSidebar";
 import { TrackingNotificationForm } from "@/components/admin/TrackingNotificationForm";
 import { NotificationManagement } from "@/components/admin/NotificationManagement";
-import { TopRevenueProducts } from "@/components/admin/TopRevenueProducts";
-import { SalesCharts } from "@/components/admin/SalesCharts";
 import Navbar from "@/components/Navbar";
 
 export default function AdminNotificationsPage() {
@@ -18,8 +16,8 @@ export default function AdminNotificationsPage() {
         <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
         <div className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "ml-0"}`}>
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl font-semibold text-[#8B7355] mb-2">Notifications & Revenue Review</h2>
-            <p className="text-gray-600 mb-6">Send notifications, manage customer communications, and view revenue metrics</p>
+            <h2 className="text-2xl font-semibold text-[#8B7355] mb-2">Notification Management</h2>
+            <p className="text-gray-600 mb-6">Send notifications and manage customer communications</p>
             
             <div className="flex border-b mb-6">
               <button
@@ -34,22 +32,10 @@ export default function AdminNotificationsPage() {
               >
                 Manage Notifications
               </button>
-              <button
-                className={`px-4 py-2 font-medium ${activeTab === 'overview' ? 'border-b-2 border-[#8B7355] text-[#8B7355]' : 'text-gray-500'}`}
-                onClick={() => setActiveTab('overview')}
-              >
-                Revenue Review
-              </button>
             </div>
             
             {activeTab === 'send' && <TrackingNotificationForm />}
             {activeTab === 'manage' && <NotificationManagement />}
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <SalesCharts />
-                <TopRevenueProducts />
-              </div>
-            )}
           </div>
         </div>
       </div>

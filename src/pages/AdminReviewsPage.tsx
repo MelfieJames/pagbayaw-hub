@@ -159,7 +159,12 @@ export default function AdminReviewsPage() {
               getReviewCount={getReviewCount}
             />
 
-            <AdminStats reviews={reviews} />
+            {/* Centered Admin Stats */}
+            <div className="flex justify-center mb-6">
+              <div className="w-full max-w-4xl">
+                <AdminStats reviews={reviews} />
+              </div>
+            </div>
 
             {reviewsLoading ? (
               <div className="flex justify-center items-center h-64">
