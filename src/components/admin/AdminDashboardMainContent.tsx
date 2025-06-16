@@ -2,7 +2,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminStats } from "./AdminStats";
 import { SalesCharts } from "./SalesCharts";
-import { RecentPurchases } from "./RecentPurchases";
 import { TopRevenueProducts } from "./TopRevenueProducts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -42,8 +41,6 @@ export default function AdminDashboardMainContent() {
         <SalesCharts />
         <TopRevenueProducts />
       </div>
-      
-      <RecentPurchases />
     </div>
   );
 }

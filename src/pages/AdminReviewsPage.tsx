@@ -46,8 +46,7 @@ export default function AdminReviewsPage() {
           created_at,
           user_id,
           product_id,
-          products(product_name),
-          profiles(email, first_name, last_name)
+          products(product_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -56,20 +55,57 @@ export default function AdminReviewsPage() {
         throw error;
       }
       
-      return data.map(review => ({
-        id: review.id,
-        rating: review.rating,
-        comment: review.comment || '',
-        image_url: review.image_url,
-        video_url: review.video_url,
-        created_at: review.created_at,
-        user_id: review.user_id,
-        product_id: review.product_id,
-        product_name: (review.products as any)?.product_name || 'Unknown Product',
-        user_email: (review.profiles as any)?.email || 'Unknown User',
-        user_first_name: (review.profiles as any)?.first_name,
-        user_last_name: (review.profiles as any)?.last_name
-      })) as ReviewWithDetails[];
+      // Get user profiles for each review
+      const reviewsWithUserData = await Promise.all(
+        data.map(async (review) => {
+          let userName = 'Unknown User';
+          let userEmail = 'unknown@email.com';
+          
+          try {
+            // Try to get user profile first
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('first_name, last_name, email')
+              .eq('id', review.user_id)
+              .maybeSingle();
+              
+            if (profileData && !profileError) {
+              userName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Unknown User';
+              userEmail = profileData.email || 'unknown@email.com';
+            } else {
+              // Fallback: try to get user info from auth (admin only)
+              try {
+                const { data: userData } = await supabase.auth.admin.getUserById(review.user_id);
+                if (userData?.user) {
+                  userEmail = userData.user.email || 'unknown@email.com';
+                  userName = userData.user.user_metadata?.full_name || userData.user.email?.split('@')[0] || 'Unknown User';
+                }
+              } catch (authError) {
+                console.log('Could not fetch user data from auth:', authError);
+              }
+            }
+          } catch (error) {
+            console.log('Error fetching user data:', error);
+          }
+
+          return {
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment || '',
+            image_url: review.image_url,
+            video_url: review.video_url,
+            created_at: review.created_at,
+            user_id: review.user_id,
+            product_id: review.product_id,
+            product_name: (review.products as any)?.product_name || 'Unknown Product',
+            user_email: userEmail,
+            user_first_name: userName.split(' ')[0],
+            user_last_name: userName.split(' ').slice(1).join(' ')
+          };
+        })
+      );
+      
+      return reviewsWithUserData as ReviewWithDetails[];
     }
   });
 
@@ -133,7 +169,76 @@ export default function AdminReviewsPage() {
               <ScrollArea className="h-[600px]">
                 <div className="space-y-4">
                   {filteredReviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
+                    <div key={review.id} className="bg-white rounded-lg shadow-sm border p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-12 h-12 bg-[#8B7355] rounded-full flex items-center justify-center text-white font-semibold">
+                            {(review.user_first_name || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <h3 className="font-semibold text-gray-900">
+                                {review.user_first_name} {review.user_last_name}
+                              </h3>
+                              <p className="text-sm text-gray-500">{review.user_email}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 mb-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <svg
+                                    key={star}
+                                    className={`w-4 h-4 ${
+                                      star <= review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                    }`}
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                ))}
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mb-3">
+                            <p className="text-sm font-medium text-[#8B7355] mb-1">
+                              Product: {review.product_name}
+                            </p>
+                            {review.comment && (
+                              <p className="text-gray-700">{review.comment}</p>
+                            )}
+                          </div>
+                          
+                          {(review.image_url || review.video_url) && (
+                            <div className="mt-4 flex gap-3">
+                              {review.image_url && (
+                                <div className="relative">
+                                  <img
+                                    src={review.image_url}
+                                    alt="Review attachment"
+                                    className="w-24 h-24 object-cover rounded-lg border"
+                                  />
+                                </div>
+                              )}
+                              {review.video_url && (
+                                <div className="relative">
+                                  <video
+                                    src={review.video_url}
+                                    className="w-24 h-24 object-cover rounded-lg border"
+                                    controls
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   ))}
                   
                   {filteredReviews.length === 0 && (

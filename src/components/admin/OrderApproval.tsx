@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -72,25 +71,81 @@ export function OrderApproval() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["all-orders"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchases")
-        .select(`
-          *,
-          transaction_details(*),
-          purchase_items(*, products(*))
-        `)
-        .order("created_at", { ascending: false });
+      console.log("Fetching orders...");
+      
+      try {
+        const { data, error } = await supabase
+          .from("purchases")
+          .select(`
+            *,
+            purchase_items(*, products(*))
+          `)
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
+        if (error) {
+          console.error("Error fetching purchases:", error);
+          throw error;
+        }
 
-      return data.map((purchase: any) => {
-        const details = purchase.transaction_details?.[0];
-        return {
-          ...purchase,
-          customerName: details ? `${details.first_name} ${details.last_name}` : purchase.email || "Anonymous",
-          customerEmail: details?.email || purchase.email || "N/A",
-        };
-      }) as Purchase[];
+        console.log("Raw purchases data:", data);
+
+        // Get transaction details and user profiles separately
+        const ordersWithDetails = await Promise.all(
+          data.map(async (purchase: any) => {
+            let customerName = "Unknown Customer";
+            let customerEmail = purchase.email || "unknown@email.com";
+            let transactionDetails = null;
+
+            // Try to get transaction details
+            try {
+              const { data: transactionData, error: transactionError } = await supabase
+                .from("transaction_details")
+                .select("*")
+                .eq("purchase_id", purchase.id)
+                .maybeSingle();
+                
+              if (transactionData && !transactionError) {
+                transactionDetails = transactionData;
+                customerName = `${transactionData.first_name} ${transactionData.last_name}`;
+                customerEmail = transactionData.email;
+              }
+            } catch (error) {
+              console.log("No transaction details found for purchase:", purchase.id);
+            }
+
+            // If no transaction details, try to get user profile
+            if (!transactionDetails) {
+              try {
+                const { data: profileData, error: profileError } = await supabase
+                  .from("profiles")
+                  .select("first_name, last_name, email")
+                  .eq("id", purchase.user_id)
+                  .maybeSingle();
+                  
+                if (profileData && !profileError) {
+                  customerName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || customerEmail.split('@')[0];
+                  customerEmail = profileData.email || customerEmail;
+                }
+              } catch (error) {
+                console.log("No profile found for user:", purchase.user_id);
+              }
+            }
+
+            return {
+              ...purchase,
+              customerName,
+              customerEmail,
+              transaction_details: transactionDetails ? [transactionDetails] : null
+            };
+          })
+        );
+
+        console.log("Orders with details:", ordersWithDetails);
+        return ordersWithDetails as Purchase[];
+      } catch (error) {
+        console.error("Error in orders query:", error);
+        throw error;
+      }
     },
     refetchInterval: 30000,
   });
