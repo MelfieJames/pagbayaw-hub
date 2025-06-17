@@ -116,7 +116,7 @@ export function OrderApproval() {
         // Batch fetch profiles
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, first_name, last_name, email")
+          .select("id, first_name, last_name, email, phone_number")
           .in("id", userIds);
 
         // Process data efficiently
@@ -138,25 +138,30 @@ export function OrderApproval() {
             customerEmail = profile.email || customerEmail;
           }
 
-          // Auto-cancel orders with no shipping address
-          if (!transaction?.address || transaction.address.trim() === '') {
-            if (purchase.status !== 'cancelled') {
-              await supabase
-                .from("purchases")
-                .update({ status: 'cancelled' })
-                .eq("id", purchase.id);
-              
-              // Send notification about cancellation
-              await supabase.from("notifications").insert({
-                user_id: purchase.user_id,
-                purchase_id: purchase.id,
-                message: `Your order #${purchase.id} has been automatically cancelled due to missing shipping information.`,
-                type: "order",
-                is_read: false
-              });
-              
-              purchase.status = 'cancelled';
-            }
+          // Auto-cancel orders with missing critical information
+          const shouldCancel = !transaction?.address || 
+                             transaction.address.trim() === '' ||
+                             !transaction?.phone_number ||
+                             transaction.phone_number.trim() === '' ||
+                             !transaction?.email ||
+                             transaction.email.trim() === '';
+
+          if (shouldCancel && purchase.status !== 'cancelled') {
+            await supabase
+              .from("purchases")
+              .update({ status: 'cancelled' })
+              .eq("id", purchase.id);
+            
+            // Send notification about cancellation
+            await supabase.from("notifications").insert({
+              user_id: purchase.user_id,
+              purchase_id: purchase.id,
+              message: `Your order #${purchase.id} has been automatically cancelled due to missing customer information (address, phone, or email).`,
+              type: "order",
+              is_read: false
+            });
+            
+            purchase.status = 'cancelled';
           }
 
           return {
@@ -178,7 +183,6 @@ export function OrderApproval() {
     staleTime: 30000,
   });
 
-  // Memoized filtered orders for better performance
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       if (activeTab === "all") return true;
@@ -423,8 +427,6 @@ export function OrderApproval() {
     }
   };
 
-  
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[200px]">
@@ -551,7 +553,7 @@ export function OrderApproval() {
                   {selectedPurchase.transaction_details?.[0]?.address ? (
                     <p className="text-sm whitespace-pre-wrap">{selectedPurchase.transaction_details[0].address}</p>
                   ) : (
-                    <p className="text-sm text-amber-600">No address provided</p>
+                    <p className="text-sm text-red-600">No address provided - Order will be cancelled</p>
                   )}
                 </div>
               </div>

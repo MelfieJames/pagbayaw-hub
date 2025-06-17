@@ -5,10 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ArrowLeft, User, Mail, Phone, MapPin, ShoppingBag } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, ShoppingBag, Edit } from "lucide-react";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileSuccessModal from "@/components/profile/ProfileSuccessModal";
 import { toast } from "sonner";
@@ -22,6 +21,7 @@ export default function UserProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [isEditing, setIsEditing] = useState(false);
 
   // Get the redirect path from location state
   const redirectAfterUpdate = location.state?.redirectAfterUpdate || "/products";
@@ -72,6 +72,9 @@ export default function UserProfile() {
     }
   }, [user, navigate]);
 
+  // Check if profile has complete data to display
+  const hasProfileData = profileData.first_name || profileData.last_name || profileData.phone_number || profileData.location;
+
   const handleChange = (field: string, value: string) => {
     updateProfileField(field as keyof typeof profileData, value);
   };
@@ -105,6 +108,7 @@ export default function UserProfile() {
     try {
       const success = await updateProfile(profileData);
       if (success) {
+        setIsEditing(false);
         setShowSuccessModal(true);
       }
     } catch (err) {
@@ -195,20 +199,77 @@ export default function UserProfile() {
             {activeTab === "profile" ? (
               <Card className="shadow-sm border-t-4 border-t-primary">
                 <div className="border-b bg-gray-50 p-6">
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    Your Profile
-                  </h2>
-                  <p className="text-gray-600">
-                    Update your personal information. This information will be used for order processing.
-                  </p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800">
+                        Your Profile
+                      </h2>
+                      <p className="text-gray-600">
+                        {isEditing ? "Update your personal information" : "Your personal information"}
+                      </p>
+                    </div>
+                    {hasProfileData && !isEditing && (
+                      <Button onClick={() => setIsEditing(true)} variant="outline">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Profile
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 
-                <ProfileForm
-                  profileData={profileData}
-                  onProfileChange={handleChange}
-                  onSubmit={handleSubmit}
-                  isSaving={isSaving}
-                />
+                {isEditing || !hasProfileData ? (
+                  <ProfileForm
+                    profileData={profileData}
+                    onProfile
+
+Change={handleChange}
+                    onSubmit={handleSubmit}
+                    isSaving={isSaving}
+                  />
+                ) : (
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Full Name</label>
+                          <p className="text-lg">{profileData.first_name} {profileData.middle_name} {profileData.last_name}</p>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Email</label>
+                          <p className="text-lg flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                            {user?.email}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Phone Number</label>
+                          <p className="text-lg flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-gray-400" />
+                            {profileData.phone_number || "Not provided"}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Address</label>
+                          <p className="text-lg flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-gray-400" />
+                            {profileData.location || "Not provided"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 pt-6 border-t">
+                      <Button onClick={() => setIsEditing(false)} variant="outline" className="mr-2">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Card>
             ) : (
               <Card className="shadow-sm">
@@ -260,35 +321,39 @@ export default function UserProfile() {
               </Card>
             )}
             
-            <div className="mt-4">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-lg font-semibold mb-4">About Me</h3>
-                <p className="text-gray-600 mb-4">
-                  {profileData.location || "No location set"}
-                </p>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <span>{user?.email}</span>
+            {/* About Me Section - Only show when not editing and has profile data */}
+            {!isEditing && hasProfileData && (
+              <div className="mt-4">
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <h3 className="text-lg font-semibold mb-4">About Me</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-gray-500" />
+                      <span>{profileData.first_name} {profileData.middle_name} {profileData.last_name}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span>{user?.email}</span>
+                    </div>
+                    
+                    {profileData.phone_number && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <span>{profileData.phone_number}</span>
+                      </div>
+                    )}
+                    
+                    {profileData.location && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <span>{profileData.location}</span>
+                      </div>
+                    )}
                   </div>
-                  
-                  {profileData.phone_number && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span>{profileData.phone_number}</span>
-                    </div>
-                  )}
-                  
-                  {profileData.location && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <span>{profileData.location}</span>
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

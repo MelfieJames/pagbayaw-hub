@@ -18,6 +18,9 @@ interface AchievementFormProps {
 }
 
 export function AchievementForm({ isOpen, onOpenChange, achievement }: AchievementFormProps) {
+  const [titleImageFile, setTitleImageFile] = useState<File | null>(null);
+  const [titleImagePreview, setTitleImagePreview] = useState<string>(achievement?.image || "");
+  
   const {
     formData,
     isSubmitting,
@@ -33,9 +36,67 @@ export function AchievementForm({ isOpen, onOpenChange, achievement }: Achieveme
     removeImage,
   } = useAchievementImages(achievement?.id);
 
+  const handleTitleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setTitleImageFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setTitleImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeTitleImage = () => {
+    setTitleImageFile(null);
+    setTitleImagePreview("");
+  };
+
   const onSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleSubmit(e);
+    
+    // Handle title image upload if there's a new file
+    let titleImageUrl = formData.image;
+    if (titleImageFile) {
+      try {
+        const { supabase } = await import("@/services/supabase/client");
+        const fileExt = titleImageFile.name.split('.').pop();
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        
+        const { data, error: uploadError } = await supabase.storage
+          .from('achievements')
+          .upload(filePath, titleImageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('achievements')
+          .getPublicUrl(filePath);
+
+        titleImageUrl = publicUrl;
+      } catch (error) {
+        console.error("Error uploading title image:", error);
+        return;
+      }
+    }
+
+    // Update form data with title image URL
+    const updatedFormData = { ...formData, image: titleImageUrl };
+    
+    // Create a synthetic event with updated form data
+    const syntheticEvent = {
+      ...e,
+      target: {
+        ...e.target,
+        elements: Object.keys(updatedFormData).map(key => ({
+          name: key,
+          value: updatedFormData[key as keyof typeof updatedFormData]
+        }))
+      }
+    };
+
+    await handleSubmit(syntheticEvent as any);
   };
 
   return (
@@ -150,70 +211,128 @@ export function AchievementForm({ isOpen, onOpenChange, achievement }: Achieveme
               </div>
             </div>
 
-            {/* Image Upload Section */}
+            {/* Title Image Section */}
             <Card className="border-[#C4A484]">
               <CardHeader>
                 <CardTitle className="text-[#8B7355] flex items-center gap-2">
                   <ImageIcon className="h-5 w-5" />
-                  Images
+                  Title Image (Main Display Image)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="image-upload" className="text-[#8B7355]">
-                      Upload Images
+                    <Label htmlFor="title-image-upload" className="text-[#8B7355]">
+                      Choose Title Image
                     </Label>
                     <div className="mt-2">
                       <Input
-                        id="image-upload"
+                        id="title-image-upload"
                         type="file"
                         accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        disabled={isUploading}
+                        onChange={handleTitleImageChange}
                         className="hidden"
                       />
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => document.getElementById('image-upload')?.click()}
-                        disabled={isUploading}
+                        onClick={() => document.getElementById('title-image-upload')?.click()}
                         className="w-full border-[#C4A484] text-[#8B7355]"
                       >
                         <Upload className="h-4 w-4 mr-2" />
-                        {isUploading ? "Uploading..." : "Choose Images"}
+                        Choose Title Image
                       </Button>
                     </div>
                   </div>
 
-                  {images.length > 0 && (
-                    <ScrollArea className="h-32">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {images.map((image, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={image.image_url}
-                              alt={`Achievement ${index + 1}`}
-                              className="w-full h-20 object-cover rounded border"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => removeImage(image.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                  {titleImagePreview && (
+                    <div className="relative inline-block">
+                      <img
+                        src={titleImagePreview}
+                        alt="Title preview"
+                        className="w-32 h-32 object-cover rounded border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0"
+                        onClick={removeTitleImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Additional Images Section */}
+            {achievement?.id && (
+              <Card className="border-[#C4A484]">
+                <CardHeader>
+                  <CardTitle className="text-[#8B7355] flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5" />
+                    Additional Images
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="additional-image-upload" className="text-[#8B7355]">
+                        Upload Additional Images
+                      </Label>
+                      <div className="mt-2">
+                        <Input
+                          id="additional-image-upload"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById('additional-image-upload')?.click()}
+                          disabled={isUploading}
+                          className="w-full border-[#C4A484] text-[#8B7355]"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {isUploading ? "Uploading..." : "Choose Additional Images"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {images.length > 0 && (
+                      <ScrollArea className="h-32">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {images.map((image, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={image.image_url}
+                                alt={`Additional ${index + 1}`}
+                                className="w-full h-20 object-cover rounded border"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => removeImage(image.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="flex justify-end gap-4 pt-4">
               <Button

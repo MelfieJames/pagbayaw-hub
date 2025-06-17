@@ -33,8 +33,8 @@ export const useAchievementForm = (achievement?: any, onOpenChange?: (open: bool
 
     setIsSubmitting(true);
     try {
-      // Remove video from form data when saving since it's not in the interface
-      const { video, ...dataToSave } = formData;
+      // Include video in form data when saving
+      const dataToSave = { ...formData };
       
       if (achievement?.id) {
         await updateAchievement(achievement.id, dataToSave);

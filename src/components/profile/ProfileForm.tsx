@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/services/supabase/client";
-import { UserRound, Upload, Camera } from "lucide-react";
+import { UserRound, Upload } from "lucide-react";
 import { ProfileData } from "@/hooks/useProfile";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -90,35 +90,6 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
   return (
     <div className="p-6">
       <form onSubmit={handleFormSubmit} className="space-y-6">
-        {/* Avatar Upload Section */}
-        <div className="flex flex-col items-center justify-center mb-6">
-          <div className="relative">
-            <Avatar className="h-24 w-24">
-              {avatarPreview ? (
-                <AvatarImage src={avatarPreview} alt="Profile" />
-              ) : (
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                  {getInitials()}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <label 
-              htmlFor="avatar-upload"
-              className="absolute bottom-0 right-0 bg-primary hover:bg-primary/90 text-white p-1.5 rounded-full cursor-pointer"
-            >
-              <Camera className="h-4 w-4" />
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
-          </div>
-          <p className="text-sm text-gray-500 mt-2">Click the camera icon to upload profile picture</p>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">

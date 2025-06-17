@@ -28,23 +28,35 @@ export function useNotificationHistory() {
   const fetchNotifications = async () => {
     try {
       setIsLoading(true);
+      console.log("Fetching notifications history...");
+      
       const { data, error } = await supabase
         .from('notifications')
         .select(`
-          *,
-          profiles (
+          id,
+          message,
+          type,
+          created_at,
+          tracking_number,
+          expected_delivery_date,
+          user_id,
+          purchase_id,
+          is_read,
+          profiles!notifications_user_id_fkey (
             first_name,
             last_name,
             email
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
       if (error) {
         console.error("Error fetching notifications:", error);
         throw error;
       }
+      
+      console.log("Notifications fetched:", data?.length || 0);
       setNotifications(data || []);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -83,5 +95,6 @@ export function useNotificationHistory() {
     isLoading,
     deletingId,
     handleDeleteNotification,
+    refetch: fetchNotifications
   };
 }
