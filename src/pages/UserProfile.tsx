@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ArrowLeft, User, Mail, Phone, MapPin, ShoppingBag, Edit } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, ShoppingBag, Edit, Package, TrendingUp, CheckCircle, XCircle } from "lucide-react";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileSuccessModal from "@/components/profile/ProfileSuccessModal";
 import { toast } from "sonner";
@@ -51,7 +52,7 @@ export default function UserProfile() {
       const stats = {
         totalOrders: purchases.length,
         pendingOrders: purchases.filter(p => p.status === 'pending').length,
-        completedOrders: purchases.filter(p => p.status === 'pending').length,
+        completedOrders: purchases.filter(p => p.status === 'completed').length,
         cancelledOrders: purchases.filter(p => p.status === 'cancelled').length,
         totalSpent: purchases
           .filter(p => p.status !== 'cancelled')
@@ -111,7 +112,6 @@ export default function UserProfile() {
         setShowSuccessModal(true);
       }
     } catch (err) {
-      // Error is already handled in the hook and displayed via toast
       console.error("Error during profile update:", err);
     } finally {
       setIsSaving(false);
@@ -136,80 +136,89 @@ export default function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-amber-50 to-orange-100">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Navbar />
-      <div className="container mx-auto px-4 pt-20 pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="container mx-auto px-4 pt-24 pb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="relative">
-                  {profileData.profile_picture ? (
-                    <img 
-                      src={profileData.profile_picture}
-                      alt="Profile" 
-                      className="w-24 h-24 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
+          <div className="lg:col-span-1">
+            <Card className="bg-gradient-to-br from-amber-100 to-orange-200 border-2 border-amber-300 shadow-xl">
+              <div className="p-8 text-center">
+                <div className="flex justify-center mb-6">
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-3xl font-bold text-white shadow-2xl">
                       {getInitials()}
                     </div>
-                  )}
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-amber-900 mb-2">
+                  {hasProfileData ? `${profileData.first_name} ${profileData.last_name}` : 'Welcome!'}
+                </h3>
+                
+                {user?.email && (
+                  <p className="text-amber-700 text-sm mb-6 flex items-center justify-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    {user.email}
+                  </p>
+                )}
+                
+                <div className="flex flex-col gap-3 mt-6">
+                  <Button 
+                    variant={activeTab === "profile" ? "default" : "outline"}
+                    className={`w-full justify-start font-medium ${
+                      activeTab === "profile" 
+                        ? "bg-amber-600 hover:bg-amber-700 text-white shadow-lg" 
+                        : "border-amber-400 text-amber-800 hover:bg-amber-200"
+                    }`}
+                    onClick={() => setActiveTab("profile")}
+                  >
+                    <User className="mr-3 h-5 w-5" /> My Profile
+                  </Button>
+                  <Button 
+                    variant={activeTab === "purchases" ? "default" : "outline"}
+                    className={`w-full justify-start font-medium ${
+                      activeTab === "purchases" 
+                        ? "bg-amber-600 hover:bg-amber-700 text-white shadow-lg" 
+                        : "border-amber-400 text-amber-800 hover:bg-amber-200"
+                    }`}
+                    onClick={() => setActiveTab("purchases")}
+                  >
+                    <ShoppingBag className="mr-3 h-5 w-5" /> Purchase History
+                  </Button>
                 </div>
               </div>
-              
-              <h3 className="text-lg font-semibold mb-1">
-                {profileData.first_name} {profileData.last_name}
-              </h3>
-              
-              {user?.email && (
-                <p className="text-gray-500 text-sm mb-4">{user.email}</p>
-              )}
-              
-              <div className="flex flex-col gap-2 mt-4">
-                <Button 
-                  variant={activeTab === "profile" ? "default" : "outline"}
-                  className="w-full justify-start" 
-                  onClick={() => setActiveTab("profile")}
-                >
-                  <User className="mr-2 h-4 w-4" /> Profile
-                </Button>
-                <Button 
-                  variant={activeTab === "purchases" ? "default" : "outline"}
-                  className="w-full justify-start" 
-                  onClick={() => setActiveTab("purchases")}
-                >
-                  <ShoppingBag className="mr-2 h-4 w-4" /> Purchase History
-                </Button>
-              </div>
-            </div>
+            </Card>
           </div>
           
           {/* Main Content */}
-          <div className="md:col-span-3">
+          <div className="lg:col-span-3">
             {activeTab === "profile" ? (
-              <Card className="shadow-sm border-t-4 border-t-primary">
-                <div className="border-b bg-gray-50 p-6">
+              <Card className="shadow-2xl border-2 border-amber-300 bg-white">
+                <div className="border-b-4 border-amber-600 bg-gradient-to-r from-amber-100 to-orange-200 p-8">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-800">
+                      <h2 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
+                        <User className="h-8 w-8" />
                         Your Profile
                       </h2>
-                      <p className="text-gray-600">
+                      <p className="text-amber-700 mt-2">
                         {isEditing ? "Update your personal information. This information will be used for order processing." : "Your personal information"}
                       </p>
                     </div>
                     {hasProfileData && !isEditing && (
-                      <Button onClick={() => setIsEditing(true)} variant="outline">
-                        <Edit className="mr-2 h-4 w-4" />
+                      <Button 
+                        onClick={() => setIsEditing(true)} 
+                        className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg"
+                      >
+                        <Edit className="mr-2 h-5 w-5" />
                         Edit Profile
                       </Button>
                     )}
@@ -224,132 +233,124 @@ export default function UserProfile() {
                     isSaving={isSaving}
                   />
                 ) : (
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Full Name</label>
-                          <p className="text-lg">{profileData.first_name} {profileData.middle_name} {profileData.last_name}</p>
+                  <div className="p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
+                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Full Name</label>
+                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
+                            <User className="h-5 w-5 text-amber-600" />
+                            {profileData.first_name} {profileData.middle_name} {profileData.last_name}
+                          </p>
                         </div>
                         
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Email</label>
-                          <p className="text-lg flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-gray-400" />
+                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
+                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Email</label>
+                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
+                            <Mail className="h-5 w-5 text-amber-600" />
                             {user?.email}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                          <p className="text-lg flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-gray-400" />
+                      <div className="space-y-6">
+                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
+                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Phone Number</label>
+                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
+                            <Phone className="h-5 w-5 text-amber-600" />
                             {profileData.phone_number || "Not provided"}
                           </p>
                         </div>
                         
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Address</label>
-                          <p className="text-lg flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-gray-400" />
+                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
+                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Address</label>
+                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
+                            <MapPin className="h-5 w-5 text-amber-600" />
                             {profileData.location || "Not provided"}
                           </p>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="mt-6 pt-6 border-t">
-                      <Button onClick={() => setIsEditing(false)} variant="outline" className="mr-2">
-                        Cancel
-                      </Button>
-                    </div>
                   </div>
                 )}
               </Card>
             ) : (
-              <Card className="shadow-sm">
-                <div className="border-b bg-gray-50 p-6">
-                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <ShoppingBag className="h-5 w-5" /> Purchase Summary
+              <Card className="shadow-2xl border-2 border-amber-300 bg-white">
+                <div className="border-b-4 border-amber-600 bg-gradient-to-r from-amber-100 to-orange-200 p-8">
+                  <h2 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
+                    <Package className="h-8 w-8" />
+                    Purchase Summary
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-amber-700 mt-2">
                     View your order statistics and history
                   </p>
                 </div>
                 
-                <div className="p-6">
+                <div className="p-8">
                   {/* Order Statistics */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white rounded-lg border p-4">
-                      <div className="text-sm text-gray-500">Total Orders</div>
-                      <div className="text-2xl font-bold">{purchaseStats?.totalOrders || 0}</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-blue-800 uppercase tracking-wide">Total Orders</div>
+                          <div className="text-3xl font-bold text-blue-900">{purchaseStats?.totalOrders || 0}</div>
+                        </div>
+                        <Package className="h-12 w-12 text-blue-600" />
+                      </div>
                     </div>
                     
-                    <div className="bg-white rounded-lg border p-4">
-                      <div className="text-sm text-gray-500">Pending</div>
-                      <div className="text-2xl font-bold">{purchaseStats?.pendingOrders || 0}</div>
+                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border-2 border-yellow-200 p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-yellow-800 uppercase tracking-wide">Pending</div>
+                          <div className="text-3xl font-bold text-yellow-900">{purchaseStats?.pendingOrders || 0}</div>
+                        </div>
+                        <TrendingUp className="h-12 w-12 text-yellow-600" />
+                      </div>
                     </div>
                     
-                    <div className="bg-white rounded-lg border p-4">
-                      <div className="text-sm text-gray-500">Completed</div>
-                      <div className="text-2xl font-bold">{purchaseStats?.completedOrders || 0}</div>
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200 p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-green-800 uppercase tracking-wide">Completed</div>
+                          <div className="text-3xl font-bold text-green-900">{purchaseStats?.completedOrders || 0}</div>
+                        </div>
+                        <CheckCircle className="h-12 w-12 text-green-600" />
+                      </div>
                     </div>
                     
-                    <div className="bg-white rounded-lg border p-4">
-                      <div className="text-sm text-gray-500">Cancelled</div>
-                      <div className="text-2xl font-bold">{purchaseStats?.cancelledOrders || 0}</div>
+                    <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl border-2 border-red-200 p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-red-800 uppercase tracking-wide">Cancelled</div>
+                          <div className="text-3xl font-bold text-red-900">{purchaseStats?.cancelledOrders || 0}</div>
+                        </div>
+                        <XCircle className="h-12 w-12 text-red-600" />
+                      </div>
                     </div>
                     
-                    <div className="bg-white rounded-lg border p-4 sm:col-span-2 lg:col-span-2">
-                      <div className="text-sm text-gray-500">Total Spent</div>
-                      <div className="text-2xl font-bold">₱{(purchaseStats?.totalSpent || 0).toFixed(2)}</div>
+                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl border-2 border-amber-200 p-6 sm:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Total Spent</div>
+                          <div className="text-3xl font-bold text-amber-900">₱{(purchaseStats?.totalSpent || 0).toFixed(2)}</div>
+                        </div>
+                        <TrendingUp className="h-12 w-12 text-amber-600" />
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="flex justify-end">
-                    <Button onClick={handleViewPurchaseHistory}>
-                      <ShoppingBag className="mr-2 h-4 w-4" />
-                      View Purchase History
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={handleViewPurchaseHistory}
+                      className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg px-8 py-3 text-lg font-semibold"
+                    >
+                      <ShoppingBag className="mr-3 h-6 w-6" />
+                      View Complete Purchase History
                     </Button>
                   </div>
                 </div>
               </Card>
-            )}
-            
-            {/* About Me Section - Only show when not editing and has profile data */}
-            {!isEditing && hasProfileData && (
-              <div className="mt-4">
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold mb-4">About Me</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span>{profileData.first_name} {profileData.middle_name} {profileData.last_name}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span>{user?.email}</span>
-                    </div>
-                    
-                    {profileData.phone_number && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span>{profileData.phone_number}</span>
-                      </div>
-                    )}
-                    
-                    {profileData.location && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span>{profileData.location}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
             )}
           </div>
         </div>

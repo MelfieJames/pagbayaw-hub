@@ -20,28 +20,6 @@ interface NotificationRecord {
   } | null;
 }
 
-// Raw type from Supabase query
-interface RawNotificationRecord {
-  id: number;
-  message: string;
-  type: string;
-  created_at: string;
-  tracking_number?: string;
-  expected_delivery_date?: string;
-  user_id: string;
-  purchase_id?: number;
-  is_read: boolean;
-  profiles?: {
-    first_name: string;
-    last_name: string;
-    email: string;
-  }[] | {
-    first_name: string;
-    last_name: string;
-    email: string;
-  } | null;
-}
-
 export function useNotificationHistory() {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,18 +56,28 @@ export function useNotificationHistory() {
         throw error;
       }
       
+      console.log("Raw notifications data:", data);
       console.log("Notifications fetched:", data?.length || 0);
       
-      // Transform the data to match our interface
-      const transformedData: NotificationRecord[] = (data as RawNotificationRecord[])?.map(notification => ({
-        ...notification,
-        profiles: Array.isArray(notification.profiles) && notification.profiles.length > 0 
-          ? notification.profiles[0] 
-          : Array.isArray(notification.profiles) 
-            ? null 
-            : notification.profiles
+      // Transform the data to ensure proper typing
+      const transformedData: NotificationRecord[] = data?.map(notification => ({
+        id: notification.id,
+        message: notification.message,
+        type: notification.type,
+        created_at: notification.created_at,
+        tracking_number: notification.tracking_number,
+        expected_delivery_date: notification.expected_delivery_date,
+        user_id: notification.user_id,
+        purchase_id: notification.purchase_id,
+        is_read: notification.is_read,
+        profiles: notification.profiles && Array.isArray(notification.profiles) && notification.profiles.length > 0
+          ? notification.profiles[0]
+          : notification.profiles && !Array.isArray(notification.profiles)
+          ? notification.profiles
+          : null
       })) || [];
       
+      console.log("Transformed notifications:", transformedData);
       setNotifications(transformedData);
     } catch (error) {
       console.error("Error fetching notifications:", error);

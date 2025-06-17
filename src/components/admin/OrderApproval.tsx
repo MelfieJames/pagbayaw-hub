@@ -1,654 +1,277 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { AlertCircle, CheckCircle, X, Clock, Truck, Package, AlertTriangle, User, Phone, Mail, MapPin } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, XCircle, Clock, Package, User, Mail, Phone, MapPin } from "lucide-react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { toast } from "sonner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-type OrderStatus = "pending" | "approved" | "processing" | "delivering" | "completed" | "cancelled";
-
-interface PurchaseItem {
-  id: number;
-  product_id: number;
-  quantity: number;
-  price_at_time: number;
-  products: {
-    product_name: string;
-    image: string | null;
-  };
-}
-
-interface Purchase {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  status: OrderStatus;
-  total_amount: number;
-  user_id: string;
-  email: string | null;
-  transaction_details?: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone_number: string;
-    address: string;
-  }[];
-  purchase_items: PurchaseItem[];
-  customerName?: string;
-  customerEmail?: string;
-}
 
 export function OrderApproval() {
-  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
-  const [trackingNumber, setTrackingNumber] = useState("");
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const queryClient = useQueryClient();
+  const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
 
-  // Optimized query with better performance
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["all-orders"],
+  const { data: orders = [], isLoading, refetch } = useQuery({
+    queryKey: ['pending-orders'],
     queryFn: async () => {
-      console.log("Fetching orders...");
-      
-      try {
-        // Fetch purchases with related data in a single optimized query
-        const { data: purchasesData, error: purchasesError } = await supabase
-          .from("purchases")
-          .select(`
+      const { data, error } = await supabase
+        .from('purchases')
+        .select(`
+          *,
+          purchase_items (
             id,
-            created_at,
-            updated_at,
-            status,
-            total_amount,
-            user_id,
-            email,
-            purchase_items(
+            quantity,
+            price_at_time,
+            products (
               id,
-              product_id,
-              quantity,
-              price_at_time,
-              products(product_name, image)
+              product_name,
+              image,
+              product_price
             )
-          `)
-          .order("created_at", { ascending: false })
-          .limit(100);
+          ),
+          profiles!purchases_user_id_fkey (
+            first_name,
+            last_name,
+            email,
+            phone_number,
+            location
+          )
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-        if (purchasesError) {
-          console.error("Error fetching purchases:", purchasesError);
-          throw purchasesError;
-        }
-
-        if (!purchasesData?.length) return [];
-
-        // Get unique user IDs for batch profile lookup
-        const userIds = [...new Set(purchasesData.map(p => p.user_id))];
-        
-        // Batch fetch transaction details
-        const { data: transactionDetails } = await supabase
-          .from("transaction_details")
-          .select("*")
-          .in("purchase_id", purchasesData.map(p => p.id));
-
-        // Batch fetch profiles
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, first_name, last_name, email, phone_number")
-          .in("id", userIds);
-
-        // Process data efficiently
-        const transactionMap = new Map(transactionDetails?.map(t => [t.purchase_id, t]) || []);
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-
-        const ordersWithDetails = await Promise.all(purchasesData.map(async (purchase: any) => {
-          const transaction = transactionMap.get(purchase.id);
-          const profile = profileMap.get(purchase.user_id);
-          
-          let customerName = "Unknown Customer";
-          let customerEmail = purchase.email || "unknown@email.com";
-
-          if (transaction) {
-            customerName = `${transaction.first_name} ${transaction.last_name}`;
-            customerEmail = transaction.email;
-          } else if (profile) {
-            customerName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || customerEmail.split('@')[0];
-            customerEmail = profile.email || customerEmail;
-          }
-
-          // Auto-cancel orders with missing critical information
-          const shouldCancel = !transaction?.address || 
-                             transaction.address.trim() === '' ||
-                             !transaction?.phone_number ||
-                             transaction.phone_number.trim() === '' ||
-                             !transaction?.email ||
-                             transaction.email.trim() === '';
-
-          if (shouldCancel && purchase.status !== 'cancelled') {
-            await supabase
-              .from("purchases")
-              .update({ status: 'cancelled' })
-              .eq("id", purchase.id);
-            
-            // Send notification about cancellation
-            await supabase.from("notifications").insert({
-              user_id: purchase.user_id,
-              purchase_id: purchase.id,
-              message: `Your order #${purchase.id} has been automatically cancelled due to missing customer information (address, phone, or email).`,
-              type: "order",
-              is_read: false
-            });
-            
-            purchase.status = 'cancelled';
-          }
-
-          return {
-            ...purchase,
-            customerName,
-            customerEmail,
-            transaction_details: transaction ? [transaction] : null
-          };
-        }));
-
-        console.log("Orders processed:", ordersWithDetails.length);
-        return ordersWithDetails as Purchase[];
-      } catch (error) {
-        console.error("Error in orders query:", error);
-        throw error;
-      }
-    },
-    refetchInterval: 60000,
-    staleTime: 30000,
+      if (error) throw error;
+      return data || [];
+    }
   });
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter(order => {
-      if (activeTab === "all") return true;
-      if (activeTab === "pending") return order.status === "pending";
-      if (activeTab === "processing") return order.status === "approved" || order.status === "processing";
-      if (activeTab === "shipping") return order.status === "delivering";
-      if (activeTab === "completed") return order.status === "completed";
-      if (activeTab === "cancelled") return order.status === "cancelled";
-      return true;
-    });
-  }, [orders, activeTab]);
+  const handleApprove = async (orderId: number) => {
+    setApprovingId(orderId);
+    try {
+      // First check if customer has complete information
+      const order = orders.find(o => o.id === orderId);
+      const profile = order?.profiles;
+      
+      if (!profile?.first_name || !profile?.last_name || !profile?.phone_number || !profile?.location) {
+        // Auto-cancel order due to incomplete customer information
+        const { error } = await supabase
+          .from('purchases')
+          .update({ status: 'cancelled' })
+          .eq('id', orderId);
 
-  const updateOrderStatus = useMutation({
-    mutationFn: async ({
-      orderId,
-      newStatus,
-      trackingNumber = null,
-    }: {
-      orderId: number;
-      newStatus: OrderStatus;
-      trackingNumber?: string | null;
-    }) => {
-      const { error: updateError } = await supabase
-        .from("purchases")
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", orderId);
+        if (error) throw error;
 
-      if (updateError) throw updateError;
-
-      let notificationMessage = "";
-      let notificationType = "";
-
-      switch (newStatus) {
-        case "approved":
-          notificationMessage = `Your order #${orderId} has been approved by admin.`;
-          notificationType = "order";
-          break;
-        case "processing":
-          notificationMessage = `Your order #${orderId} is now being processed.`;
-          notificationType = "order";
-          break;
-        case "delivering":
-          notificationMessage = `Your order #${orderId} is now out for delivery${trackingNumber ? ` with tracking number: ${trackingNumber}` : ''}.`;
-          notificationType = trackingNumber ? "tracking_update" : "order";
-          break;
-        case "completed":
-          notificationMessage = `Your order #${orderId} has been completed. Thank you for shopping with us!`;
-          notificationType = "order";
-          break;
-      }
-
-      if (notificationMessage) {
-        const { data: purchaseData } = await supabase
-          .from("purchases")
-          .select("user_id")
-          .eq("id", orderId)
-          .single();
-
-        if (purchaseData?.user_id) {
-          await supabase.from("notifications").insert({
-            user_id: purchaseData.user_id,
-            purchase_id: orderId,
-            message: notificationMessage,
-            type: notificationType,
-            tracking_number: trackingNumber,
-            is_read: false
+        // Send notification about cancellation
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: order?.user_id,
+            type: 'order',
+            message: `Your order #${orderId} has been cancelled due to incomplete profile information. Please complete your profile and place the order again.`,
+            purchase_id: orderId
           });
-        }
+
+        toast.error("Order cancelled due to incomplete customer information");
+        refetch();
+        return;
       }
 
-      return { orderId, newStatus };
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+      const { error } = await supabase
+        .from('purchases')
+        .update({ status: 'approved' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // Send notification
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: order?.user_id,
+          type: 'order',
+          message: `Your order #${orderId} has been approved and is being processed.`,
+          purchase_id: orderId
+        });
+
+      toast.success("Order approved successfully");
+      refetch();
+    } catch (error) {
+      console.error("Error approving order:", error);
+      toast.error("Failed to approve order");
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleReject = async (orderId: number) => {
+    setRejectingId(orderId);
+    try {
+      const order = orders.find(o => o.id === orderId);
       
-      let successMessage = '';
-      switch (data.newStatus) {
-        case "approved":
-          successMessage = "Order has been approved";
-          break;
-        case "processing":
-          successMessage = "Order marked as processing";
-          break;
-        case "delivering":
-          successMessage = "Order is now out for delivery";
-          break;
-        case "completed":
-          successMessage = "Order marked as completed";
-          break;
-        case "cancelled":
-          successMessage = "Order has been cancelled";
-          break;
-      }
-      
-      toast.success(successMessage);
-      setIsProcessModalOpen(false);
-      setIsViewModalOpen(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed to update order: ${error.message}`);
-    },
-  });
+      const { error } = await supabase
+        .from('purchases')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId);
 
-  const handleApproveOrder = (purchase: Purchase) => {
-    updateOrderStatus.mutate({ orderId: purchase.id, newStatus: "approved" });
-  };
+      if (error) throw error;
 
-  const handleRejectOrder = (purchase: Purchase) => {
-    updateOrderStatus.mutate({ orderId: purchase.id, newStatus: "cancelled" });
-  };
+      // Send notification
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: order?.user_id,
+          type: 'order',
+          message: `Your order #${orderId} has been cancelled.`,
+          purchase_id: orderId
+        });
 
-  const handleProcessOrder = (purchase: Purchase) => {
-    setSelectedPurchase(purchase);
-    
-    if (purchase.status === "approved") {
-      updateOrderStatus.mutate({ orderId: purchase.id, newStatus: "processing" });
-    } else if (purchase.status === "processing") {
-      setIsProcessModalOpen(true);
-    } else if (purchase.status === "delivering") {
-      updateOrderStatus.mutate({ orderId: purchase.id, newStatus: "completed" });
-    }
-  };
-
-  const handleSubmitTrackingNumber = () => {
-    if (!selectedPurchase) return;
-    
-    updateOrderStatus.mutate({
-      orderId: selectedPurchase.id,
-      newStatus: "delivering",
-      trackingNumber: trackingNumber
-    });
-  };
-
-  const viewOrderDetails = (purchase: Purchase) => {
-    setSelectedPurchase(purchase);
-    setIsViewModalOpen(true);
-  };
-
-  const getStatusBadge = (status: OrderStatus) => {
-    switch (status) {
-      case "pending":
-        return <Badge className="bg-amber-500 hover:bg-amber-600">Pending Approval</Badge>;
-      case "approved":
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Approved</Badge>;
-      case "processing":
-        return <Badge className="bg-purple-500 hover:bg-purple-600">Processing</Badge>;
-      case "delivering":
-        return <Badge className="bg-[#C4A484] hover:bg-[#a68967]">Delivering</Badge>;
-      case "completed":
-        return <Badge className="bg-green-500 hover:bg-green-600">Completed</Badge>;
-      case "cancelled":
-        return <Badge className="bg-red-500 hover:bg-red-600">Cancelled</Badge>;
-      default:
-        return <Badge className="bg-gray-500 hover:bg-gray-600">{status}</Badge>;
-    }
-  };
-
-  const getStatusIcon = (status: OrderStatus) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="h-5 w-5" />;
-      case "approved":
-        return <CheckCircle className="h-5 w-5" />;
-      case "processing":
-        return <Package className="h-5 w-5" />;
-      case "delivering":
-        return <Truck className="h-5 w-5" />;
-      case "completed":
-        return <CheckCircle className="h-5 w-5" />;
-      case "cancelled":
-        return <X className="h-5 w-5" />;
-      default:
-        return <AlertCircle className="h-5 w-5" />;
-    }
-  };
-
-  const getNextActionButton = (purchase: Purchase) => {
-    switch (purchase.status) {
-      case "pending":
-        return (
-          <div className="flex gap-2">
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="bg-green-500 hover:bg-green-600"
-              onClick={() => handleApproveOrder(purchase)}
-            >
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Approve
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={() => handleRejectOrder(purchase)}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Reject
-            </Button>
-          </div>
-        );
-      case "approved":
-        return (
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="bg-purple-500 hover:bg-purple-600"
-            onClick={() => handleProcessOrder(purchase)}
-          >
-            <Package className="h-4 w-4 mr-1" />
-            Start Processing
-          </Button>
-        );
-      case "processing":
-        return (
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="bg-[#C4A484] hover:bg-[#a68967]"
-            onClick={() => handleProcessOrder(purchase)}
-          >
-            <Truck className="h-4 w-4 mr-1" />
-            Ship Order
-          </Button>
-        );
-      case "delivering":
-        return (
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="bg-green-500 hover:bg-green-600"
-            onClick={() => handleProcessOrder(purchase)}
-          >
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Mark Completed
-          </Button>
-        );
-      default:
-        return null;
+      toast.success("Order rejected successfully");
+      refetch();
+    } catch (error) {
+      console.error("Error rejecting order:", error);
+      toast.error("Failed to reject order");
+    } finally {
+      setRejectingId(null);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-[200px]">
-        <LoadingSpinner />
-      </div>
+      <Card className="border-[#C4A484]">
+        <CardContent className="flex justify-center items-center h-32">
+          <LoadingSpinner />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">All Orders ({orders.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({orders.filter(o => o.status === "pending").length})</TabsTrigger>
-          <TabsTrigger value="processing">Processing ({orders.filter(o => o.status === "approved" || o.status === "processing").length})</TabsTrigger>
-          <TabsTrigger value="shipping">Shipping ({orders.filter(o => o.status === "delivering").length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({orders.filter(o => o.status === "completed").length})</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled ({orders.filter(o => o.status === "cancelled").length})</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value={activeTab}>
-          {filteredOrders.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              <Package className="mx-auto h-12 w-12 opacity-20 mb-3" />
-              <p>No orders in this category</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((purchase) => (
-                    <TableRow key={purchase.id} className="hover:bg-gray-50">
-                      <TableCell className="font-semibold">#{purchase.id}</TableCell>
-                      <TableCell className="text-sm text-gray-500">
-                        {format(new Date(purchase.created_at), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{purchase.customerName}</div>
-                        <div className="text-xs text-gray-500">{purchase.customerEmail}</div>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {purchase.purchase_items?.length || 0} items
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        ₱{Number(purchase.total_amount).toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(purchase.status)}
-                          {getStatusBadge(purchase.status)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => viewOrderDetails(purchase)}
-                          >
-                            Details
-                          </Button>
-                          {getNextActionButton(purchase)}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* View Order Details Dialog */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-3xl">
-          {selectedPurchase && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-xl flex items-center gap-2">
-                  {getStatusIcon(selectedPurchase.status)}
-                  Order #{selectedPurchase.id}
-                </DialogTitle>
-                <DialogDescription>
-                  Placed on {format(new Date(selectedPurchase.created_at), "MMMM d, yyyy 'at' h:mm a")}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-md border">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    Customer Information
-                  </h3>
-                  <p className="text-sm">Name: {selectedPurchase.customerName}</p>
-                  <p className="text-sm flex items-center gap-1">
-                    <Mail className="h-3 w-3 text-gray-500" />
-                    {selectedPurchase.customerEmail}
-                  </p>
-                  {selectedPurchase.transaction_details?.[0]?.phone_number && (
-                    <p className="text-sm flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-gray-500" />
-                      {selectedPurchase.transaction_details[0].phone_number}
-                    </p>
-                  )}
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-md border">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    Shipping Information
-                  </h3>
-                  {selectedPurchase.transaction_details?.[0]?.address ? (
-                    <p className="text-sm whitespace-pre-wrap">{selectedPurchase.transaction_details[0].address}</p>
-                  ) : (
-                    <p className="text-sm text-red-600">No address provided - Order will be cancelled</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-md border">
-                <h3 className="font-medium mb-2">Order Items</h3>
-                <div className="space-y-3">
-                  {selectedPurchase.purchase_items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 border-b pb-2">
-                      <img
-                        src={item.products?.image || "/placeholder.svg"}
-                        alt={item.products?.product_name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium">{item.products?.product_name}</p>
-                        <p className="text-sm text-gray-500">₱{Number(item.price_at_time).toFixed(2)} × {item.quantity}</p>
-                      </div>
-                      <p className="font-medium">₱{(Number(item.price_at_time) * item.quantity).toFixed(2)}</p>
-                    </div>
-                  ))}
-                  <div className="flex justify-between pt-2">
-                    <p className="font-medium">Total</p>
-                    <p className="font-bold">₱{Number(selectedPurchase.total_amount).toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <div className="flex gap-2 w-full justify-between">
-                  <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Close</Button>
-                  <div className="flex gap-2">
-                    {getNextActionButton(selectedPurchase)}
-                  </div>
-                </div>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Process to Shipping Dialog */}
-      <Dialog open={isProcessModalOpen} onOpenChange={setIsProcessModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Shipping Information</DialogTitle>
-            <DialogDescription>
-              Enter the tracking number for this order to proceed to shipping.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#F5F5DC]">
-                <img 
-                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQatUFPGvANNitDui-MpHNzvKz-V4BgYISitQ&s" 
-                  alt="J&T Express" 
-                  className="h-10 w-10 object-contain rounded-full"
-                />
-              </div>
-              <div>
-                <p className="font-medium">J&T Express</p>
-                <p className="text-xs text-gray-500">Tracking Number Required</p>
-              </div>
-            </div>
-            
-            <Input
-              placeholder="Enter tracking number (e.g., JT1234567890)"
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-            />
-            
-            {!trackingNumber && (
-              <div className="flex items-center gap-2 text-sm text-amber-600">
-                <AlertTriangle className="h-4 w-4" />
-                <span>Tracking number is required to proceed</span>
-              </div>
-            )}
+    <Card className="border-[#C4A484]">
+      <CardHeader className="bg-[#F5F5DC]">
+        <CardTitle className="text-[#8B7355] flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Pending Orders ({orders.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {orders.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Package className="mx-auto h-12 w-12 opacity-20 mb-3" />
+            <p>No pending orders</p>
           </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsProcessModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              disabled={!trackingNumber} 
-              onClick={handleSubmitTrackingNumber}
-              className="bg-[#C4A484] hover:bg-[#a68967]"
-            >
-              <Truck className="h-4 w-4 mr-1" />
-              Ship Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        ) : (
+          <div className="max-h-96 overflow-y-auto">
+            {orders.map((order) => {
+              const profile = order.profiles;
+              const hasCompleteInfo = profile?.first_name && profile?.last_name && profile?.phone_number && profile?.location;
+              
+              return (
+                <div key={order.id} className="p-4 border-b border-gray-100">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-medium text-gray-900">Order #{order.id}</h4>
+                      <p className="text-sm text-gray-500">
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-lg font-semibold text-[#8B7355]">
+                        ₱{Number(order.total_amount).toFixed(2)}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="border-yellow-400 text-yellow-700">
+                      Pending
+                    </Badge>
+                  </div>
+
+                  {/* Customer Information */}
+                  <div className="mb-3 p-3 bg-gray-50 rounded-md">
+                    <h5 className="font-medium text-gray-800 mb-2 flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Customer Information
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <User className="h-3 w-3 text-gray-500" />
+                        <span className={!profile?.first_name || !profile?.last_name ? "text-red-600" : "text-gray-700"}>
+                          Name: {profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : "Missing"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3 text-gray-500" />
+                        <span className="text-gray-700">Email: {order.email || "Not provided"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3 text-gray-500" />
+                        <span className={!profile?.phone_number ? "text-red-600" : "text-gray-700"}>
+                          Phone: {profile?.phone_number || "Missing"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3 w-3 text-gray-500" />
+                        <span className={!profile?.location ? "text-red-600" : "text-gray-700"}>
+                          Address: {profile?.location || "Missing"}
+                        </span>
+                      </div>
+                    </div>
+                    {!hasCompleteInfo && (
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                        ⚠️ Customer information is incomplete. Order will be auto-cancelled if approved with missing info.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="mb-3">
+                    <h5 className="font-medium text-gray-800 mb-2">Items:</h5>
+                    <div className="space-y-1">
+                      {order.purchase_items?.map((item: any) => (
+                        <div key={item.id} className="text-sm text-gray-600 flex justify-between">
+                          <span>{item.products?.product_name} × {item.quantity}</span>
+                          <span>₱{(Number(item.price_at_time) * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprove(order.id)}
+                      disabled={approvingId === order.id}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {approvingId === order.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleReject(order.id)}
+                      disabled={rejectingId === order.id}
+                    >
+                      {rejectingId === order.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

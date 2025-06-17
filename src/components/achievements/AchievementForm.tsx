@@ -10,6 +10,7 @@ import { Calendar, Upload, Video, Image as ImageIcon, X } from "lucide-react";
 import { useAchievementForm } from "@/hooks/achievement/useAchievementForm";
 import { useAchievementImages } from "@/hooks/achievement/useAchievementImages";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface AchievementFormProps {
   isOpen: boolean;
@@ -56,10 +57,10 @@ export function AchievementForm({ isOpen, onOpenChange, achievement }: Achieveme
   const onSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Handle title image upload if there's a new file
-    let titleImageUrl = formData.image;
-    if (titleImageFile) {
-      try {
+    try {
+      // Handle title image upload if there's a new file
+      let titleImageUrl = formData.image;
+      if (titleImageFile) {
         const { supabase } = await import("@/services/supabase/client");
         const fileExt = titleImageFile.name.split('.').pop();
         const filePath = `${crypto.randomUUID()}.${fileExt}`;
@@ -75,28 +76,26 @@ export function AchievementForm({ isOpen, onOpenChange, achievement }: Achieveme
           .getPublicUrl(filePath);
 
         titleImageUrl = publicUrl;
-      } catch (error) {
-        console.error("Error uploading title image:", error);
-        return;
       }
+
+      // Create form data with title image URL
+      const submitData = { 
+        ...formData, 
+        image: titleImageUrl 
+      };
+
+      // Create synthetic event for handleSubmit
+      const syntheticEvent = {
+        preventDefault: () => {},
+        target: submitData
+      } as any;
+
+      await handleSubmit(syntheticEvent);
+      toast.success(achievement ? "Achievement updated successfully!" : "Achievement created successfully!");
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("Failed to save achievement. Please try again.");
     }
-
-    // Update form data with title image URL
-    const updatedFormData = { ...formData, image: titleImageUrl };
-    
-    // Create a synthetic event with updated form data
-    const syntheticEvent = {
-      ...e,
-      target: {
-        ...e.target,
-        elements: Object.keys(updatedFormData).map(key => ({
-          name: key,
-          value: updatedFormData[key as keyof typeof updatedFormData]
-        }))
-      }
-    };
-
-    await handleSubmit(syntheticEvent as any);
   };
 
   return (
@@ -267,72 +266,70 @@ export function AchievementForm({ isOpen, onOpenChange, achievement }: Achieveme
               </CardContent>
             </Card>
 
-            {/* Additional Images Section */}
-            {achievement?.id && (
-              <Card className="border-[#C4A484]">
-                <CardHeader>
-                  <CardTitle className="text-[#8B7355] flex items-center gap-2">
-                    <ImageIcon className="h-5 w-5" />
-                    Additional Images
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="additional-image-upload" className="text-[#8B7355]">
-                        Upload Additional Images
-                      </Label>
-                      <div className="mt-2">
-                        <Input
-                          id="additional-image-upload"
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleImageUpload}
-                          disabled={isUploading}
-                          className="hidden"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('additional-image-upload')?.click()}
-                          disabled={isUploading}
-                          className="w-full border-[#C4A484] text-[#8B7355]"
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          {isUploading ? "Uploading..." : "Choose Additional Images"}
-                        </Button>
-                      </div>
+            {/* Additional Images Section - Always show for both create and edit */}
+            <Card className="border-[#C4A484]">
+              <CardHeader>
+                <CardTitle className="text-[#8B7355] flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Additional Images
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="additional-image-upload" className="text-[#8B7355]">
+                      Upload Additional Images
+                    </Label>
+                    <div className="mt-2">
+                      <Input
+                        id="additional-image-upload"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('additional-image-upload')?.click()}
+                        disabled={isUploading}
+                        className="w-full border-[#C4A484] text-[#8B7355]"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {isUploading ? "Uploading..." : "Choose Additional Images"}
+                      </Button>
                     </div>
-
-                    {images.length > 0 && (
-                      <ScrollArea className="h-32">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {images.map((image, index) => (
-                            <div key={index} className="relative group">
-                              <img
-                                src={image.image_url}
-                                alt={`Additional ${index + 1}`}
-                                className="w-full h-20 object-cover rounded border"
-                              />
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => removeImage(image.id)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+
+                  {images.length > 0 && (
+                    <ScrollArea className="h-32">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={image.image_url}
+                              alt={`Additional ${index + 1}`}
+                              className="w-full h-20 object-cover rounded border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeImage(image.id)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="flex justify-end gap-4 pt-4">
               <Button
