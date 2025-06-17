@@ -17,7 +17,7 @@ interface NotificationRecord {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
 }
 
 export function useNotificationHistory() {
@@ -57,7 +57,16 @@ export function useNotificationHistory() {
       }
       
       console.log("Notifications fetched:", data?.length || 0);
-      setNotifications(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = data?.map(notification => ({
+        ...notification,
+        profiles: Array.isArray(notification.profiles) && notification.profiles.length > 0 
+          ? notification.profiles[0] 
+          : notification.profiles
+      })) || [];
+      
+      setNotifications(transformedData);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       toast.error("Failed to load notification history");

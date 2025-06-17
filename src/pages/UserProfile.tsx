@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,7 +51,7 @@ export default function UserProfile() {
       const stats = {
         totalOrders: purchases.length,
         pendingOrders: purchases.filter(p => p.status === 'pending').length,
-        completedOrders: purchases.filter(p => p.status === 'completed').length,
+        completedOrders: purchases.filter(p => p.status === 'pending').length,
         cancelledOrders: purchases.filter(p => p.status === 'cancelled').length,
         totalSpent: purchases
           .filter(p => p.status !== 'cancelled')
@@ -205,7 +204,7 @@ export default function UserProfile() {
                         Your Profile
                       </h2>
                       <p className="text-gray-600">
-                        {isEditing ? "Update your personal information" : "Your personal information"}
+                        {isEditing ? "Update your personal information. This information will be used for order processing." : "Your personal information"}
                       </p>
                     </div>
                     {hasProfileData && !isEditing && (
@@ -220,9 +219,7 @@ export default function UserProfile() {
                 {isEditing || !hasProfileData ? (
                   <ProfileForm
                     profileData={profileData}
-                    onProfile
-
-Change={handleChange}
+                    onProfileChange={handleChange}
                     onSubmit={handleSubmit}
                     isSaving={isSaving}
                   />
