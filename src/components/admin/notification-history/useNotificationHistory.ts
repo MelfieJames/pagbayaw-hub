@@ -20,6 +20,28 @@ interface NotificationRecord {
   } | null;
 }
 
+// Raw type from Supabase query
+interface RawNotificationRecord {
+  id: number;
+  message: string;
+  type: string;
+  created_at: string;
+  tracking_number?: string;
+  expected_delivery_date?: string;
+  user_id: string;
+  purchase_id?: number;
+  is_read: boolean;
+  profiles?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  }[] | {
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+}
+
 export function useNotificationHistory() {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,11 +81,13 @@ export function useNotificationHistory() {
       console.log("Notifications fetched:", data?.length || 0);
       
       // Transform the data to match our interface
-      const transformedData = data?.map(notification => ({
+      const transformedData: NotificationRecord[] = (data as RawNotificationRecord[])?.map(notification => ({
         ...notification,
         profiles: Array.isArray(notification.profiles) && notification.profiles.length > 0 
           ? notification.profiles[0] 
-          : notification.profiles
+          : Array.isArray(notification.profiles) 
+            ? null 
+            : notification.profiles
       })) || [];
       
       setNotifications(transformedData);
