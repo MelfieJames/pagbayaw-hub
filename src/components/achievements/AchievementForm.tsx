@@ -40,7 +40,7 @@ export function AchievementForm({ isOpen, onOpenChange, achievement }: Achieveme
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-[#8B7355]">
             {achievement ? "Edit Achievement" : "Add New Achievement"}
@@ -106,7 +106,7 @@ export function AchievementForm({ isOpen, onOpenChange, achievement }: Achieveme
                     <Input
                       id="video"
                       name="video"
-                      value={formData.video}
+                      value={formData.video || ""}
                       onChange={handleInputChange}
                       placeholder="Enter video URL"
                       className="mt-1 pl-10"

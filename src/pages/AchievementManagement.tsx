@@ -33,25 +33,6 @@ const AchievementManagement = () => {
     queryClient.invalidateQueries({ queryKey: ["achievements"] });
   };
 
-  // Hide the description field using CSS (if not modifiable directly)
-  const AchievementFormWrapper = ({ mode, initialData, onSuccess, onClose }: any) => (
-    <div className="achievement-form-wrapper">
-      <style>
-        {`.achievement-form-wrapper [for="description"],
-          .achievement-form-wrapper #description,
-          .achievement-form-wrapper textarea[name="description"] {
-            display: none !important;
-        }`}
-      </style>
-      <AchievementForm
-        mode={mode}
-        initialData={initialData}
-        onSuccess={onSuccess}
-        onClose={onClose}
-      />
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <Navbar />
@@ -71,29 +52,13 @@ const AchievementManagement = () => {
               </div>
 
               {/* Add Button */}
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-[#8B7355] hover:bg-[#a48b69] text-white font-medium shadow-md transition-all hover:scale-105">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add Achievement
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-gray-50 border border-gray-200">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-[#8B7355]">
-                      <Plus className="w-5 h-5" />
-                      Add New Achievement
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="mt-4">
-                    <AchievementFormWrapper
-                      mode="add"
-                      onSuccess={handleAddSuccess}
-                      onClose={() => setIsAddDialogOpen(false)}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                className="bg-[#8B7355] hover:bg-[#a48b69] text-white font-medium shadow-md transition-all hover:scale-105"
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Achievement
+              </Button>
             </div>
 
             {/* Achievement List */}
@@ -109,25 +74,18 @@ const AchievementManagement = () => {
         </main>
       </div>
 
+      {/* Add Dialog */}
+      <AchievementForm
+        isOpen={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+      />
+
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-gray-50 border border-gray-200">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-[#8B7355]">
-              <Pencil className="w-5 h-5" />
-              Edit Achievement
-            </DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            <AchievementFormWrapper
-              mode="edit"
-              initialData={currentAchievement}
-              onSuccess={handleEditSuccess}
-              onClose={() => setIsEditDialogOpen(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AchievementForm
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        achievement={currentAchievement}
+      />
     </div>
   );
 };
