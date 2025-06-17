@@ -95,7 +95,7 @@ export function OrderApproval() {
             )
           `)
           .order("created_at", { ascending: false })
-          .limit(100); // Limit for better performance
+          .limit(100);
 
         if (purchasesError) {
           console.error("Error fetching purchases:", purchasesError);
@@ -123,7 +123,7 @@ export function OrderApproval() {
         const transactionMap = new Map(transactionDetails?.map(t => [t.purchase_id, t]) || []);
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-        const ordersWithDetails = purchasesData.map((purchase: any) => {
+        const ordersWithDetails = await Promise.all(purchasesData.map(async (purchase: any) => {
           const transaction = transactionMap.get(purchase.id);
           const profile = profileMap.get(purchase.user_id);
           
@@ -138,13 +138,34 @@ export function OrderApproval() {
             customerEmail = profile.email || customerEmail;
           }
 
+          // Auto-cancel orders with no shipping address
+          if (!transaction?.address || transaction.address.trim() === '') {
+            if (purchase.status !== 'cancelled') {
+              await supabase
+                .from("purchases")
+                .update({ status: 'cancelled' })
+                .eq("id", purchase.id);
+              
+              // Send notification about cancellation
+              await supabase.from("notifications").insert({
+                user_id: purchase.user_id,
+                purchase_id: purchase.id,
+                message: `Your order #${purchase.id} has been automatically cancelled due to missing shipping information.`,
+                type: "order",
+                is_read: false
+              });
+              
+              purchase.status = 'cancelled';
+            }
+          }
+
           return {
             ...purchase,
             customerName,
             customerEmail,
             transaction_details: transaction ? [transaction] : null
           };
-        });
+        }));
 
         console.log("Orders processed:", ordersWithDetails.length);
         return ordersWithDetails as Purchase[];
@@ -153,8 +174,8 @@ export function OrderApproval() {
         throw error;
       }
     },
-    refetchInterval: 60000, // Reduced refresh rate for better performance
-    staleTime: 30000, // Cache data for 30 seconds
+    refetchInterval: 60000,
+    staleTime: 30000,
   });
 
   // Memoized filtered orders for better performance

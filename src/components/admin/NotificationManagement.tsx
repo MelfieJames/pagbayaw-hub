@@ -2,10 +2,9 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrackingNotificationForm } from "./TrackingNotificationForm";
 import { NotificationHistory } from "./NotificationHistory";
 import { BulkNotificationSender } from "./BulkNotificationSender";
-import { Bell, Send, Truck, History, Users } from "lucide-react";
+import { Bell, Users, History } from "lucide-react";
 
 export function NotificationManagement() {
   return (
@@ -17,12 +16,8 @@ export function NotificationManagement() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="tracking" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="tracking" className="flex items-center gap-2">
-              <Truck className="h-4 w-4" />
-              Tracking Updates
-            </TabsTrigger>
+        <Tabs defaultValue="bulk" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="bulk" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Bulk Notifications
@@ -32,10 +27,6 @@ export function NotificationManagement() {
               History
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="tracking" className="mt-6">
-            <TrackingNotificationForm />
-          </TabsContent>
           
           <TabsContent value="bulk" className="mt-6">
             <BulkNotificationSender />

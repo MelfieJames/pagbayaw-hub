@@ -12,6 +12,7 @@ interface NotificationRecord {
   expected_delivery_date?: string;
   user_id: string;
   purchase_id?: number;
+  is_read: boolean;
   profiles?: {
     first_name: string;
     last_name: string;
@@ -40,7 +41,10 @@ export function useNotificationHistory() {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching notifications:", error);
+        throw error;
+      }
       setNotifications(data || []);
     } catch (error) {
       console.error("Error fetching notifications:", error);

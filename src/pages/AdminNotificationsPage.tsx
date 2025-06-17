@@ -21,7 +21,7 @@ export default function AdminNotificationsPage() {
             
             <div className="flex border-b mb-6">
               <button
-                className={`px-4 py-2 font-medium ${activeTab === 'send' ? 'border-b-2 border-[#8B7355] text-[#8B7355]' : 'text-gray-500'}`}
+                className={`px-4 py-2 font-medium ${activeTab === 'send' ? 'border-b-2 border-[#8B7355]text-[#8B7355]' : 'text-gray-500'}`}
                 onClick={() => setActiveTab('send')}
               >
                 Send Tracking Updates
