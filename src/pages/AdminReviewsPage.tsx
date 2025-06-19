@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
-import AdminSidebar from "@/components/products/AdminSidebar";
+import { AdminSidebar } from "@/components/products/AdminSidebar";
 import AdminReviewsFilters from "@/components/admin/AdminReviewsFilters";
 import ReviewCard from "@/components/admin/ReviewCard";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -43,6 +42,7 @@ const AdminReviewsPage = () => {
     product: "",
     sortBy: "newest"
   });
+  const [isOpen, setIsOpen] = useState(false);
 
   // Fetch all reviews with related profile and product data
   const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useQuery({
@@ -168,7 +168,7 @@ const AdminReviewsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
-        <AdminSidebar />
+        <AdminSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
         <div className="flex-1 p-8 ml-64">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
