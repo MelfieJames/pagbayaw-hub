@@ -1,7 +1,6 @@
 
-import { Input } from "@/components/ui/input";
-import { Search, Filter, Star } from "lucide-react";
-import { Dispatch, SetStateAction } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface AdminReviewsFiltersProps {
   filters: {
@@ -9,77 +8,86 @@ interface AdminReviewsFiltersProps {
     product: string;
     sortBy: string;
   };
-  onFiltersChange: Dispatch<SetStateAction<{
-    rating: string;
-    product: string;
-    sortBy: string;
-  }>>;
-  products: any[];
+  onFiltersChange: (filters: { rating: string; product: string; sortBy: string }) => void;
+  products: Array<{
+    id: number;
+    product_name: string;
+    image: string | null;
+  }>;
 }
 
-export function AdminReviewsFilters({
-  filters,
-  onFiltersChange,
-  products
-}: AdminReviewsFiltersProps) {
+export default function AdminReviewsFilters({ filters, onFiltersChange, products }: AdminReviewsFiltersProps) {
+  const handleFilterChange = (key: string, value: string) => {
+    onFiltersChange({
+      ...filters,
+      [key]: value
+    });
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Filter className="h-5 w-5 text-[#8B7355]" />
-        <h3 className="text-lg font-semibold text-[#8B7355]">Filter Reviews</h3>
-      </div>
+    <div className="bg-white p-6 rounded-lg shadow-sm border space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Rating Filter */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-            <Star className="h-4 w-4" />
-            Rating
-          </label>
-          <select
+          <Label htmlFor="rating-filter">Filter by Rating</Label>
+          <Select
             value={filters.rating}
-            onChange={(e) => onFiltersChange(prev => ({ ...prev, rating: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#8B7355] focus:border-transparent"
+            onValueChange={(value) => handleFilterChange('rating', value)}
           >
-            <option value="">All Ratings</option>
-            <option value="5">5 Stars</option>
-            <option value="4">4 Stars</option>
-            <option value="3">3 Stars</option>
-            <option value="2">2 Stars</option>
-            <option value="1">1 Star</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="All ratings" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All ratings</SelectItem>
+              <SelectItem value="5">5 stars</SelectItem>
+              <SelectItem value="4">4 stars</SelectItem>
+              <SelectItem value="3">3 stars</SelectItem>
+              <SelectItem value="2">2 stars</SelectItem>
+              <SelectItem value="1">1 star</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Product Filter */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Product</label>
-          <select
+          <Label htmlFor="product-filter">Filter by Product</Label>
+          <Select
             value={filters.product}
-            onChange={(e) => onFiltersChange(prev => ({ ...prev, product: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#8B7355] focus:border-transparent"
+            onValueChange={(value) => handleFilterChange('product', value)}
           >
-            <option value="">All Products</option>
-            {products.map(product => (
-              <option key={product.id} value={product.id.toString()}>
-                {product.product_name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="All products" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All products</SelectItem>
+              {products.map((product) => (
+                <SelectItem key={product.id} value={product.id.toString()}>
+                  {product.product_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Sort Filter */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Sort By</label>
-          <select
+          <Label htmlFor="sort-filter">Sort by</Label>
+          <Select
             value={filters.sortBy}
-            onChange={(e) => onFiltersChange(prev => ({ ...prev, sortBy: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-[#8B7355] focus:border-transparent"
+            onValueChange={(value) => handleFilterChange('sortBy', value)}
           >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="highest">Highest Rating</option>
-            <option value="lowest">Lowest Rating</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="highest_rating">Highest rating</SelectItem>
+              <SelectItem value="lowest_rating">Lowest rating</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>
