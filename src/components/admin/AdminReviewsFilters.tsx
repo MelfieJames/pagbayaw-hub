@@ -18,9 +18,11 @@ interface AdminReviewsFiltersProps {
 
 export default function AdminReviewsFilters({ filters, onFiltersChange, products }: AdminReviewsFiltersProps) {
   const handleFilterChange = (key: string, value: string) => {
+    // Convert "all" values back to empty strings for filtering logic
+    const filterValue = value === "all" ? "" : value;
     onFiltersChange({
       ...filters,
-      [key]: value
+      [key]: filterValue
     });
   };
 
@@ -33,14 +35,14 @@ export default function AdminReviewsFilters({ filters, onFiltersChange, products
         <div className="space-y-2">
           <Label htmlFor="rating-filter">Filter by Rating</Label>
           <Select
-            value={filters.rating}
+            value={filters.rating || "all"}
             onValueChange={(value) => handleFilterChange('rating', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All ratings" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All ratings</SelectItem>
+              <SelectItem value="all">All ratings</SelectItem>
               <SelectItem value="5">5 stars</SelectItem>
               <SelectItem value="4">4 stars</SelectItem>
               <SelectItem value="3">3 stars</SelectItem>
@@ -54,14 +56,14 @@ export default function AdminReviewsFilters({ filters, onFiltersChange, products
         <div className="space-y-2">
           <Label htmlFor="product-filter">Filter by Product</Label>
           <Select
-            value={filters.product}
+            value={filters.product || "all"}
             onValueChange={(value) => handleFilterChange('product', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All products" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All products</SelectItem>
+              <SelectItem value="all">All products</SelectItem>
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id.toString()}>
                   {product.product_name}
