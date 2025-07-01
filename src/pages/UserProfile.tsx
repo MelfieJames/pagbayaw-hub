@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +32,8 @@ export default function UserProfile() {
     isComplete,
     isFetched,
     updateProfile,
-    error
+    error,
+    refetchProfile
   } = useProfile();
 
   // Fetch user purchase statistics
@@ -73,7 +73,7 @@ export default function UserProfile() {
   }, [user, navigate]);
 
   // Check if profile has complete data to display
-  const hasProfileData = profileData.first_name || profileData.last_name || profileData.phone_number || profileData.location;
+  const hasProfileData = !!(profileData.first_name || profileData.last_name || profileData.phone_number || profileData.location);
 
   const handleChange = (field: string, value: string) => {
     updateProfileField(field as keyof typeof profileData, value);
@@ -120,7 +120,7 @@ export default function UserProfile() {
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    navigate(redirectAfterUpdate);
+    navigate("/profile");
   };
 
   const getInitials = () => {
@@ -225,12 +225,19 @@ export default function UserProfile() {
                   </div>
                 </div>
                 
-                {isEditing || !hasProfileData ? (
+                {isLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <LoadingSpinner size="lg" />
+                  </div>
+                ) : (isEditing || !hasProfileData ? (
                   <ProfileForm
                     profileData={profileData}
                     onProfileChange={handleChange}
                     onSubmit={handleSubmit}
                     isSaving={isSaving}
+                    isLoading={isLoading}
+                    isEditing={isEditing}
+                    hasProfileData={hasProfileData}
                   />
                 ) : (
                   <div className="p-8">
@@ -244,7 +251,7 @@ export default function UserProfile() {
                           </p>
                         </div>
                         
-                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
+                        <div className="bg-amber  -50 p-6 rounded-xl border border-amber-200">
                           <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Email</label>
                           <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
                             <Mail className="h-5 w-5 text-amber-600" />
@@ -272,7 +279,7 @@ export default function UserProfile() {
                       </div>
                     </div>
                   </div>
-                )}
+                ))}
               </Card>
             ) : (
               <Card className="shadow-2xl border-2 border-amber-300 bg-white">
