@@ -61,14 +61,14 @@ export default function AdminDashboard() {
 
   if (isCheckingAdmin || isLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-100">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-amber-50 to-amber-100">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100">
       <Navbar />
       <div className="flex pt-16">
         <AdminSidebar 
@@ -78,11 +78,11 @@ export default function AdminDashboard() {
         <main className={`flex-1 transition-all p-6 ${isSidebarOpen ? "md:ml-64" : "md:ml-16"}`}>
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-[#8B7355] mb-2">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage your business operations and monitor performance</p>
+              <h1 className="text-3xl font-bold text-amber-800 mb-2">Admin Dashboard</h1>
+              <p className="text-amber-700">Manage your business operations and monitor performance</p>
             </div>
             
-            <div className="bg-white rounded-xl shadow-md border border-gray-200">
+            <div className="bg-white rounded-xl shadow-lg border-2 border-amber-200">
               <AdminDashboardMainContent />
             </div>
           </div>

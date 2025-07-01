@@ -15,7 +15,7 @@ export function RecentPurchases() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
-  // Fetch all purchases with related data, now using admin RLS policies
+  // Fetch all purchases with related data, now using fixed query
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['admin-purchases-detailed'],
     queryFn: async () => {
@@ -29,7 +29,14 @@ export function RecentPurchases() {
               *,
               products(*)
             ),
-            transaction_details(*)
+            transaction_details(*),
+            profiles(
+              first_name,
+              last_name,
+              email,
+              phone_number,
+              location
+            )
           `)
           .order('created_at', { ascending: false });
         
@@ -46,7 +53,7 @@ export function RecentPurchases() {
             ? purchase.transaction_details[0]
             : null;
             
-          // If we have transaction details, use those
+          // If we have transaction details, use those, otherwise use profile data
           if (transactionDetails) {
             return {
               ...purchase,
@@ -54,6 +61,15 @@ export function RecentPurchases() {
               customer_email: transactionDetails.email,
               customer_phone: transactionDetails.phone_number,
               customer_address: transactionDetails.address
+            };
+          } else if (purchase.profiles) {
+            const profile = purchase.profiles;
+            return {
+              ...purchase,
+              customer_name: profile.first_name && profile.last_name ? `${profile.first_name} ${profile.last_name}` : null,
+              customer_email: profile.email,
+              customer_phone: profile.phone_number,
+              customer_address: profile.location
             };
           }
           
@@ -102,6 +118,10 @@ export function RecentPurchases() {
         return 'bg-yellow-500 hover:bg-yellow-600';
       case 'cancelled':
         return 'bg-red-500 hover:bg-red-600';
+      case 'processing':
+        return 'bg-orange-500 hover:bg-orange-600';
+      case 'delivering':
+        return 'bg-blue-500 hover:bg-blue-600';
       default:
         return 'bg-gray-500 hover:bg-gray-600';
     }
@@ -116,14 +136,14 @@ export function RecentPurchases() {
   }
 
   return (
-    <Card className="border-2 border-[#C4A484]">
-      <CardHeader className="bg-[#F5F5DC]">
+    <Card className="border-2 border-amber-700 bg-white shadow-lg">
+      <CardHeader className="bg-amber-100 border-b border-amber-200">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-[#8B7355] flex items-center gap-2">
+          <CardTitle className="text-amber-800 flex items-center gap-2">
             <ShoppingBag className="h-5 w-5" />
             Recent Purchases
           </CardTitle>
-          <Badge variant="outline" className="px-3 py-1 bg-white">
+          <Badge variant="outline" className="px-3 py-1 bg-white border-amber-300">
             Total: {purchases.length} orders
           </Badge>
         </div>
@@ -136,7 +156,7 @@ export function RecentPurchases() {
               placeholder="Search by ID, status, or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 border-amber-300 focus:border-amber-600 focus:ring-amber-200"
             />
           </div>
           <div className="relative">
@@ -145,10 +165,10 @@ export function RecentPurchases() {
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="pl-8"
+              className="pl-8 border-amber-300 focus:border-amber-600 focus:ring-amber-200"
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2 border-amber-300 hover:bg-amber-50">
             <Download className="h-4 w-4" />
             Export
           </Button>
@@ -159,9 +179,9 @@ export function RecentPurchases() {
             No purchases found
           </div>
         ) : (
-          <div className="rounded-md border overflow-hidden">
+          <div className="rounded-md border border-amber-200 overflow-hidden">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader className="bg-amber-50">
                 <TableRow>
                   <TableHead className="w-[80px]">
                     <div className="flex items-center gap-1">
@@ -193,7 +213,7 @@ export function RecentPurchases() {
               </TableHeader>
               <TableBody>
                 {filteredPurchases.map((purchase) => (
-                  <TableRow key={purchase.id} className="hover:bg-gray-50">
+                  <TableRow key={purchase.id} className="hover:bg-amber-50">
                     <TableCell className="font-medium">#{purchase.id}</TableCell>
                     <TableCell>
                       {purchase.customer_name || "Anonymous"}
@@ -223,7 +243,7 @@ export function RecentPurchases() {
                         {format(new Date(purchase.created_at), 'h:mm a')}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-amber-800">
                       {formatCurrency(parseFloat(purchase.total_amount))}
                     </TableCell>
                     <TableCell>

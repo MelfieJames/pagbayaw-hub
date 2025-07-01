@@ -76,7 +76,7 @@ export function OrderApproval() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch all orders
+  // Fetch all orders with fixed query
   const { data: allOrders = [], isLoading, refetch } = useQuery({
     queryKey: ['all-orders'],
     queryFn: async () => {
@@ -108,7 +108,10 @@ export function OrderApproval() {
           )
         `)
         .order('created_at', { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
+      }
       return data || [];
     }
   });
@@ -121,7 +124,7 @@ export function OrderApproval() {
     if (!searchValue.trim()) return orders;
     const term = searchValue.trim().toLowerCase();
     return orders.filter(order => {
-      const profile = Array.isArray(order.profiles) ? order.profiles[0] : order.profiles;
+      const profile = order.profiles;
       const name = (profile?.first_name && profile?.last_name) ? `${profile.first_name} ${profile.last_name}`.toLowerCase() : "";
       const orderId = String(order.id);
       return name.includes(term) || orderId.includes(term);
@@ -308,15 +311,15 @@ export function OrderApproval() {
 
   // Tab UI
   const renderTabs = () => (
-    <div className="flex border-b border-[#C4A484] mb-4">
+    <div className="flex border-b border-amber-700 mb-4">
       <button
-        className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${activeTab === 'pending' ? 'text-[#8B7355] border-b-2 border-[#C4A484] bg-[#F5F5DC]' : 'text-gray-500 hover:text-[#8B7355]'}`}
+        className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${activeTab === 'pending' ? 'text-amber-800 border-b-2 border-amber-700 bg-amber-50' : 'text-gray-500 hover:text-amber-800'}`}
         onClick={() => setActiveTab('pending')}
       >
         <Clock className="h-5 w-5" /> Pending Orders
       </button>
       <button
-        className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${activeTab === 'all' ? 'text-[#8B7355] border-b-2 border-[#C4A484] bg-[#F5F5DC]' : 'text-gray-500 hover:text-[#8B7355]'}`}
+        className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${activeTab === 'all' ? 'text-amber-800 border-b-2 border-amber-700 bg-amber-50' : 'text-gray-500 hover:text-amber-800'}`}
         onClick={() => setActiveTab('all')}
       >
         <List className="h-5 w-5" /> All Orders
@@ -332,8 +335,8 @@ export function OrderApproval() {
           key={status}
           className={`flex items-center gap-1 px-4 py-2 rounded-full border transition-colors whitespace-nowrap ${
             activeStatus === status
-              ? 'bg-[#F5F5DC] border-[#C4A484] text-[#8B7355] font-semibold'
-              : 'bg-white border-gray-200 text-gray-500 hover:text-[#8B7355]'
+              ? 'bg-amber-50 border-amber-700 text-amber-800 font-semibold'
+              : 'bg-white border-gray-200 text-gray-500 hover:text-amber-800'
           }`}
           onClick={() => setActiveStatus(status)}
         >
@@ -351,7 +354,7 @@ export function OrderApproval() {
     const status = order.status;
     const customerName = profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : null;
     return (
-      <div key={order.id} className="w-full bg-white shadow rounded-lg p-4 border border-gray-100 mb-4 flex flex-col md:flex-row md:items-center md:justify-between">
+      <div key={order.id} className="w-full bg-white shadow-md rounded-lg p-4 border border-amber-200 mb-4 flex flex-col md:flex-row md:items-center md:justify-between hover:shadow-lg transition-shadow">
         <div className="flex items-center gap-3 mb-2 md:mb-0">
           <span className={`w-3 h-3 rounded-full ${STATUS_COLORS[status]}`}></span>
           <div>
@@ -362,7 +365,7 @@ export function OrderApproval() {
             <p className="text-sm text-gray-500">
               {new Date(order.created_at).toLocaleDateString()}
             </p>
-            <p className="text-lg font-semibold text-[#8B7355]">
+            <p className="text-lg font-semibold text-amber-800">
               ₱{Number(order.total_amount).toFixed(2)}
             </p>
           </div>
@@ -386,7 +389,7 @@ export function OrderApproval() {
               size="sm"
               onClick={() => handleApprove(order.id)}
               disabled={approvingId === order.id}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-amber-600 hover:bg-amber-700 text-white"
             >
               {approvingId === order.id ? (
                 <LoadingSpinner size="sm" />
@@ -445,7 +448,7 @@ export function OrderApproval() {
               setSelectedOrder(order);
               setModalOpen(true);
             }}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 border-amber-200 hover:bg-amber-50"
           >
             <Eye className="h-4 w-4 mr-1" /> View Details
           </Button>
@@ -462,7 +465,7 @@ export function OrderApproval() {
     let trackingNumber = trackingNumbers[selectedOrder.id] || "";
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+        <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative border-2 border-amber-200">
           <button
             className="absolute top-3 right-3 text-gray-400 hover:text-gray-700"
             onClick={() => setModalOpen(false)}
@@ -470,12 +473,12 @@ export function OrderApproval() {
           >
             <CloseIcon className="h-5 w-5" />
           </button>
-          <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+          <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-amber-800">
             {profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : `Order #${selectedOrder.id}`} (Order #{selectedOrder.id})
             <span className={`w-3 h-3 rounded-full ${STATUS_COLORS[status]}`}></span>
             <span>{STATUS_LABELS[status]}</span>
           </h3>
-          {status === 'delivering' || status === 'completed' && trackingNumber && (
+          {(status === 'delivering' || status === 'completed') && trackingNumber && (
             <div className="mb-4">
               <h4 className="font-semibold text-gray-800 mb-1">Tracking Number</h4>
               <div className="text-blue-700 font-mono text-lg">{trackingNumber}</div>
@@ -485,7 +488,7 @@ export function OrderApproval() {
             Placed on {new Date(selectedOrder.created_at).toLocaleString()}
           </p>
           <div className="mb-4">
-            <h4 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+            <h4 className="font-semibold text-amber-800 mb-1 flex items-center gap-2">
               <User className="h-4 w-4" /> Customer Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -514,7 +517,7 @@ export function OrderApproval() {
             </div>
           </div>
           <div className="mb-4">
-            <h4 className="font-semibold text-gray-800 mb-1">Order Items</h4>
+            <h4 className="font-semibold text-amber-800 mb-1">Order Items</h4>
             <div className="space-y-1">
               {selectedOrder.purchase_items?.map((item: any) => (
                 <div key={item.id} className="flex justify-between text-sm text-gray-600">
@@ -525,7 +528,7 @@ export function OrderApproval() {
             </div>
           </div>
           <div className="flex justify-between items-center mt-4">
-            <span className="font-semibold text-[#8B7355] text-lg">
+            <span className="font-semibold text-amber-800 text-lg">
               Total: ₱{Number(selectedOrder.total_amount).toFixed(2)}
             </span>
             <Badge variant="outline" className={
@@ -549,12 +552,12 @@ export function OrderApproval() {
     if (!pendingTrackingOrder) return null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white rounded-lg shadow-lg max-w-xs w-full p-6 relative flex flex-col items-center">
+        <div className="bg-white rounded-lg shadow-lg max-w-xs w-full p-6 relative flex flex-col items-center border-2 border-amber-200">
           <img src="/lovable-uploads/logo-jnt.jpg" alt="J&T Logo" className="h-16 mb-4" />
-          <h3 className="text-lg font-bold mb-2 text-center">Send with J&T Express</h3>
+          <h3 className="text-lg font-bold mb-2 text-center text-amber-800">Send with J&T Express</h3>
           <input
             type="text"
-            className="border rounded px-2 py-1 text-sm mb-4 w-full"
+            className="border border-amber-300 rounded px-2 py-1 text-sm mb-4 w-full focus:border-amber-600 focus:ring-1 focus:ring-amber-200"
             placeholder="Tracking number"
             value={trackingInput}
             onChange={e => setTrackingInput(e.target.value)}
@@ -562,7 +565,7 @@ export function OrderApproval() {
           />
           <div className="flex gap-2 w-full justify-center">
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+              className="bg-amber-600 hover:bg-amber-700 text-white w-full"
               disabled={!trackingInput || approvingId === pendingTrackingOrder.orderId}
               onClick={() => handleMoveToDelivering(pendingTrackingOrder.orderId, trackingInput)}
             >
@@ -570,6 +573,7 @@ export function OrderApproval() {
             </Button>
             <Button
               variant="outline"
+              className="border-amber-300 hover:bg-amber-50"
               onClick={() => { setShowJntModal(false); setPendingTrackingOrder(null); setTrackingInput(""); }}
             >
               Cancel
@@ -583,7 +587,7 @@ export function OrderApproval() {
   // Modal to show after notifying user
   const renderNotifiedModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg max-w-xs w-full p-8 relative flex flex-col items-center text-center">
+      <div className="bg-white rounded-lg shadow-lg max-w-xs w-full p-8 relative flex flex-col items-center text-center border-2 border-amber-200">
         <div className="bg-green-100 rounded-full p-4 mb-4 flex items-center justify-center">
           <Check className="h-10 w-10 text-green-600" />
         </div>
@@ -605,7 +609,7 @@ export function OrderApproval() {
   // Main Render
   if (isLoading) {
     return (
-      <Card className="border-[#C4A484]">
+      <Card className="border-amber-700 bg-white">
         <CardContent className="flex justify-center items-center h-32">
           <LoadingSpinner />
         </CardContent>
@@ -618,9 +622,9 @@ export function OrderApproval() {
     : filterOrders(allOrders.filter((order: any) => order.status === activeStatus));
 
   return (
-    <Card className="border-[#C4A484]">
-      <CardHeader className="bg-[#F5F5DC]">
-        <CardTitle className="text-[#8B7355] flex items-center gap-2">
+    <Card className="border-amber-700 bg-white shadow-lg">
+      <CardHeader className="bg-amber-100 border-b border-amber-200">
+        <CardTitle className="text-amber-800 flex items-center gap-2">
           <Clock className="h-5 w-5" />
           Order Management
         </CardTitle>
@@ -630,7 +634,7 @@ export function OrderApproval() {
         <div className="flex justify-center items-center p-4 pb-0">
           <input
             type="text"
-            className="border-2 border-[#C4A484] rounded-2xl px-5 py-3 text-base w-full max-w-lg text-center shadow focus:border-[#8B7355] focus:ring-2 focus:ring-[#C4A484] bg-white placeholder-gray-400"
+            className="border-2 border-amber-700 rounded-2xl px-5 py-3 text-base w-full max-w-lg text-center shadow focus:border-amber-800 focus:ring-2 focus:ring-amber-200 bg-white placeholder-gray-400"
             placeholder="Search by name or order number"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
@@ -644,7 +648,7 @@ export function OrderApproval() {
             <p>No orders found</p>
           </div>
         ) : (
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto p-4">
             {ordersToShow.map((order: any) => renderOrderCard(order))}
           </div>
         )}

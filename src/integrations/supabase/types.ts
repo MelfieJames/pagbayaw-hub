@@ -319,6 +319,21 @@ export type Database = {
           },
         ]
       }
+      order_mngmnt: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string
@@ -479,6 +494,13 @@ export type Database = {
             columns: ["transaction_details_id"]
             isOneToOne: false
             referencedRelation: "transaction_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_profiles_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
