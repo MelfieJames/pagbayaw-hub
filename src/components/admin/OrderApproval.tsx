@@ -123,6 +123,47 @@ export function OrderApproval() {
     }
   });
 
+  // Fetch all user addresses
+  const { data: allAddresses = [] } = useQuery({
+    queryKey: ['all-addresses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_addresses')
+        .select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Utility: get address for an order's user
+  const getAddressForOrder = (order: any) => {
+    return allAddresses.find((addr: any) => addr.user_id === order.user_id) || null;
+  };
+
+  // Auto-cancel pending orders with missing address
+  useEffect(() => {
+    if (!allOrders || allOrders.length === 0) return;
+    const toCancel = allOrders.filter(
+      (order: any) => order.status === 'pending' && !hasCompleteAddress(order)
+    );
+    if (toCancel.length === 0) return;
+    toCancel.forEach(async (order: any) => {
+      await supabase
+        .from('purchases')
+        .update({ status: 'cancelled' })
+        .eq('id', order.id);
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: order.user_id,
+          type: 'order',
+          message: `Your order #${order.id} has been cancelled due to incomplete address information. Please add a complete address and place the order again.`,
+          purchase_id: order.id,
+        });
+    });
+    refetch();
+  }, [allOrders, allAddresses]);
+
   // Filter for pending orders
   const pendingOrders = allOrders.filter((order: any) => order.status === 'pending');
 
@@ -131,7 +172,7 @@ export function OrderApproval() {
     if (!searchValue.trim()) return orders;
     const term = searchValue.trim().toLowerCase();
     return orders.filter(order => {
-      const address = order.user_addresses?.[0];
+      const address = getAddressForOrder(order);
       const recipientName = address?.recipient_name?.toLowerCase() || "";
       const orderId = String(order.id);
       return recipientName.includes(term) || orderId.includes(term);
@@ -140,9 +181,8 @@ export function OrderApproval() {
 
   // Check if order has complete address information
   const hasCompleteAddress = (order: any) => {
-    const address = order.user_addresses?.[0];
+    const address = getAddressForOrder(order);
     if (!address) return false;
-    
     return !!(
       address.recipient_name &&
       address.address_line1 &&
@@ -371,7 +411,7 @@ export function OrderApproval() {
 
   // Order Card
   const renderOrderCard = (order: any) => {
-    const address = order.user_addresses?.[0];
+    const address = getAddressForOrder(order);
     const hasCompleteInfo = hasCompleteAddress(order);
     const status = order.status;
     const customerName = address?.recipient_name || "Unknown";
@@ -485,7 +525,7 @@ export function OrderApproval() {
   // Modal for order details
   const renderOrderModal = () => {
     if (!selectedOrder) return null;
-    const address = selectedOrder.user_addresses?.[0];
+    const address = getAddressForOrder(selectedOrder);
     const status = selectedOrder.status;
     let trackingNumber = trackingNumbers[selectedOrder.id] || "";
     
