@@ -23,9 +23,16 @@ import {
 interface AddressManagementProps {
   selectedAddress?: any;
   onAddressSelect: (address: any) => void;
+  selectedAddressId?: number | null;
+  showSelectionUI?: boolean;
 }
 
-export default function AddressManagement({ selectedAddress, onAddressSelect }: AddressManagementProps) {
+export default function AddressManagement({ 
+  selectedAddress, 
+  onAddressSelect, 
+  selectedAddressId,
+  showSelectionUI = false 
+}: AddressManagementProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
@@ -87,6 +94,17 @@ export default function AddressManagement({ selectedAddress, onAddressSelect }: 
     setModalOpen(false);
   };
 
+  // Determine which address is currently selected
+  const getSelectedAddress = () => {
+    if (selectedAddress) return selectedAddress;
+    if (selectedAddressId) {
+      return addresses.find(addr => addr.id === selectedAddressId);
+    }
+    return null;
+  };
+
+  const currentSelectedAddress = getSelectedAddress();
+
   if (isLoading) {
     return (
       <Card className="border-amber-200">
@@ -137,7 +155,7 @@ export default function AddressManagement({ selectedAddress, onAddressSelect }: 
                 <div
                   key={address.id}
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                    selectedAddress?.id === address.id
+                    currentSelectedAddress?.id === address.id
                       ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
                       : 'border-amber-200 hover:border-amber-300 hover:bg-amber-25'
                   }`}
@@ -155,7 +173,7 @@ export default function AddressManagement({ selectedAddress, onAddressSelect }: 
                             Default
                           </Badge>
                         )}
-                        {selectedAddress?.id === address.id && (
+                        {currentSelectedAddress?.id === address.id && (
                           <Check className="h-4 w-4 text-green-600" />
                         )}
                       </div>

@@ -39,7 +39,7 @@ export default function Checkout() {
   const [showOrderSummaryDialog, setShowOrderSummaryDialog] = useState(false);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<any>(null);
 
   const cachedBuyNowItems = queryClient.getQueryData<CartItem[]>(['checkout-items']) || [];
 
@@ -121,9 +121,9 @@ export default function Checkout() {
     if (userAddresses.length > 0) {
       const defaultAddress = userAddresses.find(addr => addr.is_default);
       if (defaultAddress) {
-        setSelectedAddressId(defaultAddress.id);
+        setSelectedAddress(defaultAddress);
       } else {
-        setSelectedAddressId(userAddresses[0].id);
+        setSelectedAddress(userAddresses[0]);
       }
     }
   }, [userAddresses]);
@@ -261,32 +261,24 @@ export default function Checkout() {
       }
 
       // If we have a selected address, link it to the purchase
-      if (selectedAddressId) {
-        const { data: addressData } = await supabase
-          .from('user_addresses')
-          .select('*')
-          .eq('id', selectedAddressId)
-          .single();
+      if (selectedAddress) {
+        // Format the address
+        const addressLine2 = selectedAddress.address_line2 ? `${selectedAddress.address_line2}, ` : '';
+        const fullAddress = `${selectedAddress.address_line1}, ${addressLine2}${selectedAddress.city}, ${selectedAddress.state_province}, ${selectedAddress.postal_code}, ${selectedAddress.country}`;
+        
+        const { error: transactionError } = await supabase
+          .from('transaction_details')
+          .insert({
+            purchase_id: purchase.id,
+            first_name: selectedAddress.recipient_name.split(' ')[0],
+            last_name: selectedAddress.recipient_name.split(' ').slice(1).join(' '),
+            email: user.email,
+            phone_number: selectedAddress.phone_number,
+            address: fullAddress
+          });
           
-        if (addressData) {
-          // Format the address
-          const addressLine2 = addressData.address_line2 ? `${addressData.address_line2}, ` : '';
-          const fullAddress = `${addressData.address_line1}, ${addressLine2}${addressData.city}, ${addressData.state_province}, ${addressData.postal_code}, ${addressData.country}`;
-          
-          const { error: transactionError } = await supabase
-            .from('transaction_details')
-            .insert({
-              purchase_id: purchase.id,
-              first_name: addressData.recipient_name.split(' ')[0],
-              last_name: addressData.recipient_name.split(' ').slice(1).join(' '),
-              email: user.email,
-              phone_number: addressData.phone_number,
-              address: fullAddress
-            });
-            
-          if (transactionError) {
-            console.error("Transaction details error:", transactionError);
-          }
+        if (transactionError) {
+          console.error("Transaction details error:", transactionError);
         }
       } else {
         // Even if no address is selected, create a minimal transaction record
@@ -300,7 +292,7 @@ export default function Checkout() {
             phone_number: '',
             address: 'Not provided'
           });
-            
+          
         if (transactionError) {
           console.error("Transaction details error:", transactionError);
         }
@@ -388,7 +380,7 @@ export default function Checkout() {
   };
 
   const handleAddressSelect = (address: any) => {
-    setSelectedAddressId(address.id);
+    setSelectedAddress(address);
   };
 
   const handleCancellation = async (reason: string, details?: string) => {
@@ -453,7 +445,7 @@ export default function Checkout() {
                 <CardContent className="p-4">
                   <AddressManagement 
                     onAddressSelect={handleAddressSelect}
-                    selectedAddressId={selectedAddressId}
+                    selectedAddress={selectedAddress}
                     showSelectionUI={true}
                   />
                 </CardContent>

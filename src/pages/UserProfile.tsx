@@ -32,8 +32,7 @@ export default function UserProfile() {
     isComplete,
     isFetched,
     updateProfile,
-    error,
-    refetchProfile
+    error
   } = useProfile();
 
   // Fetch user purchase statistics

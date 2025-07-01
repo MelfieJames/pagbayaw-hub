@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,7 +63,7 @@ export default function OrderSummaryDialog({
   const [step, setStep] = useState<"summary" | "details">("summary");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("saved");
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
 
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails>({
     first_name: "",
@@ -74,7 +73,6 @@ export default function OrderSummaryDialog({
     address: "",
   });
 
-  // Fetch transaction details using purchaseId or userEmail if no purchaseId is available
   useEffect(() => {
     const fetchTransactionDetails = async () => {
       if (!purchaseId && !userEmail) {
@@ -149,7 +147,7 @@ export default function OrderSummaryDialog({
           return;
         }
       }
-    } else if (activeTab === "saved" && !selectedAddressId) {
+    } else if (activeTab === "saved" && !selectedAddress) {
       toast.error("Please select an address");
       return;
     }
@@ -158,33 +156,23 @@ export default function OrderSummaryDialog({
 
     try {
       // If a saved address was selected, use that data
-      if (selectedAddressId) {
-        const { data, error } = await supabase
-          .from('user_addresses')
-          .select('*')
-          .eq('id', selectedAddressId)
-          .single();
+      if (selectedAddress) {
+        const addressLine2 = selectedAddress.address_line2 ? `${selectedAddress.address_line2}, ` : '';
+        const formattedAddress = `${selectedAddress.address_line1}, ${addressLine2}${selectedAddress.city}, ${selectedAddress.state_province}, ${selectedAddress.postal_code}, ${selectedAddress.country}`;
         
-        if (error) throw error;
-        
-        if (data) {
-          const addressLine2 = data.address_line2 ? `${data.address_line2}, ` : '';
-          const formattedAddress = `${data.address_line1}, ${addressLine2}${data.city}, ${data.state_province}, ${data.postal_code}, ${data.country}`;
-          
-          const { error: updateError } = await supabase.from("transaction_details").upsert(
-            {
-              first_name: data.recipient_name.split(' ')[0] || transactionDetails.first_name,
-              last_name: data.recipient_name.split(' ').slice(1).join(' ') || transactionDetails.last_name,
-              email: transactionDetails.email,
-              phone_number: data.phone_number,
-              address: formattedAddress,
-              purchase_id: purchaseId
-            },
-            { onConflict: "email" }
-          );
+        const { error: updateError } = await supabase.from("transaction_details").upsert(
+          {
+            first_name: selectedAddress.recipient_name.split(' ')[0] || transactionDetails.first_name,
+            last_name: selectedAddress.recipient_name.split(' ').slice(1).join(' ') || transactionDetails.last_name,
+            email: transactionDetails.email,
+            phone_number: selectedAddress.phone_number,
+            address: formattedAddress,
+            purchase_id: purchaseId
+          },
+          { onConflict: "email" }
+        );
 
-          if (updateError) throw updateError;
-        }
+        if (updateError) throw updateError;
       } else {
         // Use manual input
         const { error } = await supabase.from("transaction_details").upsert(
@@ -210,7 +198,7 @@ export default function OrderSummaryDialog({
   };
 
   const handleAddressSelect = (address: AddressData) => {
-    setSelectedAddressId(address.id);
+    setSelectedAddress(address);
   };
 
   return (
@@ -308,7 +296,7 @@ export default function OrderSummaryDialog({
               <TabsContent value="saved" className="space-y-4 py-4">
                 <AddressManagement 
                   onAddressSelect={handleAddressSelect} 
-                  selectedAddressId={selectedAddressId}
+                  selectedAddress={selectedAddress}
                   showSelectionUI={true} 
                 />
               </TabsContent>
@@ -370,7 +358,7 @@ export default function OrderSummaryDialog({
               >
                 Back
               </Button>
-              <Button onClick={handleSubmitDetails} className="w-full md:w-auto" disabled={isSubmitting || (activeTab === "saved" && !selectedAddressId)}>
+              <Button onClick={handleSubmitDetails} className="w-full md:w-auto" disabled={isSubmitting || (activeTab === "saved" && !selectedAddress)}>
                 {isSubmitting ? (
                   <>
                     <LoadingSpinner size="sm" />
