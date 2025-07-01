@@ -608,6 +608,7 @@ export type Database = {
           address_line1: string
           address_line2: string | null
           address_name: string
+          barangay: string
           city: string
           country: string
           created_at: string
@@ -615,6 +616,7 @@ export type Database = {
           is_default: boolean | null
           phone_number: string
           postal_code: string
+          purok: string | null
           recipient_name: string
           state_province: string
           user_id: string
@@ -623,6 +625,7 @@ export type Database = {
           address_line1: string
           address_line2?: string | null
           address_name: string
+          barangay?: string
           city: string
           country: string
           created_at?: string
@@ -630,6 +633,7 @@ export type Database = {
           is_default?: boolean | null
           phone_number: string
           postal_code: string
+          purok?: string | null
           recipient_name: string
           state_province: string
           user_id: string
@@ -638,6 +642,7 @@ export type Database = {
           address_line1?: string
           address_line2?: string | null
           address_name?: string
+          barangay?: string
           city?: string
           country?: string
           created_at?: string
@@ -645,6 +650,7 @@ export type Database = {
           is_default?: boolean | null
           phone_number?: string
           postal_code?: string
+          purok?: string | null
           recipient_name?: string
           state_province?: string
           user_id?: string

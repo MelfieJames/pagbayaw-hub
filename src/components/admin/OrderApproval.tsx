@@ -20,6 +20,7 @@ import {
   Eye,
   X as CloseIcon,
   Loader2,
+  Home,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { toast } from "sonner";
@@ -76,7 +77,7 @@ export function OrderApproval() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch all orders with fixed query
+  // Fetch all orders with address data
   const { data: allOrders = [], isLoading, refetch } = useQuery({
     queryKey: ['all-orders'],
     queryFn: async () => {
@@ -99,12 +100,18 @@ export function OrderApproval() {
               product_price
             )
           ),
-          profiles (
-            first_name,
-            last_name,
-            email,
-            phone_number,
-            location
+          user_addresses (
+            recipient_name,
+            address_name,
+            address_line1,
+            address_line2,
+            purok,
+            barangay,
+            city,
+            state_province,
+            postal_code,
+            country,
+            phone_number
           )
         `)
         .order('created_at', { ascending: false });
@@ -124,11 +131,28 @@ export function OrderApproval() {
     if (!searchValue.trim()) return orders;
     const term = searchValue.trim().toLowerCase();
     return orders.filter(order => {
-      const profile = order.profiles;
-      const name = (profile?.first_name && profile?.last_name) ? `${profile.first_name} ${profile.last_name}`.toLowerCase() : "";
+      const address = order.user_addresses?.[0];
+      const recipientName = address?.recipient_name?.toLowerCase() || "";
       const orderId = String(order.id);
-      return name.includes(term) || orderId.includes(term);
+      return recipientName.includes(term) || orderId.includes(term);
     });
+  };
+
+  // Check if order has complete address information
+  const hasCompleteAddress = (order: any) => {
+    const address = order.user_addresses?.[0];
+    if (!address) return false;
+    
+    return !!(
+      address.recipient_name &&
+      address.address_line1 &&
+      address.barangay &&
+      address.city &&
+      address.state_province &&
+      address.postal_code &&
+      address.country &&
+      address.phone_number
+    );
   };
 
   // Approve logic: handles both pending -> processing and processing -> delivering
@@ -136,11 +160,11 @@ export function OrderApproval() {
     setApprovingId(orderId);
     try {
       const order = allOrders.find((o: any) => o.id === orderId);
-      const profile = order && (Array.isArray(order.profiles) ? order.profiles[0] : order.profiles);
+      
       if (order.status === 'pending') {
-        // Check for complete info
-        if (!profile?.first_name || !profile?.last_name || !profile?.phone_number || !profile?.location) {
-          // Auto-cancel order due to incomplete customer information
+        // Check for complete address info
+        if (!hasCompleteAddress(order)) {
+          // Auto-cancel order due to incomplete address information
           const { error } = await supabase
             .from('purchases')
             .update({ status: 'cancelled' })
@@ -151,10 +175,10 @@ export function OrderApproval() {
             .insert({
               user_id: order?.user_id,
               type: 'order',
-              message: `Your order #${orderId} has been cancelled due to incomplete profile information. Please complete your profile and place the order again.`,
+              message: `Your order #${orderId} has been cancelled due to incomplete address information. Please add a complete address and place the order again.`,
               purchase_id: orderId
             });
-          toast.error("Order cancelled due to incomplete customer information");
+          toast.error("Order cancelled due to incomplete address information");
           refetch();
           return;
         }
@@ -279,7 +303,6 @@ export function OrderApproval() {
     }
   };
 
-  // Confirm move to delivering (from modal)
   const confirmMoveToDelivering = async () => {
     if (!deliverOrderId) return;
     setApprovingId(deliverOrderId);
@@ -327,7 +350,6 @@ export function OrderApproval() {
     </div>
   );
 
-  // Status filter for All Orders tab
   const renderStatusFilter = () => (
     <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
       {ALL_STATUSES.map((status) => (
@@ -349,18 +371,21 @@ export function OrderApproval() {
 
   // Order Card
   const renderOrderCard = (order: any) => {
-    const profile = Array.isArray(order.profiles) ? order.profiles[0] : order.profiles;
-    const hasCompleteInfo = profile?.first_name && profile?.last_name && profile?.phone_number && profile?.location;
+    const address = order.user_addresses?.[0];
+    const hasCompleteInfo = hasCompleteAddress(order);
     const status = order.status;
-    const customerName = profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : null;
+    const customerName = address?.recipient_name || "Unknown";
     return (
       <div key={order.id} className="w-full bg-white shadow-md rounded-lg p-4 border border-amber-200 mb-4 flex flex-col md:flex-row md:items-center md:justify-between hover:shadow-lg transition-shadow">
         <div className="flex items-center gap-3 mb-2 md:mb-0">
           <span className={`w-3 h-3 rounded-full ${STATUS_COLORS[status]}`}></span>
           <div>
             <h4 className="font-medium text-gray-900 flex items-center gap-2">
-              {customerName ? `${customerName} (Order #${order.id})` : `Order #${order.id}`}
+              {customerName} (Order #{order.id})
               <span>{STATUS_ICONS[status] || <Package className="h-4 w-4 text-gray-400" />}</span>
+              {!hasCompleteInfo && status === 'pending' && (
+                <span className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded">Incomplete Address</span>
+              )}
             </h4>
             <p className="text-sm text-gray-500">
               {new Date(order.created_at).toLocaleDateString()}
@@ -460,9 +485,10 @@ export function OrderApproval() {
   // Modal for order details
   const renderOrderModal = () => {
     if (!selectedOrder) return null;
-    const profile = Array.isArray(selectedOrder.profiles) ? selectedOrder.profiles[0] : selectedOrder.profiles;
+    const address = selectedOrder.user_addresses?.[0];
     const status = selectedOrder.status;
     let trackingNumber = trackingNumbers[selectedOrder.id] || "";
+    
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
         <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative border-2 border-amber-200">
@@ -474,7 +500,7 @@ export function OrderApproval() {
             <CloseIcon className="h-5 w-5" />
           </button>
           <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-amber-800">
-            {profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : `Order #${selectedOrder.id}`} (Order #{selectedOrder.id})
+            {address?.recipient_name || `Order #${selectedOrder.id}`} (Order #{selectedOrder.id})
             <span className={`w-3 h-3 rounded-full ${STATUS_COLORS[status]}`}></span>
             <span>{STATUS_LABELS[status]}</span>
           </h3>
@@ -489,32 +515,82 @@ export function OrderApproval() {
           </p>
           <div className="mb-4">
             <h4 className="font-semibold text-amber-800 mb-1 flex items-center gap-2">
-              <User className="h-4 w-4" /> Customer Information
+              <Home className="h-4 w-4" /> Delivery Address
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <User className="h-3 w-3 text-gray-500" />
-                <span className={!profile?.first_name || !profile?.last_name ? "text-red-600" : "text-gray-700"}>
-                  Name: {profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : "Missing"}
-                </span>
+            {address ? (
+              <div className="bg-gray-50 p-3 rounded-md text-sm space-y-1">
+                <div className="flex items-center gap-2">
+                  <User className="h-3 w-3 text-gray-500" />
+                  <span className={!address.recipient_name ? "text-red-600" : "text-gray-700"}>
+                    Name: {address.recipient_name || "Missing"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Home className="h-3 w-3 text-gray-500" />
+                  <span className="text-gray-700">
+                    Address Name: {address.address_name || "Not specified"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3 text-gray-500" />
+                  <span className={!address.address_line1 ? "text-red-600" : "text-gray-700"}>
+                    Street: {address.address_line1 || "Missing"}
+                  </span>
+                </div>
+                {address.address_line2 && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3 w-3 text-gray-500" />
+                    <span className="text-gray-700">Address Line 2: {address.address_line2}</span>
+                  </div>
+                )}
+                {address.purok && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3 w-3 text-gray-500" />
+                    <span className="text-gray-700">Purok: {address.purok}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3 text-gray-500" />
+                  <span className={!address.barangay ? "text-red-600" : "text-gray-700"}>
+                    Barangay: {address.barangay || "Missing"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3 text-gray-500" />
+                  <span className={!address.city ? "text-red-600" : "text-gray-700"}>
+                    City: {address.city || "Missing"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3 text-gray-500" />
+                  <span className={!address.state_province ? "text-red-600" : "text-gray-700"}>
+                    Province: {address.state_province || "Missing"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3 text-gray-500" />
+                  <span className={!address.postal_code ? "text-red-600" : "text-gray-700"}>
+                    Postal Code: {address.postal_code || "Missing"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3 w-3 text-gray-500" />
+                  <span className={!address.country ? "text-red-600" : "text-gray-700"}>
+                    Country: {address.country || "Missing"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3 text-gray-500" />
+                  <span className={!address.phone_number ? "text-red-600" : "text-gray-700"}>
+                    Phone: {address.phone_number || "Missing"}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-3 w-3 text-gray-500" />
-                <span className="text-gray-700">Email: {profile?.email || "Not provided"}</span>
+            ) : (
+              <div className="text-red-600 bg-red-50 p-3 rounded-md">
+                No address information available
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-3 w-3 text-gray-500" />
-                <span className={!profile?.phone_number ? "text-red-600" : "text-gray-700"}>
-                  Phone: {profile?.phone_number || "Missing"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-3 w-3 text-gray-500" />
-                <span className={!profile?.location ? "text-red-600" : "text-gray-700"}>
-                  Address: {profile?.location || "Missing"}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
           <div className="mb-4">
             <h4 className="font-semibold text-amber-800 mb-1">Order Items</h4>
@@ -547,7 +623,6 @@ export function OrderApproval() {
     );
   };
 
-  // J&T Modal for tracking confirmation and input
   const renderJntModal = () => {
     if (!pendingTrackingOrder) return null;
     return (
@@ -584,7 +659,6 @@ export function OrderApproval() {
     );
   };
 
-  // Modal to show after notifying user
   const renderNotifiedModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div className="bg-white rounded-lg shadow-lg max-w-xs w-full p-8 relative flex flex-col items-center text-center border-2 border-amber-200">
@@ -630,12 +704,11 @@ export function OrderApproval() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Centered Search Bar, auto-search */}
         <div className="flex justify-center items-center p-4 pb-0">
           <input
             type="text"
             className="border-2 border-amber-700 rounded-2xl px-5 py-3 text-base w-full max-w-lg text-center shadow focus:border-amber-800 focus:ring-2 focus:ring-amber-200 bg-white placeholder-gray-400"
-            placeholder="Search by name or order number"
+            placeholder="Search by recipient name or order number"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
