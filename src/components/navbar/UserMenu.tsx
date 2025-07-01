@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, Star, Clock, LogOut } from "lucide-react";
+import { User, Star, Clock, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu() {
@@ -41,27 +41,28 @@ export function UserMenu() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => navigate("/profile")}>
-          <User className="h-4 w-4 mr-2" />
-          Profile
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onClick={() => navigate("/profile")} className="flex items-center gap-3 py-3 px-4 text-sm">
+          <User className="h-5 w-5 text-gray-600" />
+          <span className="font-medium">Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/my-ratings")}>
-          <Star className="h-4 w-4 mr-2" />
-          My Ratings
+        <DropdownMenuItem onClick={() => navigate("/my-ratings")} className="flex items-center gap-3 py-3 px-4 text-sm">
+          <Star className="h-5 w-5 text-yellow-500" />
+          <span className="font-medium">My Ratings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/purchase-history")}>
-          <Clock className="h-4 w-4 mr-2" />
-          Purchase History
+        <DropdownMenuItem onClick={() => navigate("/purchase-history")} className="flex items-center gap-3 py-3 px-4 text-sm">
+          <Clock className="h-5 w-5 text-blue-600" />
+          <span className="font-medium">Purchase History</span>
         </DropdownMenuItem>
         {user.isAdmin && (
-          <DropdownMenuItem onClick={() => navigate("/admin")}>
-            Dashboard
+          <DropdownMenuItem onClick={() => navigate("/admin")} className="flex items-center gap-3 py-3 px-4 text-sm">
+            <Shield className="h-5 w-5 text-purple-600" />
+            <span className="font-medium">Dashboard</span>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={handleLogout}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
+        <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 py-3 px-4 text-sm text-red-600 hover:text-red-700">
+          <LogOut className="h-5 w-5" />
+          <span className="font-medium">Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

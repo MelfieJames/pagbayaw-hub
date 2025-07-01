@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 export default function MyRatings() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pending");
 
@@ -37,67 +38,6 @@ export default function MyRatings() {
     }
   }, [queryClient, user]);
 
-  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
-    queryKey: ['notifications', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      console.log("Fetching notifications for user:", user.id);
-      
-      try {
-        // First get notifications
-        const { data: notificationData, error: notificationError } = await supabase
-          .from('notifications')
-          .select('*, purchases(*)')
-          .eq('user_id', user.id)
-          .eq('type', 'review_request')
-          .order('created_at', { ascending: false });
-
-        if (notificationError) {
-          console.error('Notifications fetch error:', notificationError);
-          return [];
-        }
-        
-        if (!notificationData?.length) {
-          console.log("No notifications found");
-          return [];
-        }
-        
-        console.log("Fetched notifications:", notificationData);
-        
-        // For each notification, get associated purchase items and product details
-        const notificationsWithProducts = await Promise.all(
-          notificationData.map(async (notification) => {
-            // Get purchase items for this purchase
-            const { data: purchaseItems, error: purchaseItemsError } = await supabase
-              .from('purchase_items')
-              .select('*, products(*)')
-              .eq('purchase_id', notification.purchase_id);
-              
-            if (purchaseItemsError) {
-              console.error('Purchase items fetch error:', purchaseItemsError);
-              return notification;
-            }
-            
-            // Attach the products data to the notification
-            return {
-              ...notification,
-              products: purchaseItems
-            };
-          })
-        );
-        
-        console.log("Notifications with products:", notificationsWithProducts);
-        return notificationsWithProducts;
-      } catch (error) {
-        console.error('Unexpected error fetching notifications:', error);
-        return [];
-      }
-    },
-    enabled: !!user?.id,
-    staleTime: 0, // Don't use cached data
-  });
-
   // Fetch all purchases with their transaction details
   const { data: purchases = [], isLoading: purchasesLoading } = useQuery({
     queryKey: ['user-purchases', user?.id],
@@ -113,6 +53,7 @@ export default function MyRatings() {
             purchase_items(*, products(*))
           `)
           .eq('user_id', user.id)
+          .eq('status', 'completed')
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -127,7 +68,7 @@ export default function MyRatings() {
       }
     },
     enabled: !!user?.id,
-    staleTime: 0, // Don't use cached data
+    staleTime: 0,
   });
 
   const { data: userReviews = [], isLoading: reviewsLoading } = useQuery({
@@ -165,27 +106,23 @@ export default function MyRatings() {
       }
     },
     enabled: !!user?.id,
-    staleTime: 0, // Don't use cached data
+    staleTime: 0,
   });
 
   // Get all reviewed product IDs
   const reviewedProductIds = userReviews.map(review => review.product_id);
 
   // Create a unique list of products that need reviews
-  // Filter out already reviewed products using the reviewedProductIds array
   const pendingProductMap = new Map();
   
   purchases.forEach(purchase => {
-    // Only process if purchase items exist
     if (!purchase.purchase_items) return;
     
     purchase.purchase_items.forEach(item => {
-      // Skip products that have already been reviewed
       if (reviewedProductIds.includes(item.product_id)) {
         return;
       }
       
-      // Only add if not already in the map
       if (!pendingProductMap.has(item.product_id)) {
         pendingProductMap.set(item.product_id, {
           ...item,
@@ -196,7 +133,6 @@ export default function MyRatings() {
     });
   });
   
-  // Convert map to array
   const pendingReviews = Array.from(pendingProductMap.values());
 
   const handleRateNow = (productItem) => {
@@ -207,24 +143,49 @@ export default function MyRatings() {
           id: productItem.product_id,
           name: productItem.products?.product_name,
           image: productItem.products?.image,
-          purchaseId: productItem.purchase_id,
-          purchaseItemId: productItem.id // Add this to prevent double reviews
+          purchaseId: productItem.purchaseId,
+          purchaseItemId: productItem.id
         }
       } 
     });
   };
 
+  // Check if we should show a specific product for rating
+  useEffect(() => {
+    if (location.state?.showRatingFor) {
+      const productId = location.state.showRatingFor;
+      const productToRate = pendingReviews.find(item => item.product_id === productId);
+      
+      if (productToRate) {
+        // Add a small delay to ensure the page is fully loaded
+        setTimeout(() => {
+          handleRateNow(productToRate);
+        }, 500);
+      }
+      
+      // Clear the state to prevent repeated redirects
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, pendingReviews]);
+
   if (!user) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
-  const isLoading = notificationsLoading || reviewsLoading || purchasesLoading;
+  const isLoading = reviewsLoading || purchasesLoading;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white">
       <Navbar />
       <div className="container mx-auto px-4 pt-20 flex-grow animate-fade-in">
-        <h1 className="text-3xl font-bold mb-6 text-purple-800">My Product Ratings</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-purple-800">My Product Ratings</h1>
+          {pendingReviews.length > 0 && (
+            <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-2 rounded-lg">
+              <span className="font-medium">🌟 You can rate {pendingReviews.length} product{pendingReviews.length > 1 ? 's' : ''}!</span>
+            </div>
+          )}
+        </div>
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">

@@ -158,7 +158,8 @@ export default function OrderSummaryDialog({
       // If a saved address was selected, use that data
       if (selectedAddress) {
         const addressLine2 = selectedAddress.address_line2 ? `${selectedAddress.address_line2}, ` : '';
-        const formattedAddress = `${selectedAddress.address_line1}, ${addressLine2}${selectedAddress.city}, ${selectedAddress.state_province}, ${selectedAddress.postal_code}, ${selectedAddress.country}`;
+        const purokPart = selectedAddress.purok ? `Purok ${selectedAddress.purok}, ` : '';
+        const formattedAddress = `${selectedAddress.address_line1}, ${addressLine2}${purokPart}${selectedAddress.barangay}, ${selectedAddress.city}, ${selectedAddress.state_province}, ${selectedAddress.postal_code}, ${selectedAddress.country}`;
         
         const { error: updateError } = await supabase.from("transaction_details").upsert(
           {
@@ -173,6 +174,14 @@ export default function OrderSummaryDialog({
         );
 
         if (updateError) throw updateError;
+
+        // Update the purchase with the selected address ID
+        const { error: purchaseUpdateError } = await supabase
+          .from("purchases")
+          .update({ user_address_id: selectedAddress.id })
+          .eq("id", purchaseId);
+
+        if (purchaseUpdateError) throw purchaseUpdateError;
       } else {
         // Use manual input
         const { error } = await supabase.from("transaction_details").upsert(
@@ -201,6 +210,7 @@ export default function OrderSummaryDialog({
     setSelectedAddress(address);
   };
 
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md md:max-w-2xl">

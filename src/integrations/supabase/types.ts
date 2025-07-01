@@ -466,6 +466,7 @@ export type Database = {
           total_amount: number
           transaction_details_id: number | null
           updated_at: string | null
+          user_address_id: number | null
           user_id: string | null
         }
         Insert: {
@@ -476,6 +477,7 @@ export type Database = {
           total_amount: number
           transaction_details_id?: number | null
           updated_at?: string | null
+          user_address_id?: number | null
           user_id?: string | null
         }
         Update: {
@@ -486,6 +488,7 @@ export type Database = {
           total_amount?: number
           transaction_details_id?: number | null
           updated_at?: string | null
+          user_address_id?: number | null
           user_id?: string | null
         }
         Relationships: [
@@ -501,6 +504,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_user_address_id_fkey"
+            columns: ["user_address_id"]
+            isOneToOne: false
+            referencedRelation: "user_addresses"
             referencedColumns: ["id"]
           },
         ]
