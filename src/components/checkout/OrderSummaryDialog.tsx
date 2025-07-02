@@ -39,6 +39,8 @@ interface AddressData {
   phone_number: string;
   is_default: boolean;
   created_at: string;
+  purok: string | null;
+  barangay: string;
 }
 
 interface OrderSummaryDialogProps {
