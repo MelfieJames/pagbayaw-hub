@@ -77,7 +77,7 @@ export function OrderApproval() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch all orders with address data
+  // Fetch all orders with address data - improved query
   const { data: allOrders = [], isLoading, refetch } = useQuery({
     queryKey: ['all-orders'],
     queryFn: async () => {
@@ -89,6 +89,7 @@ export function OrderApproval() {
           created_at,
           user_id,
           status,
+          user_address_id,
           purchase_items (
             id,
             quantity,
@@ -101,6 +102,7 @@ export function OrderApproval() {
             )
           ),
           user_addresses (
+            id,
             recipient_name,
             address_name,
             address_line1,
@@ -123,21 +125,13 @@ export function OrderApproval() {
     }
   });
 
-  // Fetch all user addresses
-  const { data: allAddresses = [] } = useQuery({
-    queryKey: ['all-addresses'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_addresses')
-        .select('*');
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  // Utility: get address for an order's user
+  // Utility: get address for an order
   const getAddressForOrder = (order: any) => {
-    return allAddresses.find((addr: any) => addr.user_id === order.user_id) || null;
+    // First try to get the address from the direct relationship
+    if (order.user_addresses) {
+      return order.user_addresses;
+    }
+    return null;
   };
 
   // Auto-cancel pending orders with missing address
@@ -162,7 +156,7 @@ export function OrderApproval() {
         });
     });
     refetch();
-  }, [allOrders, allAddresses]);
+  }, [allOrders]);
 
   // Filter for pending orders
   const pendingOrders = allOrders.filter((order: any) => order.status === 'pending');
@@ -522,7 +516,7 @@ export function OrderApproval() {
     );
   };
 
-  // Modal for order details
+  // Modal for order details - improved address display
   const renderOrderModal = () => {
     if (!selectedOrder) return null;
     const address = getAddressForOrder(selectedOrder);

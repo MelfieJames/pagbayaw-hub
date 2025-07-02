@@ -71,13 +71,13 @@ export default function UserProfile() {
     }
   }, [user, navigate]);
 
-  // Check if profile has any data (for display)
+  // Check if profile has any data (for display) - improved check
   const hasAnyProfileData = !!(
-    profileData.first_name ||
-    profileData.last_name ||
-    profileData.phone_number ||
-    profileData.location ||
-    profileData.middle_name
+    (profileData.first_name && profileData.first_name.trim()) ||
+    (profileData.last_name && profileData.last_name.trim()) ||
+    (profileData.phone_number && profileData.phone_number.trim()) ||
+    (profileData.location && profileData.location.trim()) ||
+    (profileData.middle_name && profileData.middle_name.trim())
   );
 
   const handleChange = (field: string, value: string) => {
@@ -165,7 +165,7 @@ export default function UserProfile() {
                 </div>
                 
                 <h3 className="text-2xl font-bold text-amber-900 mb-2">
-                  {hasAnyProfileData ? `${profileData.first_name} ${profileData.last_name}` : 'Welcome!'}
+                  {hasAnyProfileData ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Welcome!' : 'Welcome!'}
                 </h3>
                 
                 {user?.email && (
@@ -246,7 +246,7 @@ export default function UserProfile() {
                 ) : (
                   <div className="p-8">
                     {/* Show a message if all fields are empty */}
-                    {!(profileData.first_name || profileData.last_name || profileData.phone_number || profileData.location) && (
+                    {!hasAnyProfileData && (
                       <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
                         Your profile is incomplete. Click <b>Edit Profile</b> to add your details.
                       </div>
@@ -257,7 +257,10 @@ export default function UserProfile() {
                           <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Full Name</label>
                           <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
                             <User className="h-5 w-5 text-amber-600" />
-                            {profileData.first_name || ""} {profileData.middle_name || ""} {profileData.last_name || ""}
+                            {hasAnyProfileData 
+                              ? `${profileData.first_name || ""} ${profileData.middle_name || ""} ${profileData.last_name || ""}`.trim() || "Not provided"
+                              : "Not provided"
+                            }
                           </p>
                         </div>
                         <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
