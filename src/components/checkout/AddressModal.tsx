@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
@@ -157,6 +156,7 @@ export function AddressModal({
     const requiredFields = [
       { field: 'address_name', label: 'Address Name' },
       { field: 'address_line1', label: 'Address Line 1' },
+      { field: 'purok', label: 'Purok Details' },
       { field: 'barangay', label: 'Barangay' },
       { field: 'city', label: 'City' },
       { field: 'state_province', label: 'Province' },
@@ -259,13 +259,13 @@ export function AddressModal({
             <div className="space-y-2">
               <Label htmlFor="purok" className="flex items-center gap-2">
                 <Home className="h-4 w-4 text-amber-600" />
-                Purok
+                Purok Details *
               </Label>
               <Input
                 id="purok"
                 value={formData.purok}
                 onChange={(e) => handleInputChange('purok', e.target.value)}
-                placeholder="Purok number (optional)"
+                placeholder="Purok details"
               />
             </div>
 
