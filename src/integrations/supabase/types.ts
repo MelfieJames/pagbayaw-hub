@@ -389,6 +389,7 @@ export type Database = {
           location: string | null
           middle_name: string | null
           phone_number: string | null
+          profile_picture: string | null
           updated_at: string | null
         }
         Insert: {
@@ -400,6 +401,7 @@ export type Database = {
           location?: string | null
           middle_name?: string | null
           phone_number?: string | null
+          profile_picture?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -411,6 +413,7 @@ export type Database = {
           location?: string | null
           middle_name?: string | null
           phone_number?: string | null
+          profile_picture?: string | null
           updated_at?: string | null
         }
         Relationships: []

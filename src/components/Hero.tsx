@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const Hero = () => {
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 hover:scale-105"
         style={{
           backgroundImage: "url('/lovable-uploads/unvaspic0.jpg')",
         }}
@@ -27,19 +28,19 @@ const Hero = () => {
       </div>
       
       {/* Content */}
-      <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-6">
+      <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-6 animate-fade-in">
         {/* Main Heading */}
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+        <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight transform hover:scale-105 transition-transform duration-300 cursor-default">
           UNVAS
         </h1>
         
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl mb-4 font-light opacity-90">
+        <p className="text-2xl md:text-3xl mb-4 font-light opacity-90 transform hover:scale-105 transition-all duration-300 cursor-default">
           Celebrating Excellence in Every Achievement
         </p>
         
         {/* Description */}
-        <p className="text-lg md:text-xl mb-12 font-light opacity-80 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-lg md:text-xl mb-12 font-light opacity-80 max-w-3xl mx-auto leading-relaxed transform hover:scale-105 transition-all duration-300 cursor-default">
           Discover our journey of accomplishments and explore our premium collection of products that reflect our commitment to quality and excellence.
         </p>
         
@@ -48,28 +49,36 @@ const Hero = () => {
           <Button
             onClick={handleViewAchievements}
             size="lg"
-            className="bg-[#8B7355] hover:bg-[#6D5A42] text-white px-8 py-4 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 min-w-[200px]"
+            className="bg-[#8B7355] hover:bg-[#6D5A42] text-white px-8 py-4 text-lg font-semibold rounded-lg shadow-xl transition-all duration-300 transform hover:scale-110 hover:shadow-2xl min-w-[220px] group"
           >
-            Our Achievements
+            <span className="group-hover:animate-pulse">Our Achievements</span>
           </Button>
           
           <Button
             onClick={handleViewProducts}
             size="lg"
             variant="outline"
-            className="border-2 border-white text-white hover:bg-white hover:text-[#8B7355] px-8 py-4 text-lg font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 min-w-[200px]"
+            className="border-2 border-white text-white hover:bg-amber-600 hover:border-amber-600 hover:text-white px-8 py-4 text-lg font-semibold rounded-lg shadow-xl transition-all duration-300 transform hover:scale-110 hover:shadow-2xl min-w-[220px] group bg-transparent backdrop-blur-sm"
           >
-            Our Products
+            <span className="group-hover:animate-pulse">Our Products</span>
           </Button>
         </div>
       </div>
       
       {/* Decorative elements */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-white/60">
+      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce">
         <div className="flex flex-col items-center space-y-2">
-          <div className="w-[1px] h-16 bg-white/40"></div>
+          <ChevronDown className="w-6 h-6" />
           <p className="text-sm font-light">Scroll to explore</p>
         </div>
+      </div>
+
+      {/* Floating particles animation */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full animate-ping"></div>
+        <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-amber-400/30 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-white/20 rounded-full animate-ping animation-delay-1000"></div>
+        <div className="absolute bottom-1/4 right-1/3 w-3 h-3 bg-amber-400/30 rounded-full animate-pulse animation-delay-2000"></div>
       </div>
     </div>
   );

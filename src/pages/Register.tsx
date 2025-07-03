@@ -12,8 +12,6 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
     email: "",
     gender: "",
     password: "",
@@ -39,14 +37,21 @@ const Register = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
             gender: formData.gender,
           }
         }
@@ -80,32 +85,6 @@ const Register = () => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                name="firstName"
-                type="text"
-                required
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="First Name"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                name="lastName"
-                type="text"
-                required
-                value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Last Name"
-              />
-            </div>
-
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -150,7 +129,7 @@ const Register = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Password"
+                placeholder="Password (min. 6 characters)"
               />
             </div>
 

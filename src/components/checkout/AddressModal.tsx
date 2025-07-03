@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { User, Phone, MapPin, Home, Building, Mail } from "lucide-react";
 
 interface AddressModalProps {
   open: boolean;
@@ -33,6 +35,7 @@ export function AddressModal({
 }: AddressModalProps) {
   const { user } = useAuth();
   const { profileData } = useProfile();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   
   const [formData, setFormData] = useState({
@@ -50,19 +53,30 @@ export function AddressModal({
     is_default: false,
   });
 
+  // Check if profile has required data for recipient name
+  const hasProfileData = !!(
+    (profileData.first_name && profileData.first_name.trim()) &&
+    (profileData.last_name && profileData.last_name.trim())
+  );
+
   // Auto-fill recipient name from profile when creating new address
   useEffect(() => {
-    if (open && !editingAddress && profileData) {
-      const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
-      if (fullName) {
-        setFormData(prev => ({
-          ...prev,
-          recipient_name: fullName,
-          phone_number: profileData.phone_number || '',
-        }));
+    if (open && !editingAddress) {
+      if (!hasProfileData) {
+        toast.error("Please complete your profile first to add delivery addresses");
+        onOpenChange(false);
+        navigate('/profile');
+        return;
       }
+      
+      const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+      setFormData(prev => ({
+        ...prev,
+        recipient_name: fullName,
+        phone_number: profileData.phone_number || '',
+      }));
     }
-  }, [open, editingAddress, profileData]);
+  }, [open, editingAddress, profileData, hasProfileData, onOpenChange, navigate]);
 
   useEffect(() => {
     if (editingAddress) {
@@ -76,12 +90,11 @@ export function AddressModal({
         city: editingAddress.city || '',
         state_province: editingAddress.state_province || '',
         postal_code: editingAddress.postal_code || '',
-        country: 'Philippines', // Always Philippines
+        country: 'Philippines',
         phone_number: editingAddress.phone_number || '',
         is_default: editingAddress.is_default || false,
       });
-    } else {
-      // Reset form for new address
+    } else if (hasProfileData) {
       const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
       setFormData({
         address_name: '',
@@ -98,7 +111,7 @@ export function AddressModal({
         is_default: false,
       });
     }
-  }, [editingAddress, open, profileData]);
+  }, [editingAddress, open, profileData, hasProfileData]);
 
   const saveAddressMutation = useMutation({
     mutationFn: async (addressData: any) => {
@@ -140,15 +153,20 @@ export function AddressModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
+    // Validation for required fields
     const requiredFields = [
-      'address_name', 'recipient_name', 'address_line1', 
-      'barangay', 'city', 'state_province', 'postal_code', 'phone_number'
+      { field: 'address_name', label: 'Address Name' },
+      { field: 'address_line1', label: 'Address Line 1' },
+      { field: 'barangay', label: 'Barangay' },
+      { field: 'city', label: 'City' },
+      { field: 'state_province', label: 'Province' },
+      { field: 'postal_code', label: 'Postal Code' },
+      { field: 'phone_number', label: 'Phone Number' },
     ];
     
-    for (const field of requiredFields) {
+    for (const { field, label } of requiredFields) {
       if (!formData[field as keyof typeof formData]?.toString().trim()) {
-        toast.error(`Please fill in ${field.replace('_', ' ')}`);
+        toast.error(`Please fill in ${label}`);
         return;
       }
     }
@@ -162,9 +180,10 @@ export function AddressModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Home className="h-6 w-6 text-amber-600" />
             {editingAddress ? 'Edit Address' : 'Add New Address'}
           </DialogTitle>
           <DialogDescription>
@@ -172,64 +191,89 @@ export function AddressModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="address_name">Address Name *</Label>
-            <Input
-              id="address_name"
-              value={formData.address_name}
-              onChange={(e) => handleInputChange('address_name', e.target.value)}
-              placeholder="e.g., Home, Work, etc."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="recipient_name">Recipient Name *</Label>
-            <Input
-              id="recipient_name"
-              value={formData.recipient_name}
-              readOnly
-              className="bg-gray-100"
-              placeholder="Recipient name"
-            />
-            <p className="text-xs text-gray-500">
-              Based on your profile information and cannot be changed here
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address_line1">Address Line 1 *</Label>
-            <Input
-              id="address_line1"
-              value={formData.address_line1}
-              onChange={(e) => handleInputChange('address_line1', e.target.value)}
-              placeholder="Street address, building, house number"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address_line2">Address Line 2</Label>
-            <Input
-              id="address_line2"
-              value={formData.address_line2}
-              onChange={(e) => handleInputChange('address_line2', e.target.value)}
-              placeholder="Apartment, suite, unit, etc. (optional)"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="purok">Purok</Label>
-            <Input
-              id="purok"
-              value={formData.purok}
-              onChange={(e) => handleInputChange('purok', e.target.value)}
-              placeholder="Purok number (optional)"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Row 1: Address Name and Recipient */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="barangay">Barangay *</Label>
+              <Label htmlFor="address_name" className="flex items-center gap-2">
+                <Home className="h-4 w-4 text-amber-600" />
+                Address Name *
+              </Label>
+              <Input
+                id="address_name"
+                value={formData.address_name}
+                onChange={(e) => handleInputChange('address_name', e.target.value)}
+                placeholder="e.g., Home, Work, etc."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="recipient_name" className="flex items-center gap-2">
+                <User className="h-4 w-4 text-amber-600" />
+                Recipient Name *
+              </Label>
+              <Input
+                id="recipient_name"
+                value={formData.recipient_name}
+                readOnly
+                className="bg-gray-100"
+                placeholder="Recipient name"
+              />
+              <p className="text-xs text-gray-500">
+                Based on your profile information
+              </p>
+            </div>
+          </div>
+
+          {/* Row 2: Address Lines */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="address_line1" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-amber-600" />
+                Address Line 1 *
+              </Label>
+              <Input
+                id="address_line1"
+                value={formData.address_line1}
+                onChange={(e) => handleInputChange('address_line1', e.target.value)}
+                placeholder="Street address, building, house number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address_line2" className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-amber-600" />
+                Address Line 2
+              </Label>
+              <Input
+                id="address_line2"
+                value={formData.address_line2}
+                onChange={(e) => handleInputChange('address_line2', e.target.value)}
+                placeholder="Apartment, suite, unit, etc. (optional)"
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Purok and Barangay */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="purok" className="flex items-center gap-2">
+                <Home className="h-4 w-4 text-amber-600" />
+                Purok
+              </Label>
+              <Input
+                id="purok"
+                value={formData.purok}
+                onChange={(e) => handleInputChange('purok', e.target.value)}
+                placeholder="Purok number (optional)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="barangay" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-amber-600" />
+                Barangay *
+              </Label>
               <Input
                 id="barangay"
                 value={formData.barangay}
@@ -237,8 +281,15 @@ export function AddressModal({
                 placeholder="Barangay"
               />
             </div>
+          </div>
+
+          {/* Row 4: City and Province */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="city">City *</Label>
+              <Label htmlFor="city" className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-amber-600" />
+                City *
+              </Label>
               <Input
                 id="city"
                 value={formData.city}
@@ -246,11 +297,12 @@ export function AddressModal({
                 placeholder="City"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="state_province">Province *</Label>
+              <Label htmlFor="state_province" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-amber-600" />
+                Province *
+              </Label>
               <Input
                 id="state_province"
                 value={formData.state_province}
@@ -258,8 +310,15 @@ export function AddressModal({
                 placeholder="Province"
               />
             </div>
+          </div>
+
+          {/* Row 5: Postal Code and Country */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="postal_code">Postal Code *</Label>
+              <Label htmlFor="postal_code" className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-amber-600" />
+                Postal Code *
+              </Label>
               <Input
                 id="postal_code"
                 value={formData.postal_code}
@@ -267,23 +326,30 @@ export function AddressModal({
                 placeholder="Postal Code"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-amber-600" />
+                Country
+              </Label>
+              <Input
+                id="country"
+                value={formData.country}
+                readOnly
+                className="bg-gray-100"
+              />
+              <p className="text-xs text-gray-500">
+                Currently only available in the Philippines
+              </p>
+            </div>
           </div>
 
+          {/* Row 6: Phone Number */}
           <div className="space-y-2">
-            <Label htmlFor="country">Country</Label>
-            <Input
-              id="country"
-              value={formData.country}
-              readOnly
-              className="bg-gray-100"
-            />
-            <p className="text-xs text-gray-500">
-              Currently only available in the Philippines
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone_number">Phone Number *</Label>
+            <Label htmlFor="phone_number" className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-amber-600" />
+              Phone Number *
+            </Label>
             <Input
               id="phone_number"
               value={formData.phone_number}
