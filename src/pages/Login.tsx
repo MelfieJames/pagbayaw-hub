@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -40,6 +39,7 @@ const LoginPage = () => {
   const [isConfirmationAlertOpen, setIsConfirmationAlertOpen] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (message) {
@@ -72,6 +72,11 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
+
+    if (!isLogin && password !== confirmPassword) {
+      setErrorMessage("Passwords do not match");
+      return;
+    }
 
     try {
       if (email === "admin@unvas.com") {
@@ -165,24 +170,8 @@ const LoginPage = () => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <div className="relative">
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required={!isLogin}
-                        className="w-full pl-10"
-                      />
-                      <User className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
-                    </div>
-                  </div>
-                )}
-
+                {/* Remove Full Name field */}
+                {/* Confirm Password field for sign up */}
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
@@ -225,6 +214,24 @@ const LoginPage = () => {
                     </button>
                   </div>
                 </div>
+
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        className="w-full pl-10"
+                      />
+                      <Lock className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
+                    </div>
+                  </div>
+                )}
 
                 {isLogin && (
                   <div className="flex items-center space-x-2">
