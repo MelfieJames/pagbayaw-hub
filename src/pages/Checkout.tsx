@@ -206,7 +206,10 @@ export default function Checkout() {
       toast.error("No items to checkout");
       return;
     }
-    
+    if (!selectedAddress) {
+      toast.error("Please add a delivery address before placing your order.");
+      return;
+    }
     setIsProcessing(true);
 
     try {
@@ -232,7 +235,8 @@ export default function Checkout() {
           user_id: user.id,
           total_amount: total,
           status: 'pending',
-          email: user.email
+          email: user.email,
+          user_address_id: selectedAddress ? selectedAddress.id : null
         })
         .select()
         .single();
