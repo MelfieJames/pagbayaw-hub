@@ -101,7 +101,7 @@ export function OrderApproval() {
               product_price
             )
           ),
-          user_addresses (
+          user_addresses:user_address_id (
             id,
             recipient_name,
             address_name,
@@ -189,16 +189,21 @@ export function OrderApproval() {
     );
   };
 
+  // Check if order has any address information (not strict completeness)
+  const hasAnyAddress = (order: any) => {
+    const address = getAddressForOrder(order);
+    return !!address;
+  };
+
   // Approve logic: handles both pending -> processing and processing -> delivering
   const handleApprove = async (orderId: number) => {
     setApprovingId(orderId);
     try {
       const order = allOrders.find((o: any) => o.id === orderId);
-      
       if (order.status === 'pending') {
-        // Check for complete address info
-        if (!hasCompleteAddress(order)) {
-          // Auto-cancel order due to incomplete address information
+        // Only require any address, not strict completeness
+        if (!hasAnyAddress(order)) {
+          // Auto-cancel order due to missing address
           const { error } = await supabase
             .from('purchases')
             .update({ status: 'cancelled' })
@@ -209,10 +214,10 @@ export function OrderApproval() {
             .insert({
               user_id: order?.user_id,
               type: 'order',
-              message: `Your order #${orderId} has been cancelled due to incomplete address information. Please add a complete address and place the order again.`,
+              message: `Your order #${orderId} has been cancelled due to missing address information. Please add a delivery address and place the order again.`,
               purchase_id: orderId
             });
-          toast.error("Order cancelled due to incomplete address information");
+          toast.error("Order cancelled due to missing address information");
           refetch();
           return;
         }
@@ -233,7 +238,6 @@ export function OrderApproval() {
         toast.success("Order moved to processing");
         refetch();
       } else if (order.status === 'processing') {
-        // Show modal for delivering
         setDeliverOrderId(orderId);
         setShowDeliveringModal(true);
         setApprovingId(null);
@@ -407,6 +411,7 @@ export function OrderApproval() {
   const renderOrderCard = (order: any) => {
     const address = getAddressForOrder(order);
     const hasCompleteInfo = hasCompleteAddress(order);
+    const hasAddress = hasAnyAddress(order);
     const status = order.status;
     const customerName = address?.recipient_name || "Unknown";
     return (
@@ -417,8 +422,8 @@ export function OrderApproval() {
             <h4 className="font-medium text-gray-900 flex items-center gap-2">
               {customerName} (Order #{order.id})
               <span>{STATUS_ICONS[status] || <Package className="h-4 w-4 text-gray-400" />}</span>
-              {!hasCompleteInfo && status === 'pending' && (
-                <span className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded">Incomplete Address</span>
+              {!hasAddress && status === 'pending' && (
+                <span className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded">No Address</span>
               )}
             </h4>
             <p className="text-sm text-gray-500">
@@ -428,9 +433,11 @@ export function OrderApproval() {
               ₱{Number(order.total_amount).toFixed(2)}
             </p>
           </div>
-          {status === 'pending' ? (
+          {/* Show NOT APPROVED only if address is missing or incomplete */}
+          {status === 'pending' && !hasCompleteInfo && (
             <span className="ml-4 px-3 py-1 rounded-full bg-red-100 text-red-700 font-semibold text-xs">NOT APPROVED</span>
-          ) : (
+          )}
+          {status !== 'pending' && (
             <Badge variant="outline" className={
               status === 'processing' ? 'border-orange-400 text-orange-700' :
               status === 'delivering' ? 'border-blue-400 text-blue-700' :
@@ -444,21 +451,38 @@ export function OrderApproval() {
         </div>
         <div className="flex gap-2 mt-2 md:mt-0">
           {status === 'pending' && (
-            <Button
-              size="sm"
-              onClick={() => handleApprove(order.id)}
-              disabled={approvingId === order.id}
-              className="bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              {approvingId === order.id ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Approve
-                </>
-              )}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                onClick={() => handleApprove(order.id)}
+                disabled={approvingId === order.id}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {approvingId === order.id ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Approve
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleDisapprove(order.id)}
+                disabled={rejectingId === order.id}
+              >
+                {rejectingId === order.id ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Cancel
+                  </>
+                )}
+              </Button>
+            </>
           )}
           {status === 'processing' && (
             <>
@@ -622,7 +646,7 @@ export function OrderApproval() {
               </div>
             ) : (
               <div className="text-red-600 bg-red-50 p-3 rounded-md">
-                No address information available
+                No delivery address available for this order.
               </div>
             )}
           </div>
@@ -662,7 +686,7 @@ export function OrderApproval() {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
         <div className="bg-white rounded-lg shadow-lg max-w-xs w-full p-6 relative flex flex-col items-center border-2 border-amber-200">
-          <img src="/lovable-uploads/logo-jnt.jpg" alt="J&T Logo" className="h-16 mb-4" />
+          <img src="/lovable-uploads/jnt.png" alt="J&T Logo" className="h-16 mb-4" />
           <h3 className="text-lg font-bold mb-2 text-center text-amber-800">Send with J&T Express</h3>
           <input
             type="text"
