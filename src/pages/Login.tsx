@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
-import { User, Mail, Lock, Eye, EyeOff, ShoppingBag, X, ChevronRight } from "lucide-react"; // Using lucide icons
+import { User, Mail, Lock, Eye, EyeOff, ShoppingBag, X, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -144,13 +145,18 @@ const LoginPage = () => {
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen w-full overflow-hidden pt-20 bg-gradient-to-br from-green-50 via-white to-green-100 relative">
+      <div className="flex min-h-screen w-full overflow-hidden pt-20 relative">
+        {/* Background Image */}
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/lovable-uploads/unvaspic4.jpg")' }}>
+          <div className="absolute inset-0 bg-gradient-to-br from-green-900/70 via-green-800/50 to-green-900/70"></div>
+        </div>
+
         {/* Floating Bubbles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {Array.from({ length: 15 }).map((_, i) => (
+          {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={i}
-              className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/30 to-green-200/20 backdrop-blur-sm border border-white/20"
+              className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/20 to-green-200/10 backdrop-blur-sm border border-white/10"
               style={{
                 width: `${Math.random() * 60 + 20}px`,
                 height: `${Math.random() * 60 + 20}px`,
@@ -163,11 +169,10 @@ const LoginPage = () => {
         </div>
 
         {/* Left panel - decorative */}
-        <div className="hidden lg:flex w-1/2 bg-cover bg-center relative animate-fade-in-up" style={{ backgroundImage: 'url("/lovable-uploads/unvaspic4.jpg")' }}>
-          <div className="bg-gradient-to-br from-green-900/60 via-green-800/40 to-green-900/60 absolute inset-0"></div>
+        <div className="hidden lg:flex w-1/2 relative animate-fade-in-up">
           <div className="absolute bottom-12 left-6 right-6 text-center text-white px-6 py-12 z-10 glass-green rounded-3xl animate-scale-in animation-delay-1000">
             <div className="flex justify-center mb-6">
-              <div className="p-4 bg-gradient-to-r from-green-400 to-green-500 rounded-full shadow-xl animate-bounce">
+              <div className="p-4 bg-gradient-to-r from-green-400 to-green-500 rounded-full shadow-xl bubble-heartbeat">
                 <ShoppingBag className="h-8 w-8 text-white" />
               </div>
             </div>
@@ -181,14 +186,14 @@ const LoginPage = () => {
         </div>
 
         {/* Right panel - form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white/80 backdrop-blur-xl relative">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl relative z-10">
           <div className="w-full max-w-md space-y-8 animate-fade-in-up animation-delay-2000">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <img 
                   src="/lovable-uploads/unvas-logo.jpg" 
                   alt="UNVAS Logo" 
-                  className="h-16 w-16 rounded-full object-cover ring-4 ring-green-500/20 animate-bounce"
+                  className="h-16 w-16 rounded-full object-cover ring-4 ring-green-500/20 bubble-heartbeat"
                 />
                 <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
                   UNVAS®
@@ -198,7 +203,7 @@ const LoginPage = () => {
             </div>
 
             {errorMessage && (
-              <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-6 glass animate-shake">
+              <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-6 glass">
                 <div className="flex items-center gap-3">
                   <div className="p-1 bg-red-500 rounded-full">
                     <X className="h-4 w-4 text-white" />

@@ -26,25 +26,43 @@ const LatestAchievements = () => {
   const navigate = useNavigate();
   
   return (
-    <section className="py-20 bg-gradient-to-br from-green-50 via-white to-green-100 relative overflow-hidden" id="achievements">
-      {/* Background Decorations */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-green-200/30 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-green-300/20 to-transparent rounded-full blur-3xl"></div>
+    <section className="py-20 relative overflow-hidden" id="achievements">
+      {/* Background Image */}
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/lovable-uploads/unvaspic2.jpg')" }}>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-green-800/60 to-green-900/80"></div>
+      </div>
+      
+      {/* Floating Bubbles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 15 }).map((_, i) => (
+          <div
+            key={i}
+            className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/20 to-green-200/10 backdrop-blur-sm border border-white/10"
+            style={{
+              width: `${Math.random() * 50 + 20}px`,
+              height: `${Math.random() * 50 + 20}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+            }}
+          />
+        ))}
+      </div>
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-16 animate-fade-in-up">
           <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="p-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg animate-bounce">
+            <div className="p-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg bubble-heartbeat">
               <Trophy className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold text-white">
               Latest Achievements
             </h2>
-            <div className="p-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg animate-bounce animation-delay-1000">
+            <div className="p-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg bubble-heartbeat animation-delay-1000">
               <Star className="h-8 w-8 text-white" />
             </div>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-white/90 max-w-2xl mx-auto">
             Celebrating our recent milestones and outstanding accomplishments
           </p>
         </div>
@@ -52,19 +70,19 @@ const LatestAchievements = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {isLoading ? (
             <div className="col-span-3 text-center">
-              <div className="inline-flex items-center gap-3 text-green-600 text-lg">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+              <div className="inline-flex items-center gap-3 text-white text-lg">
+                <div className="bubble-heartbeat rounded-full h-6 w-6 border-b-2 border-white"></div>
                 Loading amazing achievements...
               </div>
             </div>
           ) : achievements.length === 0 ? (
-            <div className="col-span-3 text-center text-gray-500 text-lg">
+            <div className="col-span-3 text-center text-white/80 text-lg">
               No achievements yet. Stay tuned for exciting updates!
             </div>
           ) : achievements.map((ach, index) => (
             <div 
               key={ach.id} 
-              className="group bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-green-100 p-8 flex flex-col items-center card-hover animate-fade-in-up glass"
+              className="group bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-8 flex flex-col items-center card-hover animate-fade-in-up glass transform hover:scale-105 transition-all duration-500"
               style={{ animationDelay: `${index * 200}ms` }}
             >
               <div className="relative mb-6">
@@ -75,7 +93,7 @@ const LatestAchievements = () => {
                     className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" 
                   />
                 </div>
-                <div className="absolute -top-2 -right-2 p-2 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="absolute -top-2 -right-2 p-2 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300 bubble-heartbeat">
                   <Trophy className="h-5 w-5 text-white" />
                 </div>
               </div>
@@ -132,25 +150,43 @@ const LatestProducts = () => {
   const navigate = useNavigate();
   
   return (
-    <section className="py-20 bg-gradient-to-br from-white via-green-50 to-white relative overflow-hidden" id="products">
-      {/* Background Decorations */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-green-200/20 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-green-300/30 to-transparent rounded-full blur-3xl"></div>
+    <section className="py-20 relative overflow-hidden" id="products">
+      {/* Background Image */}
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/lovable-uploads/unvaspic3.jpg')" }}>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-green-800/60 to-green-900/80"></div>
+      </div>
+      
+      {/* Floating Bubbles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 15 }).map((_, i) => (
+          <div
+            key={i}
+            className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/20 to-green-200/10 backdrop-blur-sm border border-white/10"
+            style={{
+              width: `${Math.random() * 50 + 20}px`,
+              height: `${Math.random() * 50 + 20}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+            }}
+          />
+        ))}
+      </div>
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-16 animate-fade-in-up">
           <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg animate-bounce">
+            <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg bubble-heartbeat">
               <ShoppingBag className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold text-white">
               Latest Products
             </h2>
-            <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg animate-bounce animation-delay-1000">
+            <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg bubble-heartbeat animation-delay-1000">
               <Star className="h-8 w-8 text-white" />
             </div>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-white/90 max-w-2xl mx-auto">
             Discover our newest eco-friendly products crafted with excellence
           </p>
         </div>
@@ -158,19 +194,19 @@ const LatestProducts = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {isLoading ? (
             <div className="col-span-3 text-center">
-              <div className="inline-flex items-center gap-3 text-green-600 text-lg">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+              <div className="inline-flex items-center gap-3 text-white text-lg">
+                <div className="bubble-heartbeat rounded-full h-6 w-6 border-b-2 border-white"></div>
                 Loading amazing products...
               </div>
             </div>
           ) : products.length === 0 ? (
-            <div className="col-span-3 text-center text-gray-500 text-lg">
+            <div className="col-span-3 text-center text-white/80 text-lg">
               No products yet. Stay tuned for exciting launches!
             </div>
           ) : products.map((prod, index) => (
             <div 
               key={prod.id} 
-              className="group bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-green-100 p-8 flex flex-col items-center card-hover animate-fade-in-up glass"
+              className="group bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-8 flex flex-col items-center card-hover animate-fade-in-up glass transform hover:scale-105 transition-all duration-500"
               style={{ animationDelay: `${index * 200}ms` }}
             >
               <div className="relative mb-6">
@@ -181,7 +217,7 @@ const LatestProducts = () => {
                     className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" 
                   />
                 </div>
-                <div className="absolute -top-2 -right-2 p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="absolute -top-2 -right-2 p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300 bubble-heartbeat">
                   <ShoppingBag className="h-5 w-5 text-white" />
                 </div>
               </div>
@@ -221,7 +257,7 @@ const LatestProducts = () => {
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 via-white to-green-100">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <Hero />
       <LatestAchievements />

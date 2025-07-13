@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, Sparkles, Star, Award, Package } from "lucide-react";
@@ -9,22 +10,22 @@ const FloatingBubbles = () => {
   useEffect(() => {
     const createBubble = () => ({
       id: Math.random(),
-      size: Math.random() * 60 + 20,
+      size: Math.random() * 40 + 15,
       left: Math.random() * 100,
       animationDuration: Math.random() * 15 + 10,
       delay: Math.random() * 5,
     });
 
-    const initialBubbles = Array.from({ length: 20 }, createBubble);
+    const initialBubbles = Array.from({ length: 25 }, createBubble);
     setBubbles(initialBubbles);
 
     const interval = setInterval(() => {
       setBubbles(prev => {
         const newBubbles = [...prev];
-        if (newBubbles.length < 25) {
+        if (newBubbles.length < 30) {
           newBubbles.push(createBubble());
         }
-        return newBubbles.slice(-25);
+        return newBubbles.slice(-30);
       });
     }, 2000);
 
@@ -36,7 +37,7 @@ const FloatingBubbles = () => {
       {bubbles.map((bubble) => (
         <div
           key={bubble.id}
-          className="bubble"
+          className="bubble bubble-heartbeat"
           style={{
             left: `${bubble.left}%`,
             width: `${bubble.size}px`,
@@ -53,12 +54,12 @@ const FloatingBubbles = () => {
 const InteractiveParticles = () => {
   return (
     <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-white/30 rounded-full animate-pulse"></div>
-      <div className="absolute top-1/3 right-1/4 w-4 h-4 bg-green-400/40 rounded-full animate-bounce animation-delay-1000"></div>
-      <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-white/40 rounded-full animate-ping animation-delay-2000"></div>
-      <div className="absolute bottom-1/4 right-1/3 w-5 h-5 bg-green-300/30 rounded-full animate-pulse animation-delay-3000"></div>
-      <div className="absolute top-1/2 left-1/6 w-3 h-3 bg-white/50 rounded-full animate-bounce animation-delay-4000"></div>
-      <div className="absolute top-1/6 right-1/6 w-2 h-2 bg-green-500/40 rounded-full animate-ping animation-delay-5000"></div>
+      <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/40 rounded-full bubble-heartbeat"></div>
+      <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-green-400/50 rounded-full bubble-heartbeat animation-delay-1000"></div>
+      <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-white/50 rounded-full bubble-heartbeat animation-delay-2000"></div>
+      <div className="absolute bottom-1/4 right-1/3 w-4 h-4 bg-green-300/40 rounded-full bubble-heartbeat animation-delay-3000"></div>
+      <div className="absolute top-1/2 left-1/6 w-2 h-2 bg-white/60 rounded-full bubble-heartbeat animation-delay-4000"></div>
+      <div className="absolute top-1/6 right-1/6 w-2 h-2 bg-green-500/50 rounded-full bubble-heartbeat animation-delay-5000"></div>
     </div>
   );
 };
@@ -88,7 +89,7 @@ const Hero = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-100">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Animated Background */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000"
@@ -97,7 +98,7 @@ const Hero = () => {
           transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900/60 via-green-800/40 to-green-900/60"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/70 via-green-800/50 to-green-900/70"></div>
       </div>
       
       {/* Floating Bubbles */}
@@ -109,8 +110,8 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 text-center text-white max-w-5xl mx-auto px-6">
         {/* Decorative Elements */}
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-white/10 to-green-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-gradient-to-tl from-green-400/20 to-white/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-white/10 to-green-400/20 rounded-full blur-3xl bubble-heartbeat"></div>
+        <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-gradient-to-tl from-green-400/20 to-white/10 rounded-full blur-3xl bubble-heartbeat animation-delay-2000"></div>
         
         {/* Main Heading */}
         <div className="relative group cursor-default">
@@ -124,11 +125,11 @@ const Hero = () => {
         
         {/* Subtitle with Icons */}
         <div className="flex items-center justify-center gap-4 mb-6 animate-fade-in-up animation-delay-1000">
-          <Star className="w-6 h-6 text-yellow-400 animate-pulse" />
+          <Star className="w-6 h-6 text-yellow-400 bubble-heartbeat" />
           <p className="text-2xl md:text-4xl font-light opacity-90 transform hover:scale-105 transition-all duration-300">
             Celebrating Excellence in Every Achievement
           </p>
-          <Sparkles className="w-6 h-6 text-yellow-400 animate-pulse animation-delay-1000" />
+          <Sparkles className="w-6 h-6 text-yellow-400 bubble-heartbeat animation-delay-1000" />
         </div>
         
         {/* Description */}
@@ -159,11 +160,11 @@ const Hero = () => {
         </div>
       </div>
       
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-white/80 animate-bounce cursor-pointer group">
-        <div className="flex flex-col items-center space-y-2 group-hover:text-white transition-colors duration-300">
-          <ChevronDown className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
-          <p className="text-lg font-light group-hover:font-medium transition-all duration-300">Scroll to explore</p>
+      {/* Scroll Indicator - Made smaller and more professional */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/70 cursor-pointer group">
+        <div className="flex flex-col items-center space-y-1 group-hover:text-white transition-colors duration-300">
+          <ChevronDown className="w-5 h-5 group-hover:scale-110 transition-transform duration-300 bubble-heartbeat" />
+          <p className="text-sm font-light group-hover:font-medium transition-all duration-300">Scroll to explore</p>
         </div>
       </div>
     </div>

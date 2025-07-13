@@ -49,11 +49,16 @@ const Achievements = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100">
+      <div className="min-h-screen flex flex-col relative">
+        {/* Background Image */}
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/lovable-uploads/unvaspic2.jpg')" }}>
+          <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-green-800/60 to-green-900/80"></div>
+        </div>
+        
         <Navbar />
-        <div className="pt-20 container mx-auto flex-grow text-center">
-          <h1 className="text-4xl font-semibold text-gray-800">Achievements</h1>
-          <div className="mt-8 text-gray-600">Loading achievements...</div>
+        <div className="pt-20 container mx-auto flex-grow text-center relative z-10">
+          <h1 className="text-4xl font-semibold text-white">Achievements</h1>
+          <div className="mt-8 text-white/80">Loading achievements...</div>
         </div>
         <Footer />
       </div>
@@ -69,22 +74,44 @@ const Achievements = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Background Image */}
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/lovable-uploads/unvaspic2.jpg')" }}>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-green-800/60 to-green-900/80"></div>
+      </div>
+      
+      {/* Floating Bubbles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div
+            key={i}
+            className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/20 to-green-200/10 backdrop-blur-sm border border-white/10"
+            style={{
+              width: `${Math.random() * 50 + 20}px`,
+              height: `${Math.random() * 50 + 20}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+            }}
+          />
+        ))}
+      </div>
+      
       <Navbar />
-      <div className="container mx-auto pt-24 px-4 flex-grow">
+      <div className="container mx-auto pt-24 px-4 flex-grow relative z-10">
         {/* Header with Icon */}
         <div className="flex items-center justify-center mb-8 animate-fade-in">
-          <Award className="mr-4 text-green-600 h-10 w-10" />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-700 via-green-600 to-green-500 bg-clip-text text-transparent">Our Achievements</h1>
+          <Award className="mr-4 text-yellow-400 h-10 w-10 bubble-heartbeat" />
+          <h1 className="text-4xl font-bold text-white">Our Achievements</h1>
         </div>
 
-        {/* Search Bar - Fixed positioning */}
+        {/* Search Bar */}
         <div className="relative max-w-md mx-auto mb-12">
           <Input
             placeholder="Search achievements..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-lg border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all shadow-sm hover:shadow-md bg-white/80 backdrop-blur-sm"
+            className="w-full pl-12 pr-4 py-3 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all shadow-sm hover:shadow-md bg-white/90 backdrop-blur-sm text-gray-800"
           />
           <Search className="absolute left-4 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
         </div>
@@ -94,14 +121,14 @@ const Achievements = () => {
           {filteredAchievements?.map((achievement, index) => (
             <Card
               key={achievement.id}
-              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-500 rounded-lg bg-white/80 backdrop-blur-sm shadow-md hover:scale-[1.02] border border-green-200 animate-fade-in h-[400px] flex flex-col"
+              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-500 rounded-lg bg-white/90 backdrop-blur-sm shadow-md hover:scale-105 border border-white/20 animate-fade-in-up h-[400px] flex flex-col card-hover"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="h-48 overflow-hidden">
                 <img
                   src={achievement.image || "/placeholder.svg"}
                   alt={achievement.achievement_name}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                 />
               </div>
               <CardHeader className="pb-2 px-4 bg-gradient-to-r from-white to-green-50 flex-shrink-0">
@@ -113,7 +140,7 @@ const Achievements = () => {
                 </p>
                 <Link to={`/achievements/${achievement.id}`} className="mt-auto">
                   <Button
-                    className="w-full bg-green-600 hover:bg-green-700 transition-all transform hover:scale-[1.02]"
+                    className="w-full bg-green-600 hover:bg-green-700 transition-all transform hover:scale-105 duration-300"
                     size="lg"
                   >
                     <Eye className="mr-2 h-4 w-4 text-white" />
