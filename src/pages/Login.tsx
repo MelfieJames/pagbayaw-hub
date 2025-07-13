@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -11,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
-import { User, Mail, Lock, Eye, EyeOff, ShoppingBag, X, ChevronRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, X, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,21 +141,40 @@ const LoginPage = () => {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    const success = await resendConfirmationEmail(confirmationEmail);
+    if (success) {
+      setIsConfirmationAlertOpen(false);
+      toast.success("Confirmation email resent successfully!");
+    }
+  };
+
+  useEffect(() => {
+    if (message) {
+      toast(message);
+    }
+  }, [message]);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate(redirectPath);
+      }
+    };
+    checkSession();
+  }, [navigate, redirectPath]);
+
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen w-full overflow-hidden pt-20 relative">
-        {/* Background Image */}
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("/lovable-uploads/unvaspic4.jpg")' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-green-900/70 via-green-800/50 to-green-900/70"></div>
-        </div>
-
+      <div className="flex min-h-screen w-full overflow-hidden pt-24 relative bg-gradient-to-br from-green-50 to-green-100">
         {/* Floating Bubbles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={i}
-              className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/20 to-green-200/10 backdrop-blur-sm border border-white/10"
+              className="bubble-heartbeat absolute rounded-full bg-gradient-to-br from-white/60 to-green-200/40 backdrop-blur-sm border border-white/30"
               style={{
                 width: `${Math.random() * 60 + 20}px`,
                 height: `${Math.random() * 60 + 20}px`,
@@ -169,17 +187,12 @@ const LoginPage = () => {
         </div>
 
         {/* Left panel - decorative */}
-        <div className="hidden lg:flex w-1/2 relative animate-fade-in-up">
-          <div className="absolute bottom-12 left-6 right-6 text-center text-white px-6 py-12 z-10 glass-green rounded-3xl animate-scale-in animation-delay-1000">
-            <div className="flex justify-center mb-6">
-              <div className="p-4 bg-gradient-to-r from-green-400 to-green-500 rounded-full shadow-xl bubble-heartbeat">
-                <ShoppingBag className="h-8 w-8 text-white" />
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
+        <div className="hidden lg:flex w-1/2 relative animate-fade-in-up items-center justify-center">
+          <div className="text-center text-green-800 px-6 py-12 z-10 max-w-md">
+            <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-green-700 to-green-600 bg-clip-text text-transparent">
               Your trusted partner in eco-friendly products
             </h2>
-            <p className="text-white/90 text-lg leading-relaxed">
+            <p className="text-green-600 text-lg leading-relaxed">
               Discover sustainable solutions that respect our environment while enhancing your daily life.
             </p>
           </div>
@@ -203,7 +216,7 @@ const LoginPage = () => {
             </div>
 
             {errorMessage && (
-              <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-6 glass">
+              <div className="bg-red-50 text-red-700 px-6 py-4 rounded-2xl mb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-1 bg-red-500 rounded-full">
                     <X className="h-4 w-4 text-white" />
@@ -225,7 +238,7 @@ const LoginPage = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-green-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 glass group-hover:border-green-300"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 group-hover:border-green-300"
                     />
                     <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full">
                       <Mail className="h-4 w-4 text-white" />
@@ -243,7 +256,7 @@ const LoginPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full pl-12 pr-12 py-4 rounded-2xl border-2 border-green-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 glass group-hover:border-green-300"
+                      className="w-full pl-12 pr-12 py-4 rounded-2xl focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 group-hover:border-green-300"
                     />
                     <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full">
                       <Lock className="h-4 w-4 text-white" />
@@ -273,7 +286,7 @@ const LoginPage = () => {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-green-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 glass group-hover:border-green-300"
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 group-hover:border-green-300"
                       />
                       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full">
                         <Lock className="h-4 w-4 text-white" />
@@ -288,7 +301,7 @@ const LoginPage = () => {
                       id="remember" 
                       checked={rememberMe}
                       onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                      className="rounded-lg border-2 border-green-300 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                      className="rounded-lg data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                     />
                     <Label htmlFor="remember" className="text-green-700 font-medium cursor-pointer">
                       Remember me

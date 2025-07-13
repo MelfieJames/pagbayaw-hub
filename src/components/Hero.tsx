@@ -89,18 +89,7 @@ const Hero = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Animated Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000"
-        style={{
-          backgroundImage: "url('/lovable-uploads/unvaspic0.jpg')",
-          transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900/70 via-green-800/50 to-green-900/70"></div>
-      </div>
-      
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-green-50 to-green-100">
       {/* Floating Bubbles */}
       <FloatingBubbles />
       
@@ -108,32 +97,29 @@ const Hero = () => {
       <InteractiveParticles />
       
       {/* Content */}
-      <div className="relative z-10 text-center text-white max-w-5xl mx-auto px-6">
+      <div className="relative z-10 text-center text-green-800 max-w-5xl mx-auto px-6">
         {/* Decorative Elements */}
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-white/10 to-green-400/20 rounded-full blur-3xl bubble-heartbeat"></div>
-        <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-gradient-to-tl from-green-400/20 to-white/10 rounded-full blur-3xl bubble-heartbeat animation-delay-2000"></div>
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-green-200/20 to-green-400/30 rounded-full blur-3xl bubble-heartbeat"></div>
+        <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-gradient-to-tl from-green-400/30 to-green-200/20 rounded-full blur-3xl bubble-heartbeat animation-delay-2000"></div>
         
         {/* Main Heading */}
         <div className="relative group cursor-default">
-          <h1 className="text-7xl md:text-9xl font-bold mb-8 leading-tight transform group-hover:scale-105 transition-all duration-500 bg-gradient-to-r from-white via-green-100 to-white bg-clip-text text-transparent animate-fade-in-up">
+          <h1 className="text-7xl md:text-9xl font-bold mb-8 leading-tight transform group-hover:scale-105 transition-all duration-500 bg-gradient-to-r from-green-700 via-green-600 to-green-800 bg-clip-text text-transparent animate-fade-in-up">
             UNVAS
           </h1>
-          <div className="absolute inset-0 text-7xl md:text-9xl font-bold mb-8 leading-tight bg-gradient-to-r from-green-400/20 to-green-600/20 bg-clip-text text-transparent blur-sm group-hover:blur-none transition-all duration-500 animate-glow">
-            UNVAS
-          </div>
         </div>
         
         {/* Subtitle with Icons */}
         <div className="flex items-center justify-center gap-4 mb-6 animate-fade-in-up animation-delay-1000">
-          <Star className="w-6 h-6 text-yellow-400 bubble-heartbeat" />
-          <p className="text-2xl md:text-4xl font-light opacity-90 transform hover:scale-105 transition-all duration-300">
+          <Star className="w-6 h-6 text-yellow-500 bubble-heartbeat" />
+          <p className="text-2xl md:text-4xl font-light text-green-700 transform hover:scale-105 transition-all duration-300">
             Celebrating Excellence in Every Achievement
           </p>
-          <Sparkles className="w-6 h-6 text-yellow-400 bubble-heartbeat animation-delay-1000" />
+          <Sparkles className="w-6 h-6 text-yellow-500 bubble-heartbeat animation-delay-1000" />
         </div>
         
         {/* Description */}
-        <p className="text-lg md:text-xl mb-12 font-light opacity-80 max-w-4xl mx-auto leading-relaxed transform hover:scale-105 transition-all duration-300 animate-fade-in-up animation-delay-2000 glass-green p-6 rounded-2xl">
+        <p className="text-lg md:text-xl mb-12 font-light text-green-600 max-w-4xl mx-auto leading-relaxed transform hover:scale-105 transition-all duration-300 animate-fade-in-up animation-delay-2000 glass-green p-6 rounded-2xl">
           Discover our journey of accomplishments and explore our premium collection of products that reflect our commitment to quality and excellence.
         </p>
         
@@ -152,7 +138,7 @@ const Hero = () => {
             onClick={handleViewProducts}
             size="lg"
             variant="outline"
-            className="group border-3 border-white/50 text-white hover:bg-white/10 hover:border-white/80 px-10 py-6 text-xl font-semibold rounded-2xl shadow-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-white/25 min-w-[260px] glass backdrop-blur-xl"
+            className="group border-3 border-green-500 text-green-700 hover:bg-green-50 hover:border-green-600 px-10 py-6 text-xl font-semibold rounded-2xl shadow-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-green-500/25 min-w-[260px] glass backdrop-blur-xl"
           >
             <Package className="mr-3 h-6 w-6 group-hover:rotate-12 transition-transform duration-300" />
             <span className="group-hover:animate-pulse">Our Products</span>
@@ -161,10 +147,10 @@ const Hero = () => {
       </div>
       
       {/* Scroll Indicator - Made smaller and more professional */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/70 cursor-pointer group">
-        <div className="flex flex-col items-center space-y-1 group-hover:text-white transition-colors duration-300">
-          <ChevronDown className="w-5 h-5 group-hover:scale-110 transition-transform duration-300 bubble-heartbeat" />
-          <p className="text-sm font-light group-hover:font-medium transition-all duration-300">Scroll to explore</p>
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-green-600/70 cursor-pointer group">
+        <div className="flex flex-col items-center space-y-1 group-hover:text-green-700 transition-colors duration-300">
+          <ChevronDown className="w-4 h-4 group-hover:scale-110 transition-transform duration-300 bubble-heartbeat" />
+          <p className="text-xs font-light group-hover:font-medium transition-all duration-300">Scroll to explore</p>
         </div>
       </div>
     </div>

@@ -6,7 +6,6 @@ import Chatbot from "@/components/Chatbot";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { Trophy, ShoppingBag, Star, Calendar, MapPin } from "lucide-react";
-import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 const LatestAchievements = () => {
@@ -26,18 +25,13 @@ const LatestAchievements = () => {
   const navigate = useNavigate();
   
   return (
-    <section className="py-20 relative overflow-hidden" id="achievements">
-      {/* Background Image */}
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/lovable-uploads/unvaspic2.jpg')" }}>
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-green-800/60 to-green-900/80"></div>
-      </div>
-      
+    <section className="py-20 relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100" id="achievements">
       {/* Floating Bubbles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 15 }).map((_, i) => (
           <div
             key={i}
-            className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/20 to-green-200/10 backdrop-blur-sm border border-white/10"
+            className="bubble-heartbeat absolute rounded-full bg-gradient-to-br from-white/60 to-green-200/40 backdrop-blur-sm border border-white/30"
             style={{
               width: `${Math.random() * 50 + 20}px`,
               height: `${Math.random() * 50 + 20}px`,
@@ -55,14 +49,14 @@ const LatestAchievements = () => {
             <div className="p-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg bubble-heartbeat">
               <Trophy className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white">
+            <h2 className="text-4xl md:text-5xl font-bold text-green-800">
               Latest Achievements
             </h2>
             <div className="p-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-lg bubble-heartbeat animation-delay-1000">
               <Star className="h-8 w-8 text-white" />
             </div>
           </div>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
+          <p className="text-xl text-green-600 max-w-2xl mx-auto">
             Celebrating our recent milestones and outstanding accomplishments
           </p>
         </div>
@@ -70,13 +64,13 @@ const LatestAchievements = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {isLoading ? (
             <div className="col-span-3 text-center">
-              <div className="inline-flex items-center gap-3 text-white text-lg">
-                <div className="bubble-heartbeat rounded-full h-6 w-6 border-b-2 border-white"></div>
+              <div className="inline-flex items-center gap-3 text-green-700 text-lg">
+                <div className="bubble-heartbeat rounded-full h-6 w-6 border-b-2 border-green-500"></div>
                 Loading amazing achievements...
               </div>
             </div>
           ) : achievements.length === 0 ? (
-            <div className="col-span-3 text-center text-white/80 text-lg">
+            <div className="col-span-3 text-center text-green-600 text-lg">
               No achievements yet. Stay tuned for exciting updates!
             </div>
           ) : achievements.map((ach, index) => (
@@ -150,18 +144,13 @@ const LatestProducts = () => {
   const navigate = useNavigate();
   
   return (
-    <section className="py-20 relative overflow-hidden" id="products">
-      {/* Background Image */}
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/lovable-uploads/unvaspic3.jpg')" }}>
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-green-800/60 to-green-900/80"></div>
-      </div>
-      
+    <section className="py-20 relative overflow-hidden bg-gradient-to-br from-green-100 to-green-50" id="products">
       {/* Floating Bubbles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 15 }).map((_, i) => (
           <div
             key={i}
-            className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/20 to-green-200/10 backdrop-blur-sm border border-white/10"
+            className="bubble-heartbeat absolute rounded-full bg-gradient-to-br from-white/60 to-green-200/40 backdrop-blur-sm border border-white/30"
             style={{
               width: `${Math.random() * 50 + 20}px`,
               height: `${Math.random() * 50 + 20}px`,
@@ -179,14 +168,14 @@ const LatestProducts = () => {
             <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg bubble-heartbeat">
               <ShoppingBag className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white">
+            <h2 className="text-4xl md:text-5xl font-bold text-green-800">
               Latest Products
             </h2>
             <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-lg bubble-heartbeat animation-delay-1000">
               <Star className="h-8 w-8 text-white" />
             </div>
           </div>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
+          <p className="text-xl text-green-600 max-w-2xl mx-auto">
             Discover our newest eco-friendly products crafted with excellence
           </p>
         </div>
@@ -194,13 +183,13 @@ const LatestProducts = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {isLoading ? (
             <div className="col-span-3 text-center">
-              <div className="inline-flex items-center gap-3 text-white text-lg">
-                <div className="bubble-heartbeat rounded-full h-6 w-6 border-b-2 border-white"></div>
+              <div className="inline-flex items-center gap-3 text-green-700 text-lg">
+                <div className="bubble-heartbeat rounded-full h-6 w-6 border-b-2 border-green-500"></div>
                 Loading amazing products...
               </div>
             </div>
           ) : products.length === 0 ? (
-            <div className="col-span-3 text-center text-white/80 text-lg">
+            <div className="col-span-3 text-center text-green-600 text-lg">
               No products yet. Stay tuned for exciting launches!
             </div>
           ) : products.map((prod, index) => (
