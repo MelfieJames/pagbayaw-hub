@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Sparkles, Star } from "lucide-react";
+import { ChevronDown, Sparkles, Star, Award, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const FloatingBubbles = () => {
