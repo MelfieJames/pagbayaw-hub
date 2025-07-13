@@ -49,7 +49,7 @@ export default function MyRatings() {
           .from('purchases')
           .select(`
             *,
-            transaction_details(*),
+            transaction_details:transaction_details_purchase_id_fkey(*),
             purchase_items(*, products(*))
           `)
           .eq('user_id', user.id)
@@ -60,7 +60,7 @@ export default function MyRatings() {
           console.error('Purchases fetch error:', error);
           return [];
         }
-        
+        console.log('Fetched purchases:', data);
         return data || [];
       } catch (error) {
         console.error('Error fetching purchases:', error);
@@ -75,14 +75,12 @@ export default function MyRatings() {
     queryKey: ['my-reviews', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      
-      console.log("Fetching reviews for user:", user.id);
-      
       try {
         const { data, error } = await supabase
           .from('reviews')
           .select(`
             *,
+            purchase_item_id,
             products (
               id,
               product_name,
@@ -92,13 +90,11 @@ export default function MyRatings() {
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
-
         if (error) {
           console.error('Reviews fetch error:', error);
           return [];
         }
-        
-        console.log("Fetched user reviews:", data);
+        console.log('Fetched userReviews:', data);
         return data || [];
       } catch (error) {
         console.error('Unexpected error fetching reviews:', error);
@@ -110,30 +106,25 @@ export default function MyRatings() {
   });
 
   // Get all reviewed product IDs
-  const reviewedProductIds = userReviews.map(review => review.product_id);
+  const reviewedProductIds = new Set(userReviews.map(review => review.product_id));
 
-  // Create a unique list of products that need reviews
-  const pendingProductMap = new Map();
-  
+  // Create a list of purchase items that need reviews (one per product, no duplicates, and not already reviewed)
+  const pendingReviews = [];
+  const seenProductIds = new Set();
   purchases.forEach(purchase => {
     if (!purchase.purchase_items) return;
-    
     purchase.purchase_items.forEach(item => {
-      if (reviewedProductIds.includes(item.product_id)) {
-        return;
-      }
-      
-      if (!pendingProductMap.has(item.product_id)) {
-        pendingProductMap.set(item.product_id, {
+      if (!reviewedProductIds.has(item.product_id) && !seenProductIds.has(item.product_id)) {
+        pendingReviews.push({
           ...item,
           purchaseId: purchase.id,
           transactionDetails: purchase.transaction_details
         });
+        seenProductIds.add(item.product_id);
       }
     });
   });
-  
-  const pendingReviews = Array.from(pendingProductMap.values());
+  console.log('Pending reviews:', pendingReviews);
 
   const handleRateNow = (productItem) => {
     navigate(`/products`, { 
@@ -175,13 +166,13 @@ export default function MyRatings() {
   const isLoading = reviewsLoading || purchasesLoading;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#F8FFFB] via-[#E9F8F3] to-[#DFF5EC]">
       <Navbar />
       <div className="container mx-auto px-4 pt-20 flex-grow animate-fade-in">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-purple-800">My Product Ratings</h1>
+          <h1 className="text-3xl font-bold text-[#0E4A22]">My Product Ratings</h1>
           {pendingReviews.length > 0 && (
-            <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-2 rounded-lg">
+            <div className="bg-green-100 border border-green-300 text-green-800 px-4 py-2 rounded-lg">
               <span className="font-medium">🌟 You can rate {pendingReviews.length} product{pendingReviews.length > 1 ? 's' : ''}!</span>
             </div>
           )}
@@ -189,23 +180,23 @@ export default function MyRatings() {
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800">
+            <TabsTrigger value="pending" className="data-[state=active]:bg-[#A7E9C5] data-[state=active]:text-[#0E4A22] text-[#0E4A22]">
               Pending Reviews ({pendingReviews.length})
             </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-800">
+            <TabsTrigger value="completed" className="data-[state=active]:bg-[#A7E9C5] data-[state=active]:text-[#0E4A22] text-[#0E4A22]">
               Completed Reviews ({userReviews.length})
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="pending" className="space-y-4 transition-all duration-300 animate-scale-in">
             {isLoading ? (
-              <Card className="border-purple-100 shadow-md">
+              <Card className="border-green-100 shadow-md">
                 <CardContent className="pt-6 text-center py-8">
                   <LoadingSpinner size="lg" />
                 </CardContent>
               </Card>
             ) : pendingReviews.length === 0 ? (
-              <Card className="border-purple-100 shadow-md bg-white">
+              <Card className="border-green-100 shadow-md bg-white">
                 <CardContent className="pt-6 text-center py-10">
                   <p className="text-muted-foreground">No pending reviews. Great job!</p>
                 </CardContent>
@@ -213,23 +204,23 @@ export default function MyRatings() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pendingReviews.map((productItem) => (
-                  <Card key={`pending-${productItem.product_id}-${productItem.id}`} className="overflow-hidden border-purple-100 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
-                    <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
+                  <Card key={`pending-${productItem.product_id}-${productItem.id}`} className="overflow-hidden border-green-100 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
+                    <CardHeader className="pb-2 bg-gradient-to-r from-[#A7E9C5] to-white">
                       <div className="flex items-center gap-3">
                         <img 
                           src={productItem.products?.image || "/placeholder.svg"} 
                           alt={productItem.products?.product_name}
-                          className="w-16 h-16 object-cover rounded-md border-2 border-purple-200 shadow-sm"
+                          className="w-16 h-16 object-cover rounded-md border-2 border-green-200 shadow-sm"
                         />
                         <div>
-                          <CardTitle className="text-lg text-purple-900">{productItem.products?.product_name}</CardTitle>
-                          <CardDescription>Ready to review</CardDescription>
+                          <CardTitle className="text-lg text-[#0E4A22]">{productItem.products?.product_name}</CardTitle>
+                          <CardDescription className="text-green-700">Ready to review</CardDescription>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <Button 
-                        className="w-full mt-2 bg-purple-600 hover:bg-purple-700 transition-all" 
+                        className="w-full mt-2 bg-[#0E4A22] hover:bg-[#388E5C] text-white transition-all" 
                         onClick={() => handleRateNow(productItem)}
                       >
                         Rate Now
@@ -243,13 +234,13 @@ export default function MyRatings() {
           
           <TabsContent value="completed" className="space-y-4 transition-all duration-300 animate-scale-in">
             {isLoading ? (
-              <Card className="border-purple-100 shadow-md">
+              <Card className="border-green-100 shadow-md">
                 <CardContent className="pt-6 text-center py-8">
                   <LoadingSpinner size="lg" />
                 </CardContent>
               </Card>
             ) : userReviews.length === 0 ? (
-              <Card className="border-purple-100 shadow-md bg-white">
+              <Card className="border-green-100 shadow-md bg-white">
                 <CardContent className="pt-6 text-center py-10">
                   <p className="text-muted-foreground">You haven't submitted any reviews yet.</p>
                 </CardContent>
@@ -257,22 +248,22 @@ export default function MyRatings() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {userReviews.map((review) => (
-                  <Card key={review.id} className="overflow-hidden border-purple-100 shadow-md hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-white">
+                  <Card key={review.id} className="overflow-hidden border-green-100 shadow-md hover:shadow-lg transition-all duration-300">
+                    <CardHeader className="pb-2 bg-gradient-to-r from-[#A7E9C5] to-white">
                       <div className="flex items-center gap-3">
                         <img 
                           src={review.products?.image || "/placeholder.svg"} 
                           alt={review.products?.product_name}
-                          className="w-16 h-16 object-cover rounded-md border-2 border-purple-200 shadow-sm"
+                          className="w-16 h-16 object-cover rounded-md border-2 border-green-200 shadow-sm"
                         />
                         <div>
-                          <CardTitle className="text-lg text-purple-900">{review.products?.product_name}</CardTitle>
+                          <CardTitle className="text-lg text-[#0E4A22]">{review.products?.product_name}</CardTitle>
                           <CardDescription>Reviewed on {new Date(review.created_at).toLocaleDateString()}</CardDescription>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex mt-2 text-yellow-400">
+                      <div className="flex mt-2 text-green-400">
                         {[...Array(5)].map((_, i) => (
                           <Star 
                             key={i} 

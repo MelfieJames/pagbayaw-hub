@@ -49,7 +49,7 @@ export function FilterSidebar({
         <CardContent className="space-y-2">
           <Button
             variant={selectedCategory === null ? "default" : "ghost"}
-            className={`w-full justify-start ${selectedCategory === null ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'}`}
+            className={`w-full justify-start ${selectedCategory === null ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'} transition-transform duration-200 hover:scale-105`}
             onClick={() => setSelectedCategory(null)}
           >
             All Categories
@@ -62,7 +62,7 @@ export function FilterSidebar({
               <Button
                 key={category}
                 variant={selectedCategory === category ? "default" : "ghost"}
-                className={`w-full justify-between ${selectedCategory === category ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'}`}
+                className={`w-full justify-between ${selectedCategory === category ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'} transition-transform duration-200 hover:scale-105`}
                 onClick={() => setSelectedCategory(category)}
               >
                 <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export function FilterSidebar({
         <CardContent className="space-y-2">
           <Button
             variant={selectedRating === null ? "default" : "ghost"}
-            className={`w-full justify-start ${selectedRating === null ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'}`}
+            className={`w-full justify-start ${selectedRating === null ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'} transition-transform duration-200 hover:scale-105`}
             onClick={() => setSelectedRating(null)}
           >
             All Ratings
@@ -94,7 +94,7 @@ export function FilterSidebar({
             <Button
               key={rating}
               variant={selectedRating === rating ? "default" : "ghost"}
-              className={`w-full justify-between ${selectedRating === rating ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'}`}
+              className={`w-full justify-between ${selectedRating === rating ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50'} transition-transform duration-200 hover:scale-105`}
               onClick={() => setSelectedRating(rating)}
             >
               <div className="flex items-center gap-1">

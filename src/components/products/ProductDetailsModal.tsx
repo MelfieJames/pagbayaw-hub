@@ -373,7 +373,10 @@ export function ProductDetailsModal({
                 </Button>
                 <Button
                   className="w-full sm:w-auto bg-green-600 hover:bg-green-700 transition-all hover:shadow-lg"
-                  onClick={() => onAddToCart(product.id, quantity)}
+                  onClick={() => {
+                    onAddToCart(product.id, quantity);
+                    onClose();
+                  }}
                   disabled={stockQuantity === 0}
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />

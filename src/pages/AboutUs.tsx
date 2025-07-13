@@ -191,7 +191,7 @@ export default function AboutUs() {
       
       <main className="flex-1 pt-24 pb-16">
         {/* Hero Section */}
-        <div className="bg-gradient-to-b from-[#A8D0B9]/20 to-white py-16">
+        <div className="bg-gradient-to-b from-[#F8FFFB] via-[#E9F8F3] to-[#DFF5EC] py-16">
           <div className="container mx-auto text-center">
             {/* Header with Icon and Gradient Text */}
             <div className="flex items-center justify-center mb-6 animate-fade-in">
@@ -208,7 +208,7 @@ export default function AboutUs() {
         <section className="py-12 bg-white">
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto">
-              <div className="relative rounded-lg overflow-hidden border border-[#A8D0B9]/30 shadow-lg bg-[#f7faf8]">
+              <div className="relative rounded-lg overflow-hidden border border-[#A8D0B9]/30 shadow-lg bg-white/90">
                 {/* Story Carousel */}
                 <div className="min-h-[500px] flex flex-col md:flex-row">
                   {/* Left: Image with leaf design */}
@@ -241,7 +241,7 @@ export default function AboutUs() {
                       </p>
                     )}
                     
-                    <div className="bg-[#A8D0B9]/20 p-6 rounded-lg">
+                    <div className="bg-[#E9F8F3]/40 p-6 rounded-lg">
                       <div className="prose text-gray-700 max-w-none">
                         {storySlides[currentSlide].content}
                       </div>
@@ -295,7 +295,7 @@ export default function AboutUs() {
               
               <div className="space-y-8">
                 {faqData.map((category, categoryIndex) => (
-                  <div key={categoryIndex} className="bg-white rounded-lg shadow-md overflow-hidden border border-[#A8D0B9]/30">
+                  <div key={categoryIndex} className="bg-white/90 rounded-lg shadow-md overflow-hidden border border-[#A8D0B9]/30">
                     <h3 className="text-xl font-semibold p-4 bg-[#A8D0B9]/20 text-[#5a3e2b]">{category.category}</h3>
                     <div className="divide-y divide-[#A8D0B9]/20 px-4">
                       {category.questions.map((faq, index) => (
@@ -321,7 +321,7 @@ export default function AboutUs() {
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-3xl font-bold text-[#5a3e2b] mb-8">Founder's Message</h2>
               
-              <div className="bg-[#f7faf8] p-8 rounded-lg shadow-md border border-[#A8D0B9]/30">
+              <div className="bg-white/90 p-8 rounded-lg shadow-md border border-[#A8D0B9]/30">
                 <blockquote className="italic text-gray-700 mb-6 text-lg">
                   "We hope that more Filipino people will join us in revolutionizing sustainable livelihood by supporting UNVAS. Together, we can empower marginal communities in the Philippines, reduce waste, and create a greener future."
                 </blockquote>

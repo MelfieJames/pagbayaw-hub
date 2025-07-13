@@ -16,21 +16,29 @@ export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) 
   };
 
   return (
-    <div className={cn("flex items-center justify-center", className)}>
-      <Loader 
-        className={cn(
-          sizeClasses[size], 
-          "animate-spin text-[#8B7355]"
-        )} 
-      />
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
+    <div className="flex items-center justify-center min-h-[120px]">
+      <svg
+        className="animate-spin"
+        width={size === "lg" ? 64 : 32}
+        height={size === "lg" ? 64 : 32}
+        viewBox="0 0 50 50"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          className="opacity-25"
+          cx="25"
+          cy="25"
+          r="20"
+          stroke="#A7E9C5"
+          strokeWidth="5"
+        />
+        <path
+          className="opacity-75"
+          fill="#0E4A22"
+          d="M25 5a20 20 0 1 1-14.14 34.14l3.54-3.54A15 15 0 1 0 25 10V5z"
+        />
+      </svg>
     </div>
   );
 }

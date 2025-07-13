@@ -30,7 +30,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <label htmlFor="first_name" className="block text-sm font-semibold text-[#8B7355] uppercase tracking-wide">
-              <User className="inline h-4 w-4 mr-2" />
+              <User className="inline h-4 w-4 mr-2 text-[#0E4A22]" />
               First Name *
             </label>
             <Input
@@ -48,7 +48,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
           
           <div className="space-y-3">
             <label htmlFor="last_name" className="block text-sm font-semibold text-[#8B7355] uppercase tracking-wide">
-              <User className="inline h-4 w-4 mr-2" />
+              <User className="inline h-4 w-4 mr-2 text-[#0E4A22]" />
               Last Name *
             </label>
             <Input
@@ -67,7 +67,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
 
         <div className="space-y-3">
           <label htmlFor="middle_name" className="block text-sm font-semibold text-[#8B7355] uppercase tracking-wide">
-            <User className="inline h-4 w-4 mr-2" />
+            <User className="inline h-4 w-4 mr-2 text-[#0E4A22]" />
             Middle Name (Optional)
           </label>
           <Input
@@ -84,7 +84,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
 
         <div className="space-y-3">
           <label htmlFor="phone_number" className="block text-sm font-semibold text-[#8B7355] uppercase tracking-wide">
-            <Phone className="inline h-4 w-4 mr-2" />
+            <Phone className="inline h-4 w-4 mr-2 text-[#0E4A22]" />
             Phone Number *
           </label>
           <Input
@@ -102,7 +102,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
 
         <div className="space-y-3">
           <label htmlFor="location" className="block text-sm font-semibold text-[#8B7355] uppercase tracking-wide">
-            <MapPin className="inline h-4 w-4 mr-2" />
+            <MapPin className="inline h-4 w-4 mr-2 text-[#0E4A22]" />
             Primary Address *
           </label>
           <Input

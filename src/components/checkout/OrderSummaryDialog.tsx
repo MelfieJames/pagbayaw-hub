@@ -51,6 +51,8 @@ interface OrderSummaryDialogProps {
   cartItems: CartItem[];
   total: number;
   onDetailsSubmitted: () => void;
+  readOnly?: boolean;
+  selectedAddress?: any;
 }
 
 export default function OrderSummaryDialog({
@@ -61,11 +63,13 @@ export default function OrderSummaryDialog({
   cartItems,
   total,
   onDetailsSubmitted,
+  readOnly = false,
+  selectedAddress,
 }: OrderSummaryDialogProps) {
   const [step, setStep] = useState<"summary" | "details">("summary");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("saved");
-  const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
+  const [selectedAddressState, setSelectedAddress] = useState<AddressData | null>(null);
 
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetails>({
     first_name: "",
@@ -215,174 +219,71 @@ export default function OrderSummaryDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md md:max-w-2xl">
-        {step === "summary" ? (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-2xl flex items-center gap-2 text-green-600">
-                <Check className="h-6 w-6" />
-                Order Completed!
-              </DialogTitle>
-              <DialogDescription>
-                Your order has been successfully processed. Proceed to shipping details to complete your order.
-              </DialogDescription>
-            </DialogHeader>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl flex items-center gap-2 text-green-600">
+            <Check className="h-6 w-6" />
+            Confirm Your Order
+          </DialogTitle>
+          <DialogDescription>
+            Please review your order details below. All information is read-only. Click Confirm to place your order.
+          </DialogDescription>
+        </DialogHeader>
 
-            <div className="my-4 p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex justify-between mb-2">
-                <span className="font-medium">Order Number:</span>
-                <span className="font-bold">#{purchaseId}</span>
-              </div>
-              <div className="flex justify-between mb-2">
-                <span className="font-medium">Date:</span>
-                <span>{new Date().toLocaleDateString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Status:</span>
-                <span className="bg-green-600 text-white px-2 py-0.5 rounded text-xs">Completed</span>
-              </div>
-            </div>
-
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-gray-50 p-3 border-b">
-                <h3 className="font-medium flex items-center gap-1">
-                  <ShoppingBag className="h-4 w-4 text-gray-500" />
-                  Order Items
-                </h3>
-              </div>
-              <div className="p-3 space-y-2">
-                {cartItems.map((item) => (
-                  <div key={item.product_id} className="flex items-center gap-3 border-b last:border-0 py-2">
-                    <img
-                      src={item.products?.image || "/placeholder.svg"}
-                      alt={item.products?.product_name}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{item.products?.product_name}</div>
-                      <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
-                    </div>
-                    <div className="font-medium text-sm">
-                      ₱{(item.products?.product_price * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-3 border-t text-sm">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>₱{total.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Shipping:</span>
-                    <span>Free</span>
-                  </div>
-                  <div className="flex justify-between font-bold mt-2 pt-2 border-t">
-                    <span>Total:</span>
-                    <span>₱{total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="mt-4">
-              <Button className="w-full" onClick={() => setStep("details")}>
-                Continue to Shipping Details
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-xl">Shipping Details</DialogTitle>
-              <DialogDescription>
-                Please provide your shipping information to complete your order #{purchaseId}.
-              </DialogDescription>
-            </DialogHeader>
-
-            <Tabs defaultValue="saved" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="saved">Saved Addresses</TabsTrigger>
-                <TabsTrigger value="new">Enter Address</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="saved" className="space-y-4 py-4">
-                <AddressManagement 
-                  onAddressSelect={handleAddressSelect} 
-                  selectedAddress={selectedAddress}
-                  showSelectionUI={true} 
-                />
-              </TabsContent>
-              
-              <TabsContent value="new" className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="first_name">First Name</Label>
-                    <Input
-                      id="first_name"
-                      name="first_name"
-                      value={transactionDetails.first_name}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="last_name">Last Name</Label>
-                    <Input
-                      id="last_name"
-                      name="last_name"
-                      value={transactionDetails.last_name}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" value={transactionDetails.email} disabled />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone_number">Phone Number</Label>
-                  <Input
-                    id="phone_number"
-                    name="phone_number"
-                    value={transactionDetails.phone_number}
-                    onChange={handleInputChange}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Products List */}
+          <div className="flex-1">
+            <h3 className="font-semibold mb-2">Products</h3>
+            <div className="divide-y border rounded-lg bg-white">
+              {cartItems.map((item) => (
+                <div key={item.product_id} className="flex items-center gap-4 p-3">
+                  <img
+                    src={item.products?.image || "/placeholder.svg"}
+                    alt={item.products?.product_name}
+                    className="w-14 h-14 object-cover rounded-md border"
                   />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{item.products?.product_name}</div>
+                    <div className="text-xs text-gray-500">Unit Price: ₱{item.products?.product_price.toFixed(2)}</div>
+                    <div className="text-xs text-gray-500">Quantity: {item.quantity}</div>
+                  </div>
+                  <div className="font-semibold text-green-700">
+                    ₱{(item.quantity * (item.products?.product_price || 0)).toFixed(2)}
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address">Shipping Address</Label>
-                  <Input
-                    id="address"
-                    name="address"
-                    value={transactionDetails.address}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+          {/* Delivery Info */}
+          <div className="flex-1">
+            <h3 className="font-semibold mb-2">Delivery Information</h3>
+            <div className="border rounded-lg bg-white p-3 text-sm text-gray-700">
+              <div><span className="font-medium">Recipient:</span> {selectedAddress?.recipient_name || 'Not provided'}</div>
+              <div><span className="font-medium">Address:</span> {selectedAddress ? `${selectedAddress.address_line1 || ''}${selectedAddress.address_line2 ? ', ' + selectedAddress.address_line2 : ''}${selectedAddress.purok ? ', Purok ' + selectedAddress.purok : ''}, ${selectedAddress.barangay || ''}, ${selectedAddress.city || ''}, ${selectedAddress.state_province || ''} ${selectedAddress.postal_code || ''}, ${selectedAddress.country || ''}` : 'Not provided'}</div>
+              <div><span className="font-medium">Phone:</span> {selectedAddress?.phone_number || 'Not provided'}</div>
+              <div><span className="font-medium">Email:</span> {userEmail}</div>
+            </div>
+            <h3 className="font-semibold mt-4 mb-2">Payment Info</h3>
+            <div className="border rounded-lg bg-white p-3 text-sm text-gray-700">
+              <div>Cash on Delivery (COD)</div>
+              <div className="text-xs text-gray-500 mt-1">Pay in cash when your order is delivered. No advance payment required.</div>
+            </div>
+            <div className="mt-4 flex justify-between font-semibold text-lg">
+              <span>Total</span>
+              <span className="text-primary">₱{total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
 
-            <DialogFooter>
-              <Button 
-                onClick={() => setStep("summary")} 
-                variant="outline" 
-                disabled={isSubmitting}
-              >
-                Back
-              </Button>
-              <Button onClick={handleSubmitDetails} className="w-full md:w-auto" disabled={isSubmitting || (activeTab === "saved" && !selectedAddress)}>
-                {isSubmitting ? (
-                  <>
-                    <LoadingSpinner size="sm" />
-                    &nbsp;Submitting...
-                  </>
-                ) : (
-                  "Submit Details"
-                )}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+        <DialogFooter className="sm:justify-center mt-6">
+          <Button
+            className="w-full bg-green-600 hover:bg-green-700 text-white text-lg font-semibold"
+            onClick={onDetailsSubmitted}
+          >
+            Confirm
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

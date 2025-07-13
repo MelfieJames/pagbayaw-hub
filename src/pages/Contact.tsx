@@ -42,9 +42,9 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#F8FFFB] via-[#E9F8F3] to-[#DFF5EC]">
       <Navbar />
-      <div className="flex flex-col lg:flex-row items-center justify-center flex-1 px-6 py-10 gap-12 max-w-6xl mx-auto">
+      <div className="flex flex-col lg:flex-row items-center justify-center flex-1 px-6 py-20 gap-12 max-w-6xl mx-auto min-h-[700px]">
         {/* Left Side: Contact Image & Details */}
         <div className="flex flex-col items-center lg:items-start w-full lg:w-1/2 text-center lg:text-left">
           <img

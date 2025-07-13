@@ -26,7 +26,7 @@ export function SimilarProducts({ products, currentProductId, category, onProduc
         return (
           <Card 
             key={product.id}
-            className="cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden"
+            className="cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden hover:scale-105 transition-transform duration-300"
             onClick={() => onProductClick(product)}
           >
             <div className="aspect-square relative">

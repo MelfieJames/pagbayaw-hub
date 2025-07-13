@@ -12,6 +12,7 @@ interface ProductListProps {
   productRatings: Record<number, { total: number; count: number }>;
   onProductClick: (product: Product) => void;
   isLoading?: boolean;
+  onBuyNow?: (productId: number) => void;
 }
 
 export function ProductList({
@@ -23,6 +24,7 @@ export function ProductList({
   productRatings,
   onProductClick,
   isLoading = false,
+  onBuyNow,
 }: ProductListProps) {
   // Filter products based on search query, selected category, and rating
   const filteredProducts = products.filter((product) => {
@@ -58,7 +60,7 @@ export function ProductList({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 bg-transparent border-none outline-none" style={{ background: 'transparent', border: 'none', outline: 'none' }}>
       {filteredProducts.map((product) => (
         <ProductCard
           key={product.id}
@@ -66,6 +68,7 @@ export function ProductList({
           inventoryData={inventoryData}
           rating={productRatings[product.id]}
           onProductClick={() => onProductClick(product)}
+          onBuyNow={onBuyNow}
         />
       ))}
     </div>

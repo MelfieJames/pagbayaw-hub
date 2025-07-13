@@ -227,18 +227,24 @@ export default function Checkout() {
     return sum + (item.quantity * (item.products?.product_price || 0));
   }, 0);
 
-  const handleCheckout = async () => {
-    if (!user || cartItems.length === 0) {
-      toast.error("No items to checkout");
-      return;
-    }
-    if (!selectedAddress) {
-      toast.error("Please add a delivery address before placing your order.");
-      return;
-    }
-    setIsProcessing(true);
+  // Instead of processing order immediately, show summary dialog for confirmation
+  const handleCheckout = () => {
+    setShowOrderSummaryDialog(true);
+  };
 
+  // New function to actually process the order after confirmation
+  const processOrder = async () => {
+    setIsProcessing(true);
     try {
+      if (!user || cartItems.length === 0) {
+        toast.error("No items to checkout");
+        return;
+      }
+      if (!selectedAddress) {
+        toast.error("Please add a delivery address before placing your order.");
+        return;
+      }
+
       // Check inventory before proceeding
       let hasInventoryError = false;
       for (const item of cartItems) {
@@ -368,23 +374,17 @@ export default function Checkout() {
         console.error('Failed to create notification:', notificationError);
       }
       
-      // Clear cart only if this was a cart purchase (not Buy Now)
-      if (cachedBuyNowItems.length === 0) {
-        const { error: cartError } = await supabase
-          .from('cart')
-          .delete()
-          .eq('user_id', user.id)
-          .in('product_id', cartItems.map(item => item.product_id));
-
-        if (cartError) {
-          console.error("Cart clearing error:", cartError);
-          throw cartError;
-        }
+      // Always clear the cart for the current user after successful order
+      const { error: cartError } = await supabase
+        .from('cart')
+        .delete()
+        .eq('user_id', user.id);
+      if (cartError) {
+        console.error("Cart clearing error:", cartError);
+        throw cartError;
       }
-
-      // Invalidate and remove relevant queries
       queryClient.removeQueries({ queryKey: ['checkout-items'] });
-      localStorage.removeItem('checkout-items'); // Remove from localStorage after successful checkout
+      localStorage.removeItem('checkout-items');
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-data'] });
@@ -509,14 +509,16 @@ export default function Checkout() {
       />
 
       {/* Order Summary Dialog - Shown after successful checkout */}
-      <OrderSummaryDialog
+      <OrderSummaryDialog 
         open={showOrderSummaryDialog}
         onOpenChange={setShowOrderSummaryDialog}
         purchaseId={purchaseId}
         userEmail={user?.email}
         cartItems={cartItems}
         total={total}
-        onDetailsSubmitted={handleDetailsSubmitted}
+        onDetailsSubmitted={processOrder}
+        readOnly={true}
+        selectedAddress={selectedAddress}
       />
     </div>
   );

@@ -156,13 +156,13 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
+    <div className="min-h-screen bg-gradient-to-b from-[#F8FFFB] via-[#E9F8F3] to-[#DFF5EC]">
       <Navbar />
       <div className="container mx-auto px-4 pt-24 pb-10">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="bg-gradient-to-br from-amber-100 to-orange-200 border-2 border-amber-300 shadow-xl">
+            <Card className="bg-gradient-to-br from-[#A7E9C5] to-[#0E4A22] border-2 border-[#A7E9C5] shadow-xl">
               <div className="p-8 text-center">
                 <div className="flex justify-center mb-6">
                   <div className="relative">
@@ -172,12 +172,12 @@ export default function UserProfile() {
                   </div>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-amber-900 mb-2">
+                <h3 className="text-2xl font-bold text-[#0E4A22] mb-2">
                   {hasAnyProfileData ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Welcome!' : 'Welcome!'}
                 </h3>
                 
                 {user?.email && (
-                  <p className="text-amber-700 text-sm mb-6 flex items-center justify-center gap-2">
+                  <p className="text-[#0E4A22] text-sm mb-6 flex items-center justify-center gap-2">
                     <Mail className="h-4 w-4" />
                     {user.email}
                   </p>
@@ -188,8 +188,8 @@ export default function UserProfile() {
                     variant={activeTab === "profile" ? "default" : "outline"}
                     className={`w-full justify-start font-medium ${
                       activeTab === "profile" 
-                        ? "bg-amber-600 hover:bg-amber-700 text-white shadow-lg" 
-                        : "border-amber-400 text-amber-800 hover:bg-amber-200"
+                        ? "bg-[#0E4A22] hover:bg-[#388E5C] text-white shadow-lg" 
+                        : "border-[#A7E9C5] text-[#0E4A22] hover:bg-[#A7E9C5] hover:text-white"
                     }`}
                     onClick={() => setActiveTab("profile")}
                   >
@@ -199,8 +199,8 @@ export default function UserProfile() {
                     variant={activeTab === "purchases" ? "default" : "outline"}
                     className={`w-full justify-start font-medium ${
                       activeTab === "purchases" 
-                        ? "bg-amber-600 hover:bg-amber-700 text-white shadow-lg" 
-                        : "border-amber-400 text-amber-800 hover:bg-amber-200"
+                        ? "bg-[#0E4A22] hover:bg-[#388E5C] text-white shadow-lg" 
+                        : "border-[#A7E9C5] text-[#0E4A22] hover:bg-[#A7E9C5] hover:text-white"
                     }`}
                     onClick={() => setActiveTab("purchases")}
                   >
@@ -213,15 +213,15 @@ export default function UserProfile() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {activeTab === "profile" ? (
-              <Card className="shadow-2xl border-2 border-amber-300 bg-white">
-                <div className="border-b-4 border-amber-600 bg-gradient-to-r from-amber-100 to-orange-200 p-8">
+              <Card className="shadow-2xl border-2 border-[#A7E9C5] bg-white">
+                <div className="border-b-4 border-[#0E4A22] bg-gradient-to-r from-[#A7E9C5] to-[#0E4A22] p-8">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
-                        <User className="h-8 w-8" />
+                      <h2 className="text-3xl font-bold text-[#0E4A22] flex items-center gap-3">
+                        <User className="h-8 w-8 text-[#0E4A22]" />
                         Your Profile
                       </h2>
-                      <p className="text-amber-700 mt-2">
+                      <p className="text-[#0E4A22] mt-2">
                         {isProfileFullyComplete
                           ? "Your profile is now complete and cannot be changed. All details are read-only."
                           : isEditing
@@ -233,9 +233,9 @@ export default function UserProfile() {
                     {!isEditing && !isProfileFullyComplete && (
                       <Button 
                         onClick={() => setIsEditing(true)} 
-                        className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg"
+                        className="bg-[#0E4A22] hover:bg-[#388E5C] text-white shadow-lg"
                       >
-                        <Edit className="mr-2 h-5 w-5" />
+                        <Edit className="mr-2 h-5 w-5 text-white" />
                         Edit Profile
                       </Button>
                     )}
@@ -243,38 +243,38 @@ export default function UserProfile() {
                 </div>
                 {isProfileFullyComplete && !isEditing ? (
                   <div className="p-8">
-                    <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
+                      <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-800 rounded">
                       <b>Note:</b> Your profile is now locked and cannot be changed. For security and order processing, all details are read-only.
-                    </div>
+                      </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-6">
-                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
-                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Full Name</label>
-                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
-                            <User className="h-5 w-5 text-amber-600" />
+                        <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                          <label className="text-sm font-semibold text-green-800 uppercase tracking-wide">Full Name</label>
+                          <p className="text-xl font-medium text-[#0E4A22] mt-2 flex items-center gap-2">
+                            <User className="h-5 w-5 text-[#0E4A22]" />
                             {`${profileData.first_name || ''} ${profileData.middle_name || ''} ${profileData.last_name || ''}`.trim() || 'Not provided'}
                           </p>
                         </div>
-                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
-                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Email</label>
-                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
-                            <Mail className="h-5 w-5 text-amber-600" />
+                        <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                          <label className="text-sm font-semibold text-green-800 uppercase tracking-wide">Email</label>
+                          <p className="text-xl font-medium text-[#0E4A22] mt-2 flex items-center gap-2">
+                            <Mail className="h-5 w-5 text-[#0E4A22]" />
                             {user?.email}
                           </p>
                         </div>
                       </div>
                       <div className="space-y-6">
-                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
-                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Phone Number</label>
-                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
-                            <Phone className="h-5 w-5 text-amber-600" />
+                        <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                          <label className="text-sm font-semibold text-green-800 uppercase tracking-wide">Phone Number</label>
+                          <p className="text-xl font-medium text-[#0E4A22] mt-2 flex items-center gap-2">
+                            <Phone className="h-5 w-5 text-[#0E4A22]" />
                             {profileData.phone_number || 'Not provided'}
                           </p>
                         </div>
-                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
-                          <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Address</label>
-                          <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
-                            <MapPin className="h-5 w-5 text-amber-600" />
+                        <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                          <label className="text-sm font-semibold text-green-800 uppercase tracking-wide">Address</label>
+                          <p className="text-xl font-medium text-[#0E4A22] mt-2 flex items-center gap-2">
+                            <MapPin className="h-5 w-5 text-[#0E4A22]" />
                             {profileData.location || 'Not provided'}
                           </p>
                         </div>
@@ -295,13 +295,13 @@ export default function UserProfile() {
                 )}
               </Card>
             ) : (
-              <Card className="shadow-2xl border-2 border-amber-300 bg-white">
-                <div className="border-b-4 border-amber-600 bg-gradient-to-r from-amber-100 to-orange-200 p-8">
-                  <h2 className="text-3xl font-bold text-amber-900 flex items-center gap-3">
+              <Card className="shadow-2xl border-2 border-[#A7E9C5] bg-white">
+                <div className="border-b-4 border-[#0E4A22] bg-gradient-to-r from-[#A7E9C5] to-[#0E4A22] p-8">
+                  <h2 className="text-3xl font-bold text-[#0E4A22] flex items-center gap-3">
                     <Package className="h-8 w-8" />
                     Purchase Summary
                   </h2>
-                  <p className="text-amber-700 mt-2">
+                  <p className="text-[#0E4A22] mt-2">
                     View your order statistics and history
                   </p>
                 </div>
@@ -363,7 +363,7 @@ export default function UserProfile() {
                   <div className="flex justify-center">
                     <Button 
                       onClick={handleViewPurchaseHistory}
-                      className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg px-8 py-3 text-lg font-semibold"
+                      className="bg-[#0E4A22] hover:bg-[#388E5C] text-white shadow-lg px-8 py-3 text-lg font-semibold"
                     >
                       <ShoppingBag className="mr-3 h-6 w-6" />
                       View Complete Purchase History

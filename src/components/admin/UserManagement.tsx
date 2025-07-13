@@ -172,41 +172,20 @@ export function UserManagement() {
   }
 
   return (
-    <Card className="border-2 border-[#C4A484]">
-      <CardHeader className="bg-[#F5F5DC]">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-[#8B7355] flex items-center gap-2">
-            <User className="h-5 w-5" />
-            User Management
-          </CardTitle>
-          <Badge variant="outline" className="px-3 py-1 bg-white">
-            Total: {users.length} regular users
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <div className="mb-4 relative">
-          <Input 
-            placeholder="Search by name, email or location..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-          <Search className="h-4 w-4 absolute top-3 left-3 text-gray-400" />
-        </div>
-        
+    <Card>
+      <CardContent>
         {isLoading ? (
           <div className="flex justify-center p-8">
             <LoadingSpinner size="lg" />
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-red-500">
-            <p>Error loading users: {(error as Error).message}</p>
+          <div className="text-center py-8">
+            <p>Error loading users</p>
           </div>
         ) : (
           <div className="border rounded-md overflow-hidden">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Contact</TableHead>
@@ -222,7 +201,7 @@ export function UserManagement() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
-                            <AvatarFallback className="bg-[#8B7355] text-white">
+                            <AvatarFallback className="bg-[#A7E9C5] text-white">
                               {getInitials(user)}
                             </AvatarFallback>
                           </Avatar>
@@ -287,7 +266,6 @@ export function UserManagement() {
           </div>
         )}
       </CardContent>
-
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

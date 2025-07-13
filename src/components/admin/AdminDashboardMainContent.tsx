@@ -203,12 +203,8 @@ export default function AdminDashboardMainContent() {
                 <li className="flex items-center gap-2"><Star className="h-4 w-4 text-[#8B7355]" /><b>Reviews:</b> Review and manage customer feedback and ratings.</li>
                 <li className="flex items-center gap-2"><Trophy className="h-4 w-4 text-[#8B7355]" /><b>Achievements:</b> Manage user achievements and related content.</li>
                 <li className="flex items-center gap-2"><MessageSquare className="h-4 w-4 text-[#8B7355]" /><b>Chatbot:</b> Configure and manage the chatbot Q&A for user support.</li>
-                <li className="flex items-center gap-2"><Users className="h-4 w-4 text-[#8B7355]" /><b>User Management:</b> View and <span className="text-red-600 font-semibold">delete</span> user accounts (adding or editing users is not available).</li>
+                <li className="flex items-center gap-2"><Users className="h-4 w-4 text-[#8B7355]" /><b>User Management:</b> Delete user accounts.</li>
               </ul>
-              <div className="text-xs text-gray-500 mt-4">
-                For further assistance, please refer to the documentation or contact the system administrator.<br/>
-                <span className="text-red-600">Note: User Management currently only supports deleting users.</span>
-              </div>
             </div>
           </div>
           <DialogFooter>

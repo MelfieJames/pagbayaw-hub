@@ -4,12 +4,13 @@ import { Search } from "lucide-react";
 
 interface SearchBarProps {
   searchQuery: string;
-  onSearchChange: (query: string) => void;
+  onSearchChange: (value: string) => void;
+  className?: string;
 }
 
-export function SearchBar({ searchQuery, onSearchChange }: SearchBarProps) {
+export function SearchBar({ searchQuery, onSearchChange, className }: SearchBarProps) {
   return (
-    <div className="relative w-full max-w-md mx-auto mb-6">
+    <div className={className}>
       <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
       <Input
         type="text"

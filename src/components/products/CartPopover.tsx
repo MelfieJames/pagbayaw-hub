@@ -240,12 +240,10 @@ export function CartPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative mx-[5px]">
-          <ShoppingCart className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="relative mx-[5px] bg-green-100 hover:bg-green-200 rounded-full shadow-md transition-all duration-200 group" style={{ width: 48, height: 48 }}>
+          <ShoppingCart className="h-7 w-7 text-green-700 transition-transform duration-200 group-hover:scale-110" />
           {user && cartItems.length > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-              {cartItems.length}
-            </span>
+            <span className={`absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-xs text-white font-bold shadow-lg transition-all duration-200 animate-pop`}>{cartItems.length}</span>
           )}
         </Button>
       </PopoverTrigger>

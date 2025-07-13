@@ -80,10 +80,10 @@ export function AddressModal({
   // Always sync recipient_name to profile full name, even when editing
   useEffect(() => {
     if (!hasProfileData) return;
-    const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+      const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
     setFormData(prev => ({
       ...prev,
-      recipient_name: fullName,
+        recipient_name: fullName,
       phone_number: prev.phone_number || profileData.phone_number || '',
     }));
   }, [profileData, open, editingAddress, hasProfileData]);

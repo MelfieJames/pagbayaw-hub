@@ -33,9 +33,9 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="p-0 h-8 w-8">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>
+        <Button variant="ghost" className="p-0 h-12 w-12 bg-green-100 hover:bg-green-200 rounded-full shadow-md transition-all duration-200 group flex items-center justify-center">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-green-600 text-white text-lg font-bold">
               {getInitials(user.email || "")}
             </AvatarFallback>
           </Avatar>

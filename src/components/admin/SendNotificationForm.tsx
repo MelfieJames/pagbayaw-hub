@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue, 
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface User {
   id: string;
@@ -35,6 +36,7 @@ export default function SendNotificationForm() {
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -128,19 +130,8 @@ export default function SendNotificationForm() {
 
     setLoading(true);
     try {
-      // Format message with item details and delivery date
-      let formattedMessage = message.trim();
-      
-      if (selectedOrderDetails?.purchase_items) {
-        formattedMessage += `\n\nItems ordered:\n`;
-        selectedOrderDetails.purchase_items.forEach((item: any) => {
-          formattedMessage += `• ${item.quantity}x ${item.products?.name}\n`;
-        });
-      }
-      
-      if (expectedDeliveryDate) {
-        formattedMessage += `\nExpected delivery date: ${expectedDeliveryDate}`;
-      }
+      // Send the message exactly as typed by the admin, no formatting or prepending/appending
+      const formattedMessage = message.trim();
 
       const notificationData: any = {
         user_id: selectedUserId,
@@ -149,7 +140,7 @@ export default function SendNotificationForm() {
         purchase_id: selectedOrderId
       };
 
-      // Add expected delivery date if provided
+      // Add expected delivery date to the notification record only (not to the message)
       if (expectedDeliveryDate.trim()) {
         notificationData.expected_delivery_date = expectedDeliveryDate.trim();
       }
@@ -166,7 +157,7 @@ export default function SendNotificationForm() {
 
       if (updateError) throw updateError;
 
-      toast.success("Notification sent successfully!");
+      setShowSuccessModal(true);
       setMessage("");
       setExpectedDeliveryDate("");
       setSearchTerm("");
@@ -272,6 +263,27 @@ export default function SendNotificationForm() {
           </div>
         )}
 
+        {selectedUserId && selectedOrderDetails && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="text-sm">
+              {/* Get the selected user's profile for name and email */}
+              {(() => {
+                const selectedUser = users.find(u => u.id === selectedUserId);
+                const userFullName = selectedUser ? getFullName(selectedUser) : 'Unknown';
+                const userEmail = selectedUser ? selectedUser.email : 'Unknown';
+                return (
+                  <>
+                    <strong>Selected Order:</strong> #{selectedOrderDetails.id}<br />
+                    <strong>Customer:</strong> {userFullName}<br />
+                    <strong>Email:</strong> {userEmail}<br />
+                    <strong>Total:</strong> ₱{Number(selectedOrderDetails.total_amount).toFixed(2)}<br />
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
         {selectedUserId && pendingOrders.length === 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-700">
             No pending orders found for this customer.
@@ -298,12 +310,7 @@ export default function SendNotificationForm() {
             Message
           </Label>
           <Textarea
-            placeholder={`Your order has been processed! 
-
-Items ordered:
-${selectedOrderDetails?.purchase_items?.map((item: any) => `• ${item.quantity}x ${item.products?.name}`).join('\n') || '• [Items will appear here]'}
-
-Expected delivery date: [Date will be added automatically]`}
+            placeholder={`Your order has been processed!\n\nItems ordered:\n${selectedOrderDetails?.purchase_items?.map((item: any) => `• ${item.quantity}x ${item.products?.name}`).join('\n') || '• [Items will appear here]'}\n`}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             className="mt-1"
@@ -328,6 +335,17 @@ Expected delivery date: [Date will be added automatically]`}
             </>
           )}
         </Button>
+        <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+          <DialogContent className="max-w-md text-center">
+            <DialogHeader>
+              <DialogTitle>Notification Sent!</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 text-gray-700">
+              The tracking notification was sent successfully to the customer.
+            </div>
+            <Button onClick={() => setShowSuccessModal(false)} className="w-full bg-[#8B7355] hover:bg-[#7a624d] text-white mt-2">OK</Button>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

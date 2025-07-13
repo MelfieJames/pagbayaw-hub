@@ -174,7 +174,7 @@ export default function ReviewSection({
             onClick={() => setRating(star)}
             onMouseEnter={() => setHoverRating(star)}
             onMouseLeave={() => setHoverRating(0)}
-            className="text-2xl text-gray-300 hover:text-yellow-400 focus:outline-none"
+            className="text-2xl text-gray-300 hover:text-yellow-400 focus:outline-none transition-transform duration-150 hover:scale-125 focus:scale-125"
           >
             {star <= (hoverRating || rating) ? (
               <StarIcon className="h-6 w-6 fill-yellow-400 text-yellow-400" />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -125,6 +125,31 @@ export function OrderApproval() {
       return data || [];
     }
   });
+
+  // After fetching allOrders, fetch all user profiles for the orders
+  const userIds = useMemo(() => Array.from(new Set((allOrders || []).map((order: any) => order.user_id))), [allOrders]);
+  const { data: userProfiles = [] } = useQuery({
+    queryKey: ['order-user-profiles', userIds],
+    queryFn: async () => {
+      if (!userIds.length) return [];
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', userIds);
+      if (error) {
+        console.error('Error fetching user profiles:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!userIds.length,
+  });
+
+  function getProfileName(userId: number) {
+    const profile = userProfiles.find((p) => p.id === userId);
+    if (!profile) return 'Unknown';
+    return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'Unknown';
+  }
 
   // Utility: get address for an order
   const getAddressForOrder = (order: any) => {
@@ -329,7 +354,7 @@ export function OrderApproval() {
         .insert({
           user_id: order?.user_id,
           type: 'order',
-          message: `Your order #${orderId} has been marked as completed.`,
+          message: `Your order #${orderId} has been marked as completed! Please take a moment to rate your purchased item(s) in the "My Ratings" section.`,
           purchase_id: orderId
         });
       toast.success("Order marked as completed");
@@ -414,7 +439,7 @@ export function OrderApproval() {
     const hasCompleteInfo = hasCompleteAddress(order);
     const hasAddress = hasAnyAddress(order);
     const status = order.status;
-    const customerName = address?.recipient_name || "Unknown";
+    const customerName = getProfileName(order.user_id);
     return (
       <div key={order.id} className="w-full bg-white shadow-md rounded-lg p-4 border border-amber-200 mb-4 flex flex-col md:flex-row md:items-center md:justify-between hover:shadow-lg transition-shadow">
         <div className="flex items-center gap-3 mb-2 md:mb-0">
@@ -564,7 +589,7 @@ export function OrderApproval() {
             <CloseIcon className="h-5 w-5" />
           </button>
           <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-amber-800">
-            {address?.recipient_name || `Order #${selectedOrder.id}`} (Order #{selectedOrder.id})
+            {getProfileName(selectedOrder.user_id)} (Order #{selectedOrder.id})
             <span className={`w-3 h-3 rounded-full ${STATUS_COLORS[status]}`}></span>
             <span>{STATUS_LABELS[status]}</span>
           </h3>

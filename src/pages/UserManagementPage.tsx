@@ -75,6 +75,7 @@ export default function UserManagementPage() {
         <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
         <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-16'}`}>
           <div className="p-6">
+            {/* Only show the user list and delete buttons, no extra notes or instructions */}
             <UserManagement />
           </div>
         </main>

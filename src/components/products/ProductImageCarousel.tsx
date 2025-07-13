@@ -40,14 +40,14 @@ export function ProductImageCarousel({ mainImage, additionalImages = [], product
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-square overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-300 bg-white">
+      <div className="relative aspect-square overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-300 bg-white group">
         {/* Main image container */}
         <div className="relative w-full h-full">
           <img
             src={selectedImage || "/placeholder.svg"}
             alt={productName}
             className={cn(
-              "w-full h-full object-cover transition-all duration-500 hover:scale-105",
+              "w-full h-full object-cover transition-all duration-500 group-hover:scale-110",
               isOutOfStock && "blur-[2px] brightness-90"
             )}
           />
@@ -97,7 +97,7 @@ export function ProductImageCarousel({ mainImage, additionalImages = [], product
                 setCurrentIndex(index);
               }}
               className={cn(
-                "relative aspect-square rounded-md overflow-hidden transition-all duration-300",
+                "relative aspect-square rounded-md overflow-hidden transition-all duration-300 hover:scale-110 focus:scale-110",
                 selectedImage === image 
                   ? "ring-2 ring-purple-500 shadow-md scale-105" 
                   : "hover:ring-1 hover:ring-purple-400 hover:scale-[1.03]"
