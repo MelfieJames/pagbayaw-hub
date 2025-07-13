@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
-import { User, Mail, Lock, Eye, EyeOff } from "lucide-react"; // Using lucide icons
+import { User, Mail, Lock, Eye, EyeOff, ShoppingBag, X, ChevronRight } from "lucide-react"; // Using lucide icons
 import {
   AlertDialog,
   AlertDialogAction,
@@ -144,37 +144,75 @@ const LoginPage = () => {
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen w-full overflow-hidden pt-16 bg-gray-50">
+      <div className="flex min-h-screen w-full overflow-hidden pt-20 bg-gradient-to-br from-green-50 via-white to-green-100 relative">
+        {/* Floating Bubbles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <div
+              key={i}
+              className="bubble-gentle absolute rounded-full bg-gradient-to-br from-white/30 to-green-200/20 backdrop-blur-sm border border-white/20"
+              style={{
+                width: `${Math.random() * 60 + 20}px`,
+                height: `${Math.random() * 60 + 20}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 4}s`,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Left panel - decorative */}
-        <div className="hidden lg:flex w-1/2 bg-cover bg-center relative" style={{ backgroundImage: 'url("/lovable-uploads/unvaspic4.jpg")' }}>
-          <div className="bg-black opacity-40 absolute inset-0"></div>
-          <div className="absolute bottom-12 left-6 right-6 text-center text-white px-6 py-12 z-10">
-            <h2 className="text-3xl font-semibold mb-4">Your trusted partner in eco-friendly products</h2>
-            <p className="text-white/80 text-lg">Discover sustainable solutions that respect our environment while enhancing your daily life.</p>
+        <div className="hidden lg:flex w-1/2 bg-cover bg-center relative animate-fade-in-up" style={{ backgroundImage: 'url("/lovable-uploads/unvaspic4.jpg")' }}>
+          <div className="bg-gradient-to-br from-green-900/60 via-green-800/40 to-green-900/60 absolute inset-0"></div>
+          <div className="absolute bottom-12 left-6 right-6 text-center text-white px-6 py-12 z-10 glass-green rounded-3xl animate-scale-in animation-delay-1000">
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-gradient-to-r from-green-400 to-green-500 rounded-full shadow-xl animate-bounce">
+                <ShoppingBag className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
+              Your trusted partner in eco-friendly products
+            </h2>
+            <p className="text-white/90 text-lg leading-relaxed">
+              Discover sustainable solutions that respect our environment while enhancing your daily life.
+            </p>
           </div>
         </div>
 
         {/* Right panel - form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white">
-          <div className="w-full max-w-md space-y-8">
-            <div className="text-center mb-6">
-              <h1 className="text-4xl font-semibold text-gray-800">UNVAS®</h1>
-              <p className="text-gray-500">Welcome to UNVAS®</p>
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white/80 backdrop-blur-xl relative">
+          <div className="w-full max-w-md space-y-8 animate-fade-in-up animation-delay-2000">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <img 
+                  src="/lovable-uploads/unvas-logo.jpg" 
+                  alt="UNVAS Logo" 
+                  className="h-16 w-16 rounded-full object-cover ring-4 ring-green-500/20 animate-bounce"
+                />
+                <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                  UNVAS®
+                </h1>
+              </div>
+              <p className="text-gray-600 text-lg">Welcome to the future of sustainable living</p>
             </div>
 
             {errorMessage && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
-                {errorMessage}
+              <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-6 glass animate-shake">
+                <div className="flex items-center gap-3">
+                  <div className="p-1 bg-red-500 rounded-full">
+                    <X className="h-4 w-4 text-white" />
+                  </div>
+                  {errorMessage}
+                </div>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                {/* Remove Full Name field */}
-                {/* Confirm Password field for sign up */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="relative">
+              <div className="space-y-6">
+                <div className="space-y-2 animate-fade-in-up animation-delay-3000">
+                  <Label htmlFor="email" className="text-green-700 font-semibold">Email Address</Label>
+                  <div className="relative group">
                     <Input
                       id="email"
                       type="email"
@@ -182,15 +220,17 @@ const LoginPage = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full pl-10"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-green-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 glass group-hover:border-green-300"
                     />
-                    <Mail className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full">
+                      <Mail className="h-4 w-4 text-white" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
+                <div className="space-y-2 animate-fade-in-up animation-delay-4000">
+                  <Label htmlFor="password" className="text-green-700 font-semibold">Password</Label>
+                  <div className="relative group">
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
@@ -198,13 +238,15 @@ const LoginPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full pl-10 pr-10"
+                      className="w-full pl-12 pr-12 py-4 rounded-2xl border-2 border-green-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 glass group-hover:border-green-300"
                     />
-                    <Lock className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full">
+                      <Lock className="h-4 w-4 text-white" />
+                    </div>
                     <button
                       type="button"
                       onClick={togglePasswordVisibility}
-                      className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-green-600 hover:text-green-700 hover:bg-green-100 rounded-full transition-all duration-300"
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -216,9 +258,9 @@ const LoginPage = () => {
                 </div>
 
                 {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <div className="relative">
+                  <div className="space-y-2 animate-fade-in-up animation-delay-5000">
+                    <Label htmlFor="confirmPassword" className="text-green-700 font-semibold">Confirm Password</Label>
+                    <div className="relative group">
                       <Input
                         id="confirmPassword"
                         type="password"
@@ -226,37 +268,46 @@ const LoginPage = () => {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="w-full pl-10"
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-green-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 glass group-hover:border-green-300"
                       />
-                      <Lock className="absolute left-3 top-3 text-gray-500 h-4 w-4" />
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 p-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full">
+                        <Lock className="h-4 w-4 text-white" />
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {isLogin && (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3 animate-fade-in-up animation-delay-5000">
                     <Checkbox 
                       id="remember" 
                       checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked as boolean)} 
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      className="rounded-lg border-2 border-green-300 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                     />
-                    <Label htmlFor="remember" className="text-sm text-gray-500">
+                    <Label htmlFor="remember" className="text-green-700 font-medium cursor-pointer">
                       Remember me
                     </Label>
                   </div>
                 )}
               </div>
 
-              <Button type="submit" className="w-full bg-[#A8D0B9] hover:bg-[#97C0A9] text-white">
-                {isLogin ? "Sign in" : "Sign up"}
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 text-lg font-semibold rounded-2xl shadow-xl transition-all duration-500 transform hover:scale-105 hover:shadow-green-500/25 animate-glow animate-fade-in-up animation-delay-6000"
+              >
+                <span className="flex items-center justify-center gap-3">
+                  {isLogin ? "Sign in" : "Sign up"}
+                  <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </span>
               </Button>
             </form>
 
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-gray-600 animate-fade-in-up animation-delay-7000">
               {isLogin ? "New to UNVAS®?" : "Already have an account?"} {" "}
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="font-medium text-primary hover:underline"
+                className="font-semibold text-green-600 hover:text-green-700 hover:underline transition-all duration-300"
               >
                 {isLogin ? "Create an account" : "Sign in"}
               </button>

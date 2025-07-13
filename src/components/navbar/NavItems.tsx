@@ -5,25 +5,25 @@ import { Award, Package, MessageSquare, Home, Info } from "lucide-react";
 export function NavItems() {
   return (
     <>
-      <Link to="/" className="flex items-center gap-2 hover:text-primary transition-colors">
-        <Home className="h-4 w-4" />
-        <span>Home</span>
+      <Link to="/" className="group flex items-center gap-2 px-4 py-2 rounded-full hover:bg-green-50 transition-all duration-300 transform hover:scale-105">
+        <Home className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors duration-300" />
+        <span className="font-medium text-gray-700 group-hover:text-green-700 transition-colors duration-300">Home</span>
       </Link>
-      <Link to="/achievements" className="flex items-center gap-2 hover:text-primary transition-colors">
-        <Award className="h-4 w-4" />
-        <span>Achievements</span>
+      <Link to="/achievements" className="group flex items-center gap-2 px-4 py-2 rounded-full hover:bg-green-50 transition-all duration-300 transform hover:scale-105">
+        <Award className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors duration-300" />
+        <span className="font-medium text-gray-700 group-hover:text-green-700 transition-colors duration-300">Achievements</span>
       </Link>
-      <Link to="/products" className="flex items-center gap-2 hover:text-primary transition-colors">
-        <Package className="h-4 w-4" />
-        <span>Products</span>
+      <Link to="/products" className="group flex items-center gap-2 px-4 py-2 rounded-full hover:bg-green-50 transition-all duration-300 transform hover:scale-105">
+        <Package className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors duration-300" />
+        <span className="font-medium text-gray-700 group-hover:text-green-700 transition-colors duration-300">Products</span>
       </Link>
-      <Link to="/about" className="flex items-center gap-2 hover:text-primary transition-colors">
-        <Info className="h-4 w-4" />
-        <span>About Us</span>
+      <Link to="/about" className="group flex items-center gap-2 px-4 py-2 rounded-full hover:bg-green-50 transition-all duration-300 transform hover:scale-105">
+        <Info className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors duration-300" />
+        <span className="font-medium text-gray-700 group-hover:text-green-700 transition-colors duration-300">About Us</span>
       </Link>
-      <Link to="/contact" className="flex items-center gap-2 hover:text-primary transition-colors">
-        <MessageSquare className="h-4 w-4" />
-        <span>Contact Us</span>
+      <Link to="/contact" className="group flex items-center gap-2 px-4 py-2 rounded-full hover:bg-green-50 transition-all duration-300 transform hover:scale-105">
+        <MessageSquare className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors duration-300" />
+        <span className="font-medium text-gray-700 group-hover:text-green-700 transition-colors duration-300">Contact Us</span>
       </Link>
     </>
   );
