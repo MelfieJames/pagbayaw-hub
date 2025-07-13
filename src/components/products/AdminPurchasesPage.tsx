@@ -40,6 +40,7 @@ type Purchase = {
   created_at: string;
   total_amount: string;
   status: string;
+  cancellation_reason?: string;
   purchase_items: { products: any[] }[];
   transaction_details?: TransactionDetailsRow[];
   customer_name?: string;
@@ -69,6 +70,7 @@ const AdminPurchasesPage = () => {
             created_at,
             total_amount,
             status,
+            cancellation_reason,
             purchase_items(*, products(*)),
             transaction_details!transaction_details_purchase_id_fkey(first_name, last_name, email, phone_number, address)
           `)
@@ -387,6 +389,12 @@ const AdminPurchasesPage = () => {
                     <p className="text-sm">Date: {format(new Date(selectedPurchase.created_at), "PPP")}</p>
                     <p className="text-sm">Status: <span className={`inline-block px-2 py-1 rounded text-xs ${getBadgeColor(selectedPurchase.status)}`}>{selectedPurchase.status}</span></p>
                     <p className="text-sm">Total: {formatCurrency(selectedPurchase.total_amount)}</p>
+                    {selectedPurchase.status === 'cancelled' && selectedPurchase.cancellation_reason && (
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                        <p className="text-sm font-medium text-red-800">Cancellation Reason:</p>
+                        <p className="text-sm text-red-700">{selectedPurchase.cancellation_reason}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-2">

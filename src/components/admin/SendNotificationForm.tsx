@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { BellRing, Truck, Hash, Pencil, User, Search } from "lucide-react";
+import { BellRing, Truck, Hash, Pencil, User, Search, Calendar } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
@@ -30,10 +30,11 @@ export default function SendNotificationForm() {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [message, setMessage] = useState("");
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -74,7 +75,21 @@ export default function SendNotificationForm() {
     try {
       const { data, error } = await supabase
         .from("purchases")
-        .select("id, total_amount, created_at, status")
+        .select(`
+          id, 
+          total_amount, 
+          created_at, 
+          status,
+          purchase_items(
+            id,
+            quantity,
+            products(
+              id,
+              name,
+              price
+            )
+          )
+        `)
         .eq("user_id", userId)
         .eq("status", "pending");
 
@@ -84,6 +99,7 @@ export default function SendNotificationForm() {
       // Auto-select the order if there's only one
       if (data && data.length === 1) {
         setSelectedOrderId(data[0].id);
+        setSelectedOrderDetails(data[0]);
       }
     } catch (error) {
       console.error("Error fetching pending orders:", error);
@@ -105,22 +121,40 @@ export default function SendNotificationForm() {
   };
 
   const handleSend = async () => {
-    if (!selectedUserId || !message.trim() || !trackingNumber.trim() || !selectedOrderId) {
-      toast.error("Please fill all fields and select an order.");
+    if (!selectedUserId || !message.trim() || !selectedOrderId) {
+      toast.error("Please fill all required fields and select an order.");
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.from("notifications").insert([
-        {
-          user_id: selectedUserId,
-          message: `${message.trim()} - TRACKING NUMBER: ${trackingNumber.trim()}`,
-          tracking_number: trackingNumber.trim(),
-          type: "tracking_update",
-          purchase_id: selectedOrderId
-        },
-      ]);
+      // Format message with item details and delivery date
+      let formattedMessage = message.trim();
+      
+      if (selectedOrderDetails?.purchase_items) {
+        formattedMessage += `\n\nItems ordered:\n`;
+        selectedOrderDetails.purchase_items.forEach((item: any) => {
+          formattedMessage += `• ${item.quantity}x ${item.products?.name}\n`;
+        });
+      }
+      
+      if (expectedDeliveryDate) {
+        formattedMessage += `\nExpected delivery date: ${expectedDeliveryDate}`;
+      }
+
+      const notificationData: any = {
+        user_id: selectedUserId,
+        message: formattedMessage,
+        type: "tracking_update",
+        purchase_id: selectedOrderId
+      };
+
+      // Add expected delivery date if provided
+      if (expectedDeliveryDate.trim()) {
+        notificationData.expected_delivery_date = expectedDeliveryDate.trim();
+      }
+
+      const { error } = await supabase.from("notifications").insert([notificationData]);
 
       if (error) throw error;
 
@@ -132,13 +166,14 @@ export default function SendNotificationForm() {
 
       if (updateError) throw updateError;
 
-      toast.success("Tracking notification sent successfully!");
+      toast.success("Notification sent successfully!");
       setMessage("");
-      setTrackingNumber("");
+      setExpectedDeliveryDate("");
       setSearchTerm("");
       setSelectedUserId("");
       setSelectedOrderId("");
       setPendingOrders([]);
+      setSelectedOrderDetails(null);
     } catch (error) {
       console.error("Error sending notification:", error);
       toast.error("Something went wrong. Please try again later.");
@@ -204,7 +239,11 @@ export default function SendNotificationForm() {
             </Label>
             <Select 
               value={selectedOrderId} 
-              onValueChange={setSelectedOrderId}
+              onValueChange={(value) => {
+                setSelectedOrderId(value);
+                const order = pendingOrders.find(o => o.id === value);
+                setSelectedOrderDetails(order);
+              }}
             >
               <SelectTrigger className="w-full mt-1">
                 <SelectValue placeholder="Choose an order" />
@@ -217,6 +256,19 @@ export default function SendNotificationForm() {
                 ))}
               </SelectContent>
             </Select>
+            
+            {selectedOrderDetails && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="text-sm">
+                  <strong>Order Items:</strong><br />
+                  {selectedOrderDetails.purchase_items?.map((item: any, index: number) => (
+                    <div key={item.id} className="ml-2">
+                      • {item.quantity}x {item.products?.name} - ₱{item.products?.price}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -228,14 +280,15 @@ export default function SendNotificationForm() {
 
         <div>
           <Label className="text-[#8B7355] flex items-center gap-2">
-            <Hash className="w-4 h-4" />
-            Tracking Number
+            <Calendar className="w-4 h-4" />
+            Expected Delivery Date
           </Label>
           <Input
-            placeholder="Enter tracking number"
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
+            type="date"
+            value={expectedDeliveryDate}
+            onChange={(e) => setExpectedDeliveryDate(e.target.value)}
             className="mt-1"
+            min={new Date().toISOString().split('T')[0]}
           />
         </div>
 
@@ -245,25 +298,33 @@ export default function SendNotificationForm() {
             Message
           </Label>
           <Textarea
-            placeholder="Write tracking update message here..."
+            placeholder={`Your order has been processed! 
+
+Items ordered:
+${selectedOrderDetails?.purchase_items?.map((item: any) => `• ${item.quantity}x ${item.products?.name}`).join('\n') || '• [Items will appear here]'}
+
+Expected delivery date: [Date will be added automatically]`}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             className="mt-1"
+            rows={6}
           />
         </div>
 
         <Button
           onClick={handleSend}
-          disabled={loading || !selectedUserId || pendingOrders.length === 0}
+          disabled={loading || !selectedUserId || !message.trim() || !selectedOrderId}
           className="w-full bg-[#8B7355] hover:bg-[#7a624d] text-white"
         >
           {loading ? (
             <>
-              <LoadingSpinner size="sm" className="mr-2" /> Sending...
+              <LoadingSpinner size="sm" className="mr-2" />
+              Sending...
             </>
           ) : (
             <>
-              <Truck className="mr-2 h-4 w-4" /> Send Tracking Update
+              <BellRing className="w-4 h-4 mr-2" />
+              Send Tracking Notification
             </>
           )}
         </Button>

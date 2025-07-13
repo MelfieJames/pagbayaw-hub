@@ -77,40 +77,16 @@ export function AddressModal({
     }
   }, [open, editingAddress, profileData, hasProfileData, onOpenChange, navigate]);
 
+  // Always sync recipient_name to profile full name, even when editing
   useEffect(() => {
-    if (editingAddress) {
-      setFormData({
-        address_name: editingAddress.address_name || '',
-        recipient_name: editingAddress.recipient_name || '',
-        address_line1: editingAddress.address_line1 || '',
-        address_line2: editingAddress.address_line2 || '',
-        purok: editingAddress.purok || '',
-        barangay: editingAddress.barangay || '',
-        city: editingAddress.city || '',
-        state_province: editingAddress.state_province || '',
-        postal_code: editingAddress.postal_code || '',
-        country: 'Philippines',
-        phone_number: editingAddress.phone_number || '',
-        is_default: editingAddress.is_default || false,
-      });
-    } else if (hasProfileData) {
-      const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
-      setFormData({
-        address_name: '',
-        recipient_name: fullName,
-        address_line1: '',
-        address_line2: '',
-        purok: '',
-        barangay: '',
-        city: '',
-        state_province: '',
-        postal_code: '',
-        country: 'Philippines',
-        phone_number: profileData.phone_number || '',
-        is_default: false,
-      });
-    }
-  }, [editingAddress, open, profileData, hasProfileData]);
+    if (!hasProfileData) return;
+    const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+    setFormData(prev => ({
+      ...prev,
+      recipient_name: fullName,
+      phone_number: prev.phone_number || profileData.phone_number || '',
+    }));
+  }, [profileData, open, editingAddress, hasProfileData]);
 
   const saveAddressMutation = useMutation({
     mutationFn: async (addressData: any) => {
@@ -220,7 +196,7 @@ export function AddressModal({
                 placeholder="Recipient name"
               />
               <p className="text-xs text-gray-500">
-                Based on your profile information
+                This will always match your profile name and cannot be changed.
               </p>
             </div>
           </div>

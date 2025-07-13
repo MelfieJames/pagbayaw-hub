@@ -80,6 +80,14 @@ export default function UserProfile() {
     (profileData.middle_name && profileData.middle_name.trim())
   );
 
+  // Helper: check if profile is fully complete (all required fields)
+  const isProfileFullyComplete = !!(
+    profileData.first_name?.trim() &&
+    profileData.last_name?.trim() &&
+    profileData.phone_number?.trim() &&
+    profileData.location?.trim()
+  );
+
   const handleChange = (field: string, value: string) => {
     updateProfileField(field as keyof typeof profileData, value);
   };
@@ -174,7 +182,7 @@ export default function UserProfile() {
                     {user.email}
                   </p>
                 )}
-                
+                {/* Remove Edit Profile button if profile is fully complete */}
                 <div className="flex flex-col gap-3 mt-6">
                   <Button 
                     variant={activeTab === "profile" ? "default" : "outline"}
@@ -202,7 +210,6 @@ export default function UserProfile() {
               </div>
             </Card>
           </div>
-          
           {/* Main Content */}
           <div className="lg:col-span-3">
             {activeTab === "profile" ? (
@@ -215,10 +222,15 @@ export default function UserProfile() {
                         Your Profile
                       </h2>
                       <p className="text-amber-700 mt-2">
-                        {isEditing ? "Update your personal information. This information will be used for order processing." : "Your personal information"}
+                        {isProfileFullyComplete
+                          ? "Your profile is now complete and cannot be changed. All details are read-only."
+                          : isEditing
+                            ? "Update your personal information. This information will be used for order processing. Once all details are filled, your profile will be locked and cannot be changed."
+                            : "Your personal information"}
                       </p>
                     </div>
-                    {!isEditing && (
+                    {/* Only show Edit button if not fully complete and not editing */}
+                    {!isEditing && !isProfileFullyComplete && (
                       <Button 
                         onClick={() => setIsEditing(true)} 
                         className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg"
@@ -229,38 +241,18 @@ export default function UserProfile() {
                     )}
                   </div>
                 </div>
-                {isLoading ? (
-                  <div className="flex justify-center items-center py-12">
-                    <LoadingSpinner size="lg" />
-                  </div>
-                ) : isEditing ? (
-                  <ProfileForm
-                    profileData={profileData}
-                    onProfileChange={handleChange}
-                    onSubmit={handleSubmit}
-                    isSaving={isSaving}
-                    isLoading={isLoading}
-                    isEditing={isEditing}
-                    hasProfileData={hasAnyProfileData}
-                  />
-                ) : (
+                {isProfileFullyComplete && !isEditing ? (
                   <div className="p-8">
-                    {/* Show a message if all fields are empty */}
-                    {!hasAnyProfileData && (
-                      <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
-                        Your profile is incomplete. Click <b>Edit Profile</b> to add your details.
-                      </div>
-                    )}
+                    <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
+                      <b>Note:</b> Your profile is now locked and cannot be changed. For security and order processing, all details are read-only.
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-6">
                         <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
                           <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Full Name</label>
                           <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
                             <User className="h-5 w-5 text-amber-600" />
-                            {hasAnyProfileData 
-                              ? `${profileData.first_name || ""} ${profileData.middle_name || ""} ${profileData.last_name || ""}`.trim() || "Not provided"
-                              : "Not provided"
-                            }
+                            {`${profileData.first_name || ''} ${profileData.middle_name || ''} ${profileData.last_name || ''}`.trim() || 'Not provided'}
                           </p>
                         </div>
                         <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
@@ -276,19 +268,30 @@ export default function UserProfile() {
                           <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Phone Number</label>
                           <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
                             <Phone className="h-5 w-5 text-amber-600" />
-                            {profileData.phone_number || "Not provided"}
+                            {profileData.phone_number || 'Not provided'}
                           </p>
                         </div>
                         <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
                           <label className="text-sm font-semibold text-amber-800 uppercase tracking-wide">Address</label>
                           <p className="text-xl font-medium text-amber-900 mt-2 flex items-center gap-2">
                             <MapPin className="h-5 w-5 text-amber-600" />
-                            {profileData.location || "Not provided"}
+                            {profileData.location || 'Not provided'}
                           </p>
                         </div>
                       </div>
                     </div>
                   </div>
+                ) : (
+                  <ProfileForm
+                    profileData={profileData}
+                    onProfileChange={handleChange}
+                    onSubmit={handleSubmit}
+                    isSaving={isSaving}
+                    isLoading={isLoading}
+                    isEditing={isEditing && !isProfileFullyComplete}
+                    hasProfileData={hasAnyProfileData}
+                    readOnly={isProfileFullyComplete}
+                  />
                 )}
               </Card>
             ) : (

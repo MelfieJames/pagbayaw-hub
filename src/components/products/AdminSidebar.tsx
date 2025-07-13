@@ -14,7 +14,8 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
     { icon: ShoppingCart, label: "Orders", href: "/admin/orders" },
     { icon: Package, label: "Products", href: "/admin/products" },
     { icon: Star, label: "Reviews", href: "/admin/reviews" },
+    { icon: Users, label: "User Management", href: "/admin/users" },
   ];
 
   const handleLogout = async () => {

@@ -23,6 +23,11 @@ type SupabaseCartResponse = {
   };
 };
 
+// Utility: persist checkout-items to localStorage
+function persistCheckoutItems(items: CartItem[]) {
+  localStorage.setItem('checkout-items', JSON.stringify(items));
+}
+
 export function CartPopover() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -224,6 +229,7 @@ export function CartPopover() {
 
     // Set selected items for checkout
     queryClient.setQueryData(['checkout-items'], selectedItems2);
+    persistCheckoutItems(selectedItems2); // Persist to localStorage for refresh
     navigate('/checkout');
   };
 

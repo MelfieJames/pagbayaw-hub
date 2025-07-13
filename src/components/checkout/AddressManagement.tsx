@@ -19,6 +19,7 @@ import {
   MapPin,
   Check 
 } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 
 interface AddressManagementProps {
   selectedAddress?: any;
@@ -37,6 +38,7 @@ export default function AddressManagement({
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
+  const { profileData } = useProfile(); // <-- get profile
 
   const { data: addresses = [], isLoading } = useQuery({
     queryKey: ['user-addresses', user?.id],
@@ -105,6 +107,9 @@ export default function AddressManagement({
 
   const currentSelectedAddress = getSelectedAddress();
 
+  // Helper: get full name from profile
+  const profileFullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+
   if (isLoading) {
     return (
       <Card className="border-amber-200">
@@ -151,58 +156,61 @@ export default function AddressManagement({
             </div>
             
             <div className="grid gap-3">
-              {addresses.map((address) => (
-                <div
-                  key={address.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                    currentSelectedAddress?.id === address.id
-                      ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
-                      : 'border-amber-200 hover:border-amber-300 hover:bg-amber-25'
-                  }`}
-                  onClick={() => onAddressSelect(address)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Home className="h-4 w-4 text-amber-600" />
-                        <span className="font-medium text-amber-800">
-                          {address.address_name}
-                        </span>
-                        {address.is_default && (
-                          <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                            Default
-                          </Badge>
-                        )}
-                        {currentSelectedAddress?.id === address.id && (
-                          <Check className="h-4 w-4 text-green-600" />
-                        )}
-                      </div>
-                      
-                      <div className="space-y-1 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <User className="h-3 w-3" />
-                          <span>{address.recipient_name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-3 w-3" />
-                          <span>
-                            {address.address_line1}
-                            {address.address_line2 && `, ${address.address_line2}`}
-                            {address.purok && `, Purok ${address.purok}`}
+              {addresses.map((address) => {
+                // Always override recipient_name with profile name
+                const displayRecipient = profileFullName || address.recipient_name;
+                return (
+                  <div
+                    key={address.id}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      currentSelectedAddress?.id === address.id
+                        ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                        : 'border-amber-200 hover:border-amber-300 hover:bg-amber-25'
+                    }`}
+                    onClick={() => onAddressSelect(address)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Home className="h-4 w-4 text-amber-600" />
+                          <span className="font-medium text-amber-800">
+                            {address.address_name}
                           </span>
+                          {address.is_default && (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                              Default
+                            </Badge>
+                          )}
+                          {currentSelectedAddress?.id === address.id && (
+                            <Check className="h-4 w-4 text-green-600" />
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-3 w-3" />
-                          <span>
-                            {address.barangay}, {address.city}, {address.state_province} {address.postal_code}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3 w-3" />
-                          <span>{address.phone_number}</span>
+                        
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3" />
+                            <span>{displayRecipient}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>
+                              {address.address_line1}
+                              {address.address_line2 && `, ${address.address_line2}`}
+                              {address.purok && `, Purok ${address.purok}`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>
+                              {address.barangay}, {address.city}, {address.state_province} {address.postal_code}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-3 w-3" />
+                            <span>{address.phone_number}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
                     
                     <div className="flex gap-2 ml-4">
                       <Button
@@ -230,7 +238,8 @@ export default function AddressManagement({
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           </div>
         )}

@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Star, Package, Clock, CheckCircle, Truck, XCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const STATUS_ICONS: Record<string, JSX.Element> = {
   pending: <Clock className="h-4 w-4 text-yellow-600" />,
@@ -27,6 +30,14 @@ const STATUS_COLORS: Record<string, string> = {
   completed: "bg-green-100 text-green-800 border-green-200",
   cancelled: "bg-red-100 text-red-800 border-red-200",
 };
+
+const CANCELLATION_REASONS = [
+  "Changed my mind",
+  "Found a better price elsewhere",
+  "Ordered by mistake",
+  "Shipping is too slow",
+  "Other"
+];
 
 export default function PurchaseHistory() {
   const { user } = useAuth();
@@ -86,6 +97,36 @@ export default function PurchaseHistory() {
     });
   };
 
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showThankYouModal, setShowThankYouModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelReasonChoice, setCancelReasonChoice] = useState("");
+  const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
+
+  const filteredPurchases = statusFilter === "all"
+    ? purchases
+    : purchases.filter((p) => p.status === statusFilter);
+
+  const handleCancelOrder = (orderId: number) => {
+    setCancellingOrderId(orderId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelOrder = async () => {
+    let reason = cancelReasonChoice === "Other" ? cancelReason.trim() : cancelReasonChoice;
+    if (!cancellingOrderId || !reason) return;
+    await supabase
+      .from('purchases')
+      .update({ status: 'cancelled', cancellation_reason: reason })
+      .eq('id', cancellingOrderId);
+    setShowCancelModal(false);
+    setCancelReason("");
+    setCancelReasonChoice("");
+    setCancellingOrderId(null);
+    setShowThankYouModal(true);
+  };
+
   if (!user) {
     return null;
   }
@@ -95,6 +136,19 @@ export default function PurchaseHistory() {
       <Navbar />
       <div className="container mx-auto px-4 pt-20 flex-grow animate-fade-in">
         <h1 className="text-3xl font-bold mb-6 text-blue-800">Purchase History</h1>
+        {/* Status Filter */}
+        <div className="flex gap-2 mb-6">
+          {['all', 'pending', 'processing', 'delivering', 'completed', 'cancelled'].map((status) => (
+            <Button
+              key={status}
+              variant={statusFilter === status ? 'default' : 'outline'}
+              className={statusFilter === status ? 'bg-blue-700 text-white' : ''}
+              onClick={() => setStatusFilter(status)}
+            >
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Button>
+          ))}
+        </div>
         
         {isLoading ? (
           <Card className="border-blue-100 shadow-md">
@@ -102,7 +156,7 @@ export default function PurchaseHistory() {
               <LoadingSpinner size="lg" />
             </CardContent>
           </Card>
-        ) : purchases.length === 0 ? (
+        ) : filteredPurchases.length === 0 ? (
           <Card className="border-blue-100 shadow-md bg-white">
             <CardContent className="pt-6 text-center py-10">
               <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -117,7 +171,7 @@ export default function PurchaseHistory() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {purchases.map((purchase) => (
+            {filteredPurchases.map((purchase) => (
               <Card key={purchase.id} className="border-blue-100 shadow-md hover:shadow-lg transition-all duration-300">
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
                   <div className="flex justify-between items-start">
@@ -171,6 +225,14 @@ export default function PurchaseHistory() {
                       Total: ₱{Number(purchase.total_amount).toFixed(2)}
                     </span>
                     <div className="flex gap-2">
+                      {purchase.status === 'pending' && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleCancelOrder(purchase.id)}
+                        >
+                          Cancel Order
+                        </Button>
+                      )}
                       {purchase.status === 'completed' && (
                         <Button
                           variant="outline"
@@ -188,6 +250,83 @@ export default function PurchaseHistory() {
             ))}
           </div>
         )}
+        {/* Cancel Modal */}
+        <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Cancel Order</DialogTitle>
+            </DialogHeader>
+            <div className="mb-6">
+              <label className="block mb-3 font-medium text-gray-700">Select a reason for cancellation:</label>
+              <div className="space-y-2">
+                {CANCELLATION_REASONS.map((reason) => (
+                  <div key={reason} className="flex items-center">
+                    <input
+                      type="radio"
+                      id={`reason-${reason}`}
+                      name="cancelReason"
+                      value={reason}
+                      checked={cancelReasonChoice === reason}
+                      onChange={(e) => setCancelReasonChoice(e.target.value)}
+                      className="mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    />
+                    <label htmlFor={`reason-${reason}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                      {reason}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {cancelReasonChoice === "Other" && (
+                <div className="mt-4">
+                  <label htmlFor="cancel-reason" className="block mb-2 text-sm font-medium text-gray-700">
+                    Please specify your reason:
+                  </label>
+                  <Input
+                    id="cancel-reason"
+                    value={cancelReason}
+                    onChange={e => setCancelReason(e.target.value)}
+                    placeholder="Enter your reason..."
+                    className="w-full"
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCancelModal(false)}>Close</Button>
+              <Button 
+                variant="destructive" 
+                onClick={confirmCancelOrder} 
+                disabled={!cancelReasonChoice || (cancelReasonChoice === "Other" && !cancelReason.trim())}
+              >
+                Confirm Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Thank You Modal */}
+        <Dialog open={showThankYouModal} onOpenChange={setShowThankYouModal}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-xl text-center">Thank You!</DialogTitle>
+            </DialogHeader>
+            <div className="text-center py-4">
+              <CheckCircle className="mx-auto h-12 w-12 text-green-600 mb-4" />
+              <p className="text-gray-700 mb-4">Thank you for your feedback. Your order has been cancelled successfully.</p>
+            </div>
+            <DialogFooter>
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700" 
+                onClick={() => {
+                  setShowThankYouModal(false);
+                  window.location.reload();
+                }}
+              >
+                OK
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
       <Footer />
     </div>

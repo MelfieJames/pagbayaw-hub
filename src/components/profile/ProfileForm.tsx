@@ -13,13 +13,19 @@ interface ProfileFormProps {
   isLoading: boolean;
   isEditing: boolean;
   hasProfileData: boolean;
+  readOnly?: boolean; // NEW PROP
 }
 
-export default function ProfileForm({ profileData, onProfileChange, onSubmit, isSaving, isLoading, isEditing, hasProfileData }: ProfileFormProps) {
+export default function ProfileForm({ profileData, onProfileChange, onSubmit, isSaving, isLoading, isEditing, hasProfileData, readOnly }: ProfileFormProps) {
   console.log("profileData", profileData, "isLoading", isLoading, "isEditing", isEditing, "hasProfileData", hasProfileData);
 
   return (
     <div className="p-8">
+      {readOnly && (
+        <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
+          <b>Note:</b> Your profile is now locked and cannot be changed. For security and order processing, all details are read-only.
+        </div>
+      )}
       <form onSubmit={onSubmit} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
@@ -36,6 +42,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
               required
               placeholder="Enter your first name"
               className="border-2 border-[#C4A484] focus:border-[#8B7355] rounded-xl p-4 text-lg"
+              readOnly={readOnly}
             />
           </div>
           
@@ -53,6 +60,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
               required
               placeholder="Enter your last name"
               className="border-2 border-[#C4A484] focus:border-[#8B7355] rounded-xl p-4 text-lg"
+              readOnly={readOnly}
             />
           </div>
         </div>
@@ -70,6 +78,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
             onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
             placeholder="Enter your middle name"
             className="border-2 border-[#C4A484] focus:border-[#8B7355] rounded-xl p-4 text-lg"
+            readOnly={readOnly}
           />
         </div>
 
@@ -87,6 +96,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
             required
             placeholder="Enter your phone number"
             className="border-2 border-[#C4A484] focus:border-[#8B7355] rounded-xl p-4 text-lg"
+            readOnly={readOnly}
           />
         </div>
 
@@ -104,13 +114,14 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
             required
             placeholder="Enter your complete address"
             className="border-2 border-[#C4A484] focus:border-[#8B7355] rounded-xl p-4 text-lg"
+            readOnly={readOnly}
           />
         </div>
 
         <div className="flex justify-end pt-6 border-t-2 border-[#C4A484]">
           <Button 
             type="submit" 
-            disabled={isSaving}
+            disabled={isSaving || readOnly}
             className="bg-[#8B7355] hover:bg-[#6D5A42] text-white shadow-xl px-8 py-4 text-lg font-semibold rounded-xl"
           >
             {isSaving ? (
@@ -119,7 +130,7 @@ export default function ProfileForm({ profileData, onProfileChange, onSubmit, is
                 Saving Profile...
               </>
             ) : (
-              'Save Profile'
+              readOnly ? 'Profile Locked' : 'Save Profile'
             )}
           </Button>
         </div>

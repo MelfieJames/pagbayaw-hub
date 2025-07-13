@@ -19,6 +19,7 @@ import AchievementDetail from "./pages/AchievementDetail";
 import AchievementManagement from "./pages/AchievementManagement";
 import MyRatings from "./pages/MyRatings";
 import AdminReviewsPage from "./pages/AdminReviewsPage";
+import UserManagementPage from "./pages/UserManagementPage";
 
 export default function AppRoutes() {
   return (
@@ -39,6 +40,7 @@ export default function AppRoutes() {
       <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
       <Route path="/admin/chatbot" element={<AdminChatbotPage />} />
       <Route path="/admin/reviews" element={<AdminReviewsPage />} />
+      <Route path="/admin/users" element={<UserManagementPage />} />
       <Route path="/achievements" element={<Achievements />} />
       <Route path="/achievements/:id" element={<AchievementDetail />} />
       <Route path="/admin/achievements" element={<AchievementManagement />} />

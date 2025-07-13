@@ -69,6 +69,7 @@ export function useProductActions() {
 
       // Set this data in the query cache for the checkout page to use
       queryClient.setQueryData(['checkout-items'], buyNowItems);
+      persistCheckoutItems(buyNowItems); // Persist to localStorage for refresh
 
       // Navigate to checkout
       navigate("/checkout");
@@ -367,6 +368,11 @@ export function useProductActions() {
       throw error;
     }
   };
+
+  // Utility: persist checkout-items to localStorage
+  function persistCheckoutItems(items) {
+    localStorage.setItem('checkout-items', JSON.stringify(items));
+  }
 
   return {
     handleBuyNow,

@@ -89,6 +89,7 @@ export function OrderApproval() {
           created_at,
           user_id,
           status,
+          cancellation_reason,
           user_address_id,
           purchase_items (
             id,
@@ -432,6 +433,11 @@ export function OrderApproval() {
             <p className="text-lg font-semibold text-amber-800">
               ₱{Number(order.total_amount).toFixed(2)}
             </p>
+            {status === 'cancelled' && (
+              <p className="text-xs text-red-700 font-medium mt-1">
+                Cancellation Reason: {order.cancellation_reason ? order.cancellation_reason : 'No reason provided.'}
+              </p>
+            )}
           </div>
           {/* Show NOT APPROVED only if address is missing or incomplete */}
           {status === 'pending' && !hasCompleteInfo && (
@@ -575,6 +581,13 @@ export function OrderApproval() {
             <h4 className="font-semibold text-amber-800 mb-1 flex items-center gap-2">
               <Home className="h-4 w-4" /> Delivery Address
             </h4>
+            {/* Cancellation Reason for Cancelled Orders */}
+            {status === 'cancelled' && selectedOrder.cancellation_reason && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm font-medium text-red-800 mb-1">Cancellation Reason:</p>
+                <p className="text-sm text-red-700">{selectedOrder.cancellation_reason}</p>
+              </div>
+            )}
             {address ? (
               <div className="bg-gray-50 p-3 rounded-md text-sm space-y-1">
                 <div className="flex items-center gap-2">

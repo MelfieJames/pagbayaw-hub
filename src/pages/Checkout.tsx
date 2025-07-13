@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/services/supabase/client";
@@ -29,6 +29,19 @@ type SupabaseCartResponse = {
   };
 }
 
+// Utility: persist and load checkout-items from localStorage
+function persistCheckoutItems(items: CartItem[]) {
+  localStorage.setItem('checkout-items', JSON.stringify(items));
+}
+function loadCheckoutItems(): CartItem[] {
+  try {
+    const data = localStorage.getItem('checkout-items');
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -41,19 +54,40 @@ export default function Checkout() {
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
 
+  // Track if we loaded from cache/localStorage
+  const loadedFromCache = useRef(false);
+
   const cachedBuyNowItems = queryClient.getQueryData<CartItem[]>(['checkout-items']) || [];
 
+  // On mount, load checkout-items from localStorage if cache is empty
+  useEffect(() => {
+    if (!queryClient.getQueryData(['checkout-items'])) {
+      const localItems = loadCheckoutItems();
+      if (localItems.length > 0) {
+        queryClient.setQueryData(['checkout-items'], localItems);
+        loadedFromCache.current = true;
+      }
+    } else if (cachedBuyNowItems.length > 0) {
+      loadedFromCache.current = true;
+    }
+  }, [queryClient]);
+
+  // Whenever checkout-items changes, persist to localStorage
+  useEffect(() => {
+    if (cachedBuyNowItems && cachedBuyNowItems.length > 0) {
+      persistCheckoutItems(cachedBuyNowItems);
+    }
+  }, [cachedBuyNowItems]);
+
+  // Only enable the query if we did NOT load from cache/localStorage
   const { data: cartItems = [], refetch } = useQuery({
     queryKey: ['checkout-items'],
     queryFn: async () => {
       // If we have Buy Now items in the cache, return those instead of fetching from cart
       if (cachedBuyNowItems && cachedBuyNowItems.length > 0) {
-        console.log("Using Buy Now items:", cachedBuyNowItems);
         return cachedBuyNowItems;
       }
-      
       if (!user?.id) return [];
-      
       // Otherwise fetch normal cart items
       const { data: responseData, error } = await supabase
         .from('cart')
@@ -69,24 +103,14 @@ export default function Checkout() {
         `)
         .eq('user_id', user.id)
         .returns<SupabaseCartResponse[]>();
-
       if (error) {
         console.error('Cart fetch error:', error);
         return [];
       }
-      
       return responseData as CartItem[];
     },
-    enabled: !!user?.id || cachedBuyNowItems.length > 0,
+    enabled: !loadedFromCache.current && !!user?.id,
   });
-
-  useEffect(() => {
-    return () => {
-      if (cachedBuyNowItems.length > 0) {
-        queryClient.removeQueries({ queryKey: ['checkout-items'] });
-      }
-    };
-  }, [cachedBuyNowItems.length, queryClient]);
 
   const { data: inventoryData = [] } = useQuery({
     queryKey: ['inventory-data'],
@@ -146,6 +170,7 @@ export default function Checkout() {
           item.product_id === productId ? { ...item, quantity: newQuantity } : item
         );
         queryClient.setQueryData(['checkout-items'], updatedItems);
+        persistCheckoutItems(updatedItems); // Persist updated items
         return;
       }
 
@@ -174,6 +199,7 @@ export default function Checkout() {
     if (cachedBuyNowItems.length > 0) {
       const updatedItems = cachedBuyNowItems.filter(item => item.product_id !== productId);
       queryClient.setQueryData(['checkout-items'], updatedItems);
+      persistCheckoutItems(updatedItems); // Persist updated items
       return;
     }
 
@@ -358,6 +384,7 @@ export default function Checkout() {
 
       // Invalidate and remove relevant queries
       queryClient.removeQueries({ queryKey: ['checkout-items'] });
+      localStorage.removeItem('checkout-items'); // Remove from localStorage after successful checkout
       queryClient.invalidateQueries({ queryKey: ['cart-details'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-data'] });

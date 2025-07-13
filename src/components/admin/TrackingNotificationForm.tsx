@@ -22,7 +22,7 @@ interface OrderData {
 
 export function TrackingNotificationForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [rawMessage, setRawMessage] = useState("");
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
@@ -141,50 +141,41 @@ export function TrackingNotificationForm() {
     setShowDropdown(false);
   };
 
+  const fullMessage = expectedDeliveryDate
+    ? `${rawMessage.trim()}  Expected delivery date: ${expectedDeliveryDate}`
+    : rawMessage;
+
   const handleSendNotification = async () => {
     if (!selectedOrder) {
       toast.error("Please select an order");
       return;
     }
-
-    if (!selectedOrder.tracking_number) {
-      toast.error("This order doesn't have a tracking number assigned yet");
-      return;
-    }
-
-    if (!message.trim()) {
+    if (!rawMessage.trim()) {
       toast.error("Please enter a message");
       return;
     }
-
     if (!expectedDeliveryDate) {
       toast.error("Please enter expected delivery date");
       return;
     }
-
     setIsLoading(true);
     try {
       const { error } = await supabase.from("notifications").insert([
         {
           user_id: selectedOrder.user_id,
-          message: `${message.trim()} - TRACKING NUMBER: ${selectedOrder.tracking_number}`,
-          tracking_number: selectedOrder.tracking_number,
+          message: fullMessage,
           type: "tracking_update",
           purchase_id: parseInt(selectedOrder.id),
           expected_delivery_date: expectedDeliveryDate
         },
       ]);
-
       if (error) throw error;
-
-      toast.success("Tracking notification sent successfully!");
-      setMessage("");
+      toast.success("Notification sent successfully!");
+      setRawMessage("");
       setExpectedDeliveryDate("");
       setSearchTerm("");
       setSelectedOrder(null);
-      
       alert("Notification has been successfully sent to the customer!");
-      
     } catch (error) {
       console.error("Error sending notification:", error);
       toast.error("Something went wrong. Please try again later.");
@@ -263,7 +254,6 @@ export function TrackingNotificationForm() {
                 <strong>Customer:</strong> {selectedOrder.customerName}<br />
                 <strong>Email:</strong> {selectedOrder.email}<br />
                 <strong>Total:</strong> ₱{Number(selectedOrder.total_amount).toFixed(2)}<br />
-                <strong>Tracking Number:</strong> {selectedOrder.tracking_number || 'Not assigned'}
               </div>
             </div>
           )}
@@ -287,17 +277,17 @@ export function TrackingNotificationForm() {
           <Label className="text-[#8B7355] flex items-center gap-2">
             Message
           </Label>
-          <Textarea
-            placeholder="Your order has been shipped! Track your package using the tracking number above."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="mt-1 min-h-[100px]"
+          <Input
+            placeholder="Your order has been shipped!"
+            value={fullMessage}
+            onChange={e => setRawMessage(e.target.value)}
+            className="mt-1"
           />
         </div>
 
         <Button
           onClick={handleSendNotification}
-          disabled={isLoading || !selectedOrder || !selectedOrder.tracking_number}
+          disabled={isLoading || !selectedOrder}
           className="w-full bg-[#8B7355] hover:bg-[#7a624d] text-white"
         >
           {isLoading ? (

@@ -65,7 +65,19 @@ export function UserManagement() {
         
         console.log("Profiles fetched:", profiles?.length);
         
-        // Convert profile data to expected format
+        // Get admin user IDs to filter them out
+        const { data: admins, error: adminsError } = await supabase
+          .from('admins')
+          .select('user_id');
+        
+        if (adminsError) {
+          console.error("Error fetching admins:", adminsError);
+          throw adminsError;
+        }
+        
+        const adminUserIds = new Set(admins?.map(admin => admin.user_id) || []);
+        
+        // Convert profile data to expected format and filter out admins
         const userProfiles = profiles?.map(profile => ({
           id: profile.id,
           email: profile.email || '',
@@ -76,9 +88,9 @@ export function UserManagement() {
           phone_number: profile.phone_number || '',
           created_at: profile.created_at || new Date().toISOString(),
           updated_at: profile.updated_at || null
-        })) || [];
+        })).filter(profile => !adminUserIds.has(profile.id)) || [];
         
-        console.log("User profiles prepared:", userProfiles.length);
+        console.log("User profiles prepared (excluding admins):", userProfiles.length);
         return userProfiles;
       } catch (error) {
         console.error("Error in user fetching:", error);
@@ -168,7 +180,7 @@ export function UserManagement() {
             User Management
           </CardTitle>
           <Badge variant="outline" className="px-3 py-1 bg-white">
-            Total: {users.length} users
+            Total: {users.length} regular users
           </Badge>
         </div>
       </CardHeader>
