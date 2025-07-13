@@ -14,12 +14,12 @@ import {
 
 const NavItems = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
   const handleLogout = () => {
-    signOut();
+    logout();
   };
 
   const navItems = [

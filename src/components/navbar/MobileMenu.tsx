@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, User, Star, Clock, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import NavItems from "./NavItems";
+import { NavItems } from "./NavItems";
 
 export function MobileMenu() {
   const { user, signOut } = useAuth();

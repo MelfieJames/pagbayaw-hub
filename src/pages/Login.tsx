@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -142,10 +141,34 @@ const LoginPage = () => {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    const success = await resendConfirmationEmail(confirmationEmail);
+    if (success) {
+      setIsConfirmationAlertOpen(false);
+      toast.success("Confirmation email resent successfully!");
+    }
+  };
+
+  useEffect(() => {
+    if (message) {
+      toast(message);
+    }
+  }, [message]);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate(redirectPath);
+      }
+    };
+    checkSession();
+  }, [navigate, redirectPath]);
+
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen w-full overflow-hidden pt-24 relative bg-green-50">
+      <div className="flex min-h-screen w-full overflow-hidden pt-24 relative bg-gradient-to-br from-green-50 to-green-100">
         {/* Floating Bubbles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {Array.from({ length: 20 }).map((_, i) => (
@@ -164,7 +187,7 @@ const LoginPage = () => {
         </div>
 
         {/* Left panel - decorative */}
-        <div className="hidden lg:flex w-1/2 relative animate-fade-in-up items-center justify-center bg-gradient-to-br from-green-100 to-green-200">
+        <div className="hidden lg:flex w-1/2 relative animate-fade-in-up items-center justify-center">
           <div className="text-center text-green-800 px-6 py-12 z-10 max-w-md">
             <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-green-700 to-green-600 bg-clip-text text-transparent">
               Your trusted partner in eco-friendly products
@@ -176,14 +199,14 @@ const LoginPage = () => {
         </div>
 
         {/* Right panel - form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white relative z-10">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white/90 backdrop-blur-xl relative z-10">
           <div className="w-full max-w-md space-y-8 animate-fade-in-up animation-delay-2000">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <img 
                   src="/lovable-uploads/unvas-logo.jpg" 
                   alt="UNVAS Logo" 
-                  className="h-16 w-16 rounded-full object-cover ring-4 ring-green-500/20"
+                  className="h-16 w-16 rounded-full object-cover ring-4 ring-green-500/20 bubble-heartbeat"
                 />
                 <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
                   UNVAS®
@@ -289,7 +312,7 @@ const LoginPage = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 text-lg font-semibold rounded-2xl shadow-xl transition-all duration-500 transform hover:scale-105 hover:shadow-green-500/25 animate-fade-in-up animation-delay-6000"
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 text-lg font-semibold rounded-2xl shadow-xl transition-all duration-500 transform hover:scale-105 hover:shadow-green-500/25 animate-glow animate-fade-in-up animation-delay-6000"
               >
                 <span className="flex items-center justify-center gap-3">
                   {isLogin ? "Sign in" : "Sign up"}

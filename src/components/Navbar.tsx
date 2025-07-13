@@ -6,7 +6,7 @@ import { NotificationsPopover } from "./notifications/NotificationsPopover";
 import { CartPopover } from "./products/CartPopover";
 import { useMediaQuery } from "@/hooks/use-mobile";
 import { useEffect } from "react";
-import NavItems from "./navbar/NavItems";
+import { NavItems } from "./navbar/NavItems";
 import { UserMenu } from "./navbar/UserMenu";
 import { MobileMenu } from "./navbar/MobileMenu";
 
